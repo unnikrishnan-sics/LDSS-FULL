@@ -20,12 +20,13 @@ import SmsOutlinedIcon from '@mui/icons-material/SmsOutlined';
 
 const pages = [
     { label: 'Home', path: '/parent/home' },
+    { label: 'About', path: '/parent/about' },
+    { label: 'Contact', path: '/parent/contact' },
     { label: 'Child', path: '/' },
     { label: 'Plan', path: '/' },
     { label: 'Meetings', path: '/' },
     { label: 'Activities', path: '/' },
-    { label: 'About', path: '/parent/about' },
-    { label: 'Contact', path: '/parent/contact' }
+    
 ];
 
 const ParentNavbar = ({ homebg = {},aboutBg={}, profilebg = {}, navigateToProfile = () => { }, parentdetails={},contactbg={} }) => {

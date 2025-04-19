@@ -57,6 +57,10 @@ const ParentProfile = () => {
         profilePic: null
     });
     const handleDataChange = (e) => {
+        setError((prevError) => ({
+            ...prevError,
+            [name]: ""
+        }));
         const { name, value } = e.target;
         setData(prev => {
             return { ...prev, [name]: value }
@@ -86,6 +90,13 @@ const ParentProfile = () => {
         }
    
     }, []);
+
+    // loging out and not returing to profile page
+    useEffect(() => {
+        if (localStorage.getItem("parentdetails") == null) {
+          navigate("/");
+        }
+      });
 
     const [error, setError] = useState({})
     const validation = () => {
@@ -131,10 +142,10 @@ const ParentProfile = () => {
         return isValid;
 
     };
-    const [message, setMessage] = useState({
-        success: "",
-        error: ""
-    })
+    // const [message, setMessage] = useState({
+    //     success: "",
+    //     error: ""
+    // })
     const handleSubmit = async (e) => {
         const isValid = validation();
         if (!isValid) {
@@ -164,10 +175,11 @@ const ParentProfile = () => {
             phone: ""
         })
         if (updated.data.message === "Parent updated successfully.") {
-            setMessage({
-                error: "",
-                success: "Parent detail updated in database"
-            });
+            // setMessage({
+            //     error: "",
+            //     success: "Parent detail updated in database"
+            // });
+            toast.success("Parent updated successfully.")
             
 
             const token = localStorage.getItem("token");
@@ -185,10 +197,11 @@ const ParentProfile = () => {
 
         }
         else {
-            setMessage({
-                success: "",
-                error: 'Error in updating parent profile'
-            })
+            // setMessage({
+            //     success: "",
+            //     error: 'Error in updating parent profile'
+            // })
+            toast.error("Error in updating parent profile")
         }
 
 
@@ -198,7 +211,19 @@ const ParentProfile = () => {
     const handleClose = () => setOpen(false);
 
     const [editOpen, setEditOpen] = React.useState(false);
-    const handleEditOpen = () => setEditOpen(true);
+    const handleEditOpen = () => {
+        setData({
+            name: parentDetails.name || "",
+            email: parentDetails.email || "",
+            address: parentDetails.address || "",
+            phone: parentDetails.phone || "",
+            profilePic: null, // leave this null so user can choose a new one
+        });
+        setImagePreview(parentDetails?.profilePic?.filename 
+            ? `http://localhost:4000/uploads/${parentDetails.profilePic.filename}` 
+            : null);
+        setEditOpen(true);
+    }
     const handleEditClose = () => setEditOpen(false);
 
     const navigate = useNavigate();
@@ -354,10 +379,10 @@ const ParentProfile = () => {
 
                                     </Box>
                                 </Box>
-                                <div style={{textAlign:"center"}}>
+                                {/* <div style={{textAlign:"center"}}>
                                                 {message.success && <p style={{ color: 'green', fontSize: '32px' }}>{message.success}</p>}
                                                 {message.error && <p style={{ color: 'red', fontSize: '32px' }}>{message.error}</p>}
-                                                </div>
+                                                </div> */}
 
                             </Container>
 

@@ -179,14 +179,52 @@ const Navbar = ({ contactbg, aboutBg, homebg }) => {
                                 </Link>
                             ))}
                         </Box>
+                
                         <Box sx={{ flexGrow: 0 }}>
-                            <Link to ="/parent/login">
-                            <Button variant="contained"
-                                endIcon={<ArrowRightAltIcon />}
-                                sx={{ borderRadius: "25px", backgroundColor: "#1967D2" }}
+                            <Tooltip title="Open login menu">
+                                <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    onClick={handleOpenUserMenu}
+                                    endIcon={<ArrowRightAltIcon />}
+                                    sx={{ borderRadius: "25px", textTransform: "none" ,backgroundColor: "#1967D2" }}
+                                >
+                                    Login
+                                </Button>
+                            </Tooltip>
+                            <Menu
+                                sx={{ mt: '45px' }}
+                                id="menu-appbar"
+                                anchorEl={anchorElUser}
+                                anchorOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                keepMounted
+                                transformOrigin={{
+                                    vertical: 'top',
+                                    horizontal: 'right',
+                                }}
+                                open={Boolean(anchorElUser)}
+                                onClose={handleCloseUserMenu}
                             >
-                                Login</Button>
-                            </Link>
+                                <MenuItem onClick={handleCloseUserMenu}>
+                                    <Link to="/parent/login" style={{ textDecoration: "none", color: "#000" }}>
+                                        Parent Login
+                                    </Link>
+                                </MenuItem>
+                                <MenuItem onClick={handleCloseUserMenu}>
+                                    <Link to="/educator/login" style={{ textDecoration: "none", color: "#000" }}>
+                                        Educator Login
+                                    </Link>
+                                </MenuItem>
+                                <MenuItem onClick={handleCloseUserMenu}>
+                                    <Link to="/theraphist/login" style={{ textDecoration: "none", color: "#000" }}>
+                                        Theraphist Login
+                                    </Link>
+                                </MenuItem>
+                                {/* Add more roles if needed */}
+                            </Menu>
                         </Box>
                     </Toolbar>
                 </Container>

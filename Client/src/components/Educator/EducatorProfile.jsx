@@ -57,6 +57,10 @@ const EducatorProfile = () => {
         profilePic: null
     });
     const handleDataChange = (e) => {
+        setError((prevError) => ({
+            ...prevError,
+            [name]: ""
+        }));
         const { name, value } = e.target;
         setData(prev => {
             return { ...prev, [name]: value }
@@ -86,6 +90,14 @@ const EducatorProfile = () => {
         }
    
     }, []);
+
+    // logging out and not returning to profile page
+
+    useEffect(() => {
+        if (localStorage.getItem("educatorDetails") == null) {
+          navigate("/");
+        }
+      });
 
     const [error, setError] = useState({})
     const validation = () => {
@@ -131,10 +143,10 @@ const EducatorProfile = () => {
         return isValid;
 
     };
-    const [message, setMessage] = useState({
-        success: "",
-        error: ""
-    })
+    // const [message, setMessage] = useState({
+    //     success: "",
+    //     error: ""
+    // })
     const handleSubmit = async (e) => {
         const isValid = validation();
         if (!isValid) {
@@ -165,10 +177,11 @@ const EducatorProfile = () => {
             phone: ""
         })
         if (updated.data.message === "educator updated successfully.") {
-            setMessage({
-                error: "",
-                success: "educator detail updated in database"
-            });
+            // setMessage({
+            //     error: "",
+            //     success: "educator detail updated in database"
+            // });
+            toast.success("Educator updated successfully.")
             
 
             const token = localStorage.getItem("token");
@@ -186,10 +199,11 @@ const EducatorProfile = () => {
 
         }
         else {
-            setMessage({
-                success: "",
-                error: 'Error in updating parent profile'
-            })
+            // setMessage({
+            //     success: "",
+            //     error: 'Error in updating parent profile'
+            // })
+            toast.error("Error in updating educator profile")
         }
 
 
@@ -199,7 +213,19 @@ const EducatorProfile = () => {
     const handleClose = () => setOpen(false);
 
     const [editOpen, setEditOpen] = React.useState(false);
-    const handleEditOpen = () => setEditOpen(true);
+    const handleEditOpen = () => {
+        setData({
+            name: parentDetails.name || "",
+            email: parentDetails.email || "",
+            address: parentDetails.address || "",
+            phone: parentDetails.phone || "",
+            profilePic: null, // leave this null so user can choose a new one
+        });
+        setImagePreview(parentDetails?.profilePic?.filename 
+            ? `http://localhost:4000/uploads/${parentDetails.profilePic.filename}` 
+            : null);
+        setEditOpen(true);
+    }
     const handleEditClose = () => setEditOpen(false);
 
     const navigate = useNavigate();

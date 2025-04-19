@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import ParentNavbar from '../Navbar/ParentNavbar'
 import contactbg from "../../assets/vector 10.png"
 import { Box, Button, Container, Stack, TextField, Typography, styled } from '@mui/material';
@@ -6,6 +6,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import Footer from '../Footer/Footer';
+import { useNavigate } from 'react-router-dom';
 
 const ParentContactUs = () => {
     const StyledTextField = styled(TextField)({
@@ -31,10 +32,19 @@ const ParentContactUs = () => {
           }
         }
       });
+      const [parentdetails,setParentdetails]=useState({});
+    useEffect(()=>{
+       const parentdetails=  localStorage.getItem("parentdetails");
+       setParentdetails(JSON.parse(parentdetails));
+    },[]);
+    const navigate = useNavigate();
+    const navigateToProfile=()=>{
+         navigate('/parent/profile');
+    }
     
   return (
     <>
-      <ParentNavbar contactbg={contactbg} />
+      <ParentNavbar contactbg={contactbg} parentdetails={parentdetails} navigateToProfile={navigateToProfile}/>
       {/* Top Section with Background Image */}
       <Box
         sx={{

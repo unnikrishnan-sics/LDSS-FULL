@@ -13,8 +13,8 @@ const AdminLogin = () => {
     const siginupStyle = { background: "white", boxShadow: "none" };
 
     const [data, setData] = useState({
-        userId: "",
-        password: ""
+        userId: "Admin123",
+        password: "admin@123"
     });
     const navigate = useNavigate();
     const handleInputChange = (e) => {
@@ -24,24 +24,27 @@ const AdminLogin = () => {
 
     const handleLogin = async (e) => {
         e.preventDefault();
+        
+        
         const response = await axios.post("http://localhost:4000/ldss/admin/login", data);
 
         const jwtToken = response.data.token;
         const message = response.data.message;
 
 
-        if (jwtToken && message === "admin logged in successfully") {
+        if (jwtToken && message === "Admin logged in successfully") {
             localStorage.setItem("token", jwtToken);
             toast.success("logged in successfully!")
             navigate("/admin/dashboard");
         }
-
-        else {
-            toast.error("Invalid email or password");
+        if(message==="Invalid password."){
+            toast.error("Invalid password.");
         }
-
-        console.log(jwtToken);
-        console.log(message);
+        if(message==="Admin not found."){
+            toast.error("Admin not found with this ID.");
+        }
+        // console.log(jwtToken);
+        // console.log(message);
     }
     return (
         <>

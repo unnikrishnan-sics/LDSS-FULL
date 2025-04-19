@@ -57,6 +57,10 @@ const TheraphistProfile = () => {
         profilePic: null
     });
     const handleDataChange = (e) => {
+        setError((prevError) => ({
+            ...prevError,
+            [name]: ""
+        }));
         const { name, value } = e.target;
         setData(prev => {
             return { ...prev, [name]: value }
@@ -86,6 +90,13 @@ const TheraphistProfile = () => {
         }
    
     }, []);
+
+    //  logging out and not allowing to go back to profile page
+    useEffect(() => {
+        if (localStorage.getItem("theraphistDetails") == null) {
+          navigate("/");
+        }
+      });
 
     const [error, setError] = useState({})
     const validation = () => {
@@ -131,10 +142,10 @@ const TheraphistProfile = () => {
         return isValid;
 
     };
-    const [message, setMessage] = useState({
-        success: "",
-        error: ""
-    })
+    // const [message, setMessage] = useState({
+    //     success: "",
+    //     error: ""
+    // })
     const handleSubmit = async (e) => {
         const isValid = validation();
         if (!isValid) {
@@ -165,10 +176,11 @@ const TheraphistProfile = () => {
             phone: ""
         })
         if (updated.data.message === "theraphist updated successfully.") {
-            setMessage({
-                error: "",
-                success: "theraphist detail updated in database"
-            });
+            // setMessage({
+            //     error: "",
+            //     success: "theraphist detail updated in database"
+            // });
+            toast.success("Theraphist updated successfully")
             
 
             const token = localStorage.getItem("token");
@@ -186,10 +198,11 @@ const TheraphistProfile = () => {
 
         }
         else {
-            setMessage({
-                success: "",
-                error: 'Error in updating theraphist profile'
-            })
+            // setMessage({
+            //     success: "",
+            //     error: 'Error in updating theraphist profile'
+            // })
+            toast.error("Error in updating theraphist profile")
         }
 
 
@@ -199,7 +212,19 @@ const TheraphistProfile = () => {
     const handleClose = () => setOpen(false);
 
     const [editOpen, setEditOpen] = React.useState(false);
-    const handleEditOpen = () => setEditOpen(true);
+    const handleEditOpen = () => {
+        setData({
+            name: parentDetails.name || "",
+            email: parentDetails.email || "",
+            address: parentDetails.address || "",
+            phone: parentDetails.phone || "",
+            profilePic: null, // leave this null so user can choose a new one
+        });
+        setImagePreview(parentDetails?.profilePic?.filename 
+            ? `http://localhost:4000/uploads/${parentDetails.profilePic.filename}` 
+            : null);
+        setEditOpen(true);
+    }
     const handleEditClose = () => setEditOpen(false);
 
     const navigate = useNavigate();

@@ -31,6 +31,12 @@ const ParentLogin = () => {
         const jwtToken = response.data.token;
         const message = response.data.message;
 
+        if(message==="Parent not found with this email."){
+            toast.error("Parent not found with this email.")
+        }
+        if(message==="Invalid Password."){
+            toast.error("Invalid Password.")
+        }
 
         if (jwtToken && message === "Parent logged in successfully") {
             localStorage.setItem("token", jwtToken);
@@ -38,9 +44,9 @@ const ParentLogin = () => {
             navigate("/parent/home");
         }
 
-        else {
-            toast.error("Invalid email or password");
-        }
+        // else {
+        //     toast.error("Invalid email or password");
+        // }
 
         console.log(jwtToken);
         console.log(message);

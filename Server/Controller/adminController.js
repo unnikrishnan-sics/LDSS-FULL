@@ -1,28 +1,37 @@
-const adminModel=require("../Models/adminModel");
-const bcrypt=require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const adminLogin=async (req,res)=>{
+const adminLogin = async (req, res) => {
     try {
-        const {userId,password}=req.body;
+        const { userId, password } = req.body;
 
-        const admin=await adminModel.findOne({userId});
-        
-        if(!admin){
-            return res.json({message:"admin not found."})
-        }
-        const isMatch = password === admin.password;
+        // Hardcoded admin credentials
+        const ADMIN_CREDENTIALS = {
+            userId: "Admin123",
+            password: "admin@123",
+        };
 
-        if(!isMatch){
-            return res.json({message:"invalid password."})
+        // Check if the provided userId matches
+        if (userId !== ADMIN_CREDENTIALS.userId) {
+            return res.status(400).json({ message: "Admin not found." });
         }
-        console.log(process.env.SECRET_KEY);
-        const token=await jwt.sign({id:userId},process.env.SECRET_KEY,{expiresIn:"1hr"});
-        res.status(200).json({message:"admin logged in successfully",token:token});
-        
+
+        // Check if the provided password matches
+        if (password !== ADMIN_CREDENTIALS.password) {
+            return res.status(400).json({ message: "Invalid password." });
+        }
+
+        // Generate a JWT token if login is successful
+        const token = jwt.sign({ userId: ADMIN_CREDENTIALS.userId }, process.env.SECRET_KEY, { expiresIn: "1h" });
+
+        res.status(200).json({
+            message: "Admin logged in successfully",
+            token: token,
+        });
+
     } catch (error) {
-        console.log(error.message);
-        res.status(500).json({message:error.message});
+        console.error(error.message);
+        res.status(500).json({ message: error.message });
     }
-}
-module.exports={adminLogin}
+};
+
+module.exports = { adminLogin };

@@ -2,7 +2,7 @@ import { Box, Button, Container, Grid, Typography } from '@mui/material'
 import Modal from '@mui/material/Modal';
 import Fade from '@mui/material/Fade';
 import Backdrop from '@mui/material/Backdrop';
-import React from 'react';
+import React, { useEffect } from 'react';
 import adminlogo from "../../assets/adminlogo.png";
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
@@ -14,6 +14,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import CloseIcon from '@mui/icons-material/Close';
 import Divider from '@mui/material/Divider';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 
 const style = {
@@ -42,9 +43,17 @@ const handleLogOut = () => {
     // localStorage.removeItem('parentdetails');
     // window.location.reload();
     navigate('/admin/login');
-    toast.success("you logged out");
+    toast.success("You logged out");
+
+    // logging out and not returning back
+   
 
 }
+useEffect(() => {
+    if (localStorage.getItem("token") == null) {
+      navigate("/");
+    }
+  });
     return (
         <>
             <Container maxWidth="x-lg" sx={{ background: "#F6F7F9" }}>

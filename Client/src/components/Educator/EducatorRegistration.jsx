@@ -7,6 +7,7 @@ import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import Footer from '../Footer/Footer';
 import axios from "axios";
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify'; 
 
 const EducatorRegistration = () => {
     const textFieldStyle = { height: "65px", width: "360px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" }
@@ -16,14 +17,20 @@ const EducatorRegistration = () => {
 
     const handleChange = (event) => {
         setChecked(event.target.checked);
+        if (event.target.checked) {
+            setError((prevError) => ({
+                ...prevError,
+                terms: ""
+            }));
+        }
     };
 
     const [imagePreview, setImagePreview] = useState(null);
 
-    const [message, setMessage] = useState({
-        success: "",
-        error: ""
-    })
+    // const [message, setMessage] = useState({
+    //     success: "",
+    //     error: ""
+    // })
     const [error, setError] = useState({})
 
     const [data, setData] = useState({
@@ -36,6 +43,10 @@ const EducatorRegistration = () => {
         profilePic: null
     });
     const handleDataChange = (e) => {
+        setError((prevError) => ({
+            ...prevError,
+            [name]: ""
+        }));
         const { name, value } = e.target;
         setData(prev => {
             return { ...prev, [name]: value }
@@ -149,18 +160,20 @@ const EducatorRegistration = () => {
 
 
         if (result.message === "educator already registered with this phone number") {
-            return setMessage({
-                success: "",
-                error: "you have already registered with this phone number"
+            // return setMessage({
+            //     success: "",
+            //     error: "you have already registered with this phone number"
 
-            })
+            // })
+            toast.error("You have already registered with this phone number")
         }
         if (result.message === "educator already registered with this email") {
-            return setMessage({
-                success: "",
-                error: "you have already registered with this email id"
+            // return setMessage({
+            //     success: "",
+            //     error: "you have already registered with this email id"
 
-            })
+            // })
+            toast.error("You have already registered with this email")
         }
         if (result.message === "educator created successfully") {
             setData({
@@ -175,7 +188,8 @@ const EducatorRegistration = () => {
             setChecked(false);
             setImagePreview(null);
 
-            return setMessage({ success: "educator Profile created", error: "" });
+            // return setMessage({ success: "educator Profile created", error: "" });
+            toast.success("Educator Profile created successfully")
         }
 
 
@@ -241,7 +255,7 @@ const EducatorRegistration = () => {
                                 {error.email && <span style={{ color: 'red', fontSize: '12px' }}>{error.email}</span>}
                             </div>
                             <div style={textFieldStyle}>
-                                <label>New Password</label>
+                                <label>Password</label>
                                 <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                                     onChange={handleDataChange}
                                     name='password'
@@ -326,8 +340,8 @@ const EducatorRegistration = () => {
 
                     </Box>
                 </Box>
-                {message.success && <p style={{ textAlign: "center", color: "green", fontSize: "32px", fontWeight: "600" }}>{message.success}</p>}
-                {message.error && <p style={{ textAlign: "center", color: "red", fontSize: "32px", fontWeight: "600" }}>{message.error}</p>}
+                {/* {message.success && <p style={{ textAlign: "center", color: "green", fontSize: "32px", fontWeight: "600" }}>{message.success}</p>}
+                {message.error && <p style={{ textAlign: "center", color: "red", fontSize: "32px", fontWeight: "600" }}>{message.error}</p>} */}
 
             </Container>
             <Footer />

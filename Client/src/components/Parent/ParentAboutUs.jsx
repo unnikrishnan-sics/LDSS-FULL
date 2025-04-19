@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import ParentNavbar from '../Navbar/ParentNavbar';
 import { Box, Typography } from '@mui/material';
 import aboutbg from "../../assets/about-bg.png";
@@ -10,14 +10,24 @@ import vector1 from "../../assets/Vector.png";
 import vector2 from "../../assets/Vector1.png";
 import Footer from '../Footer/Footer';
 import aboutbg1 from "../../assets/aboutbg.png";
+import { useNavigate } from 'react-router-dom';
 
 const ParentAboutUs = () => {
     const aboutBg = {
         background: "#F6F7F9"
     }
+    const [parentdetails,setParentdetails]=useState({});
+    useEffect(()=>{
+       const parentdetails=  localStorage.getItem("parentdetails");
+       setParentdetails(JSON.parse(parentdetails));
+    },[]);
+    const navigate = useNavigate();
+    const navigateToProfile=()=>{
+         navigate('/parent/profile');
+    }
   return (
     <>
-    <ParentNavbar aboutBg={aboutBg}/>
+    <ParentNavbar aboutBg={aboutBg} parentdetails={parentdetails} navigateToProfile={navigateToProfile}/>
     <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{
                 position
                     : "relative", ...aboutBg
