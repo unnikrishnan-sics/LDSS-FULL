@@ -6,6 +6,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import Footer from '../Footer/Footer';
+import { useNavigate } from 'react-router-dom';
 
 const TheraphistContact = () => {
     const StyledTextField = styled(TextField)({
@@ -35,10 +36,14 @@ const TheraphistContact = () => {
     useEffect(()=>{
        const theraphistDetails=  localStorage.getItem("theraphistDetails");
        setTheraphistdetails(JSON.parse(theraphistDetails));
-    });
+    },[]);
+    const navigate = useNavigate();
+    const navigateToProfile = () => {
+        navigate('/theraphist/profile');
+    }
   return (
     <>
-    <TheraphistNavbar theraphistdetails={theraphistdetails} contactbg={contactbg}/>
+    <TheraphistNavbar theraphistdetails={theraphistdetails} contactbg={contactbg} navigateToProfile={navigateToProfile}/>
 
      {/* Top Section with Background Image */}
      <Box

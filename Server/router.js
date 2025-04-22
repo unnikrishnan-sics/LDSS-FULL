@@ -22,7 +22,7 @@ router.post("/parent/login",parentController.parentLogin);
 router.post("/parent/forgotpassword",parentController.parentForgotPassword);
 router.post("/parent/resetpassword/:email",parentController.parentResetPassword);
 router.get("/parent/getparent/:id",protectedRoute.protectedRoute,parentController.getParentById);
-router.post("/parent/updateparent/:id",protectedRoute.protectedRoute,parentController.editParentById);
+router.post("/parent/updateparent/:id",protectedRoute.protectedRoute,parentController.uploadProfilePic,parentController.editParentById);
 
 // educator
 

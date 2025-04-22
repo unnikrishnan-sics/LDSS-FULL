@@ -12,16 +12,14 @@ import Footer from '../Footer/Footer';
 import aboutbg1 from "../../assets/aboutbg.png";
 
 
-
-
-
 const AboutUs = () => {
     const aboutBg = {
-        background: "#F6F7F9"
+        background: "#F6F7F9",
+        zIndex:"-10"
     }
     return (
         <>
-            <Navbar aboutBg={aboutBg} />
+            <Navbar aboutBg={aboutBg}/>
             <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{
                 position
                     : "relative", ...aboutBg

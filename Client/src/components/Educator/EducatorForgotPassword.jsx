@@ -42,7 +42,7 @@ const navigate=useNavigate();
         if(response.data.message===" No educator found with this email."){
            return toast.error("No educator found with this email");
         }
-        toast.info("register your new password");
+        // toast.info("register your new password");
         navigate(`/educator/resetpassword/${email}`);
 
     }

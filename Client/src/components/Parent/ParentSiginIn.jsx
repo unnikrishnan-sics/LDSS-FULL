@@ -71,12 +71,13 @@ const ParentSiginIn = () => {
         let isValid = true;
         let errorMessage = {};
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,15}$/;
         if (!data.name.trim()) {
-            errorMessage.name="name should not be empty"
+            errorMessage.name="Name should not be empty"
             isValid = false;
         }
         else if(data.name.length<3||data.name.length>20){
-            errorMessage.name="name should be 3 to 20 char length"
+            errorMessage.name="Name should be 3 to 20 char length"
             isValid = false;
 
         }
@@ -92,8 +93,8 @@ const ParentSiginIn = () => {
             errorMessage.password = "Password should not be empty";
             isValid = false;
         }
-        else if(data.password.length<8||data.password.length>20){
-            errorMessage.password="password should be 8 to 20 char length"
+        else if(!passwordRegex.test(data.password)){
+            errorMessage.password="Password should have atleast one Uppercase,smallcase,special charecter and should be 6 to 15 char length"
             isValid = false;
         }
         if (!data.confirmPassword.trim()) {
@@ -101,27 +102,27 @@ const ParentSiginIn = () => {
             isValid = false;
         }
         else if(data.confirmPassword.length<8||data.confirmPassword.length>20){
-            errorMessage.confirmPassword="confirm password should be 8 to 20 char length"
+            errorMessage.confirmPassword="Confirm password should be 8 to 20 char length"
             isValid = false;
         }
         if (data.password !== data.confirmPassword) {
-            errorMessage.confirmPassword = "password and confirm password should be same";
+            errorMessage.confirmPassword = "Password and confirm password should be same";
             isValid = false;
         }
         if(data.address.length<10){
-            errorMessage.address="address should be 10 char length"
+            errorMessage.address="Address should be 10 char length"
             isValid = false;
         }
         else if(!data.address.trim()){
-            errorMessage.address="address should not be empty"
+            errorMessage.address="Address should not be empty"
             isValid = false;
         }
         if(!data.phone.trim()){
-            errorMessage.phone="phone should not be empty"
+            errorMessage.phone="Phone should not be empty"
             isValid = false;
         }
-        else if(data.phone.length !==10){
-            errorMessage.phone="phone should be 10 digit"
+        else if (!/^\d{10}$/.test(data.phone)) {
+            errorMessage.phone = "Phone number must be exactly 10 digits";
             isValid = false;
         }
         if(!checked){

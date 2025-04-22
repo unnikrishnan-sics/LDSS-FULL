@@ -129,12 +129,12 @@ const TheraphistProfile = () => {
             errorMessage.address = "address should not be empty"
             isValid = false;
         }
-        if (!data.phone.trim()) {
+        if (!data.phone) {
             errorMessage.phone = "phone should not be empty"
             isValid = false;
         }
-        else if (data.phone.length !== 10) {
-            errorMessage.phone = "phone should be 10 digit"
+        else if (!/^\d{10}$/.test(data.phone)) {
+            errorMessage.phone = "Phone number must be exactly 10 digits";
             isValid = false;
         }
 
@@ -214,14 +214,14 @@ const TheraphistProfile = () => {
     const [editOpen, setEditOpen] = React.useState(false);
     const handleEditOpen = () => {
         setData({
-            name: parentDetails.name || "",
-            email: parentDetails.email || "",
-            address: parentDetails.address || "",
-            phone: parentDetails.phone || "",
+            name: theraphistdetails.name || "",
+            email: theraphistdetails.email || "",
+            address: theraphistdetails.address || "",
+            phone: theraphistdetails.phone || "",
             profilePic: null, // leave this null so user can choose a new one
         });
-        setImagePreview(parentDetails?.profilePic?.filename 
-            ? `http://localhost:4000/uploads/${parentDetails.profilePic.filename}` 
+        setImagePreview(theraphistdetails?.profilePic?.filename 
+            ? `http://localhost:4000/uploads/${theraphistdetails?.profilePic?.filename}` 
             : null);
         setEditOpen(true);
     }
@@ -377,10 +377,10 @@ const TheraphistProfile = () => {
 
                                     </Box>
                                 </Box>
-                                <div style={{textAlign:"center"}}>
+                                {/* <div style={{textAlign:"center"}}>
                                                 {message.success && <p style={{ color: 'green', fontSize: '32px' }}>{message.success}</p>}
                                                 {message.error && <p style={{ color: 'red', fontSize: '32px' }}>{message.error}</p>}
-                                                </div>
+                                                </div> */}
 
                             </Container>
 

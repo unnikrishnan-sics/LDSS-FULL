@@ -10,6 +10,7 @@ import vector1 from "../../assets/Vector.png";
 import vector2 from "../../assets/Vector1.png";
 import Footer from '../Footer/Footer';
 import aboutbg1 from "../../assets/aboutbg.png";
+import { useNavigate } from 'react-router-dom';
 
 const TheraphistAbout = () => {
     const aboutBg = {
@@ -19,10 +20,14 @@ const TheraphistAbout = () => {
     useEffect(()=>{
        const theraphistdetails=  localStorage.getItem("theraphistDetails");
        setTheraphistdetails(JSON.parse(theraphistdetails));
-    });
+    },[]);
+    const navigate = useNavigate();
+    const navigateToProfile = () => {
+        navigate('/theraphist/profile');
+    }
   return (
     <>
-      <TheraphistNavbar aboutBg={aboutBg} theraphistdetails={theraphistdetails}/>
+      <TheraphistNavbar aboutBg={aboutBg} theraphistdetails={theraphistdetails} navigateToProfile={navigateToProfile}/>
       <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{
                 position
                     : "relative", ...aboutBg

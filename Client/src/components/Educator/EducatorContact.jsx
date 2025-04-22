@@ -6,6 +6,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import Footer from '../Footer/Footer';
+import { useNavigate } from 'react-router-dom';
 
 const EducatorContact = () => {
     const StyledTextField = styled(TextField)({
@@ -35,10 +36,14 @@ const EducatorContact = () => {
     useEffect(()=>{
        const educatorDetails=  localStorage.getItem("educatorDetails");
        setEducatorDetails(JSON.parse(educatorDetails));
-    });
+    },[]);
+    const navigate = useNavigate();
+    const navigateToProfile = () => {
+        navigate('/educator/profile');
+    }
   return (
     <>
-    <EducatorNavbar contactbg={contactbg} educatorDetails={educatorDetails}/>
+    <EducatorNavbar contactbg={contactbg} educatorDetails={educatorDetails} navigateToProfile={navigateToProfile}/>
 
      {/* Top Section with Background Image */}
      <Box

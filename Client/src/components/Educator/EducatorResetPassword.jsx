@@ -5,16 +5,16 @@ import background from "../../assets/Frame 12.png"
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import Footer from '../Footer/Footer';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-toastify'; 
 
 const EducatorResetPassword = () => {
     const textFieldStyle = { height: "65px", width: "360px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" };
     const siginupStyle = { background: "white", boxShadow: "none" };
 
     const {email}=useParams();
+    const navigate=useNavigate();
     
-
-
     const[data,setData]=useState({
         password:"",
         confirmpassword:""
@@ -76,17 +76,20 @@ const EducatorResetPassword = () => {
         
 
         if(result.data.message==="No educator found with this email."){
-            setMessage({
-                success:"",
-                error:"No educator found with this email."
-            });
+            // setMessage({
+            //     success:"",
+            //     error:"No educator found with this email."
+            // });
+            toast.error("No educator found with this email.")
             return;
         }
         if(result.data.message==="Password reset successfully."){
-            setMessage({
-                success:"Password reset successfully.",
-                error:""
-            });
+            // setMessage({
+            //     success:"Password reset successfully.",
+            //     error:""
+            // });
+            toast.success("Password reset successfully.");
+            navigate("/educator/login");
         }
         
     } 
@@ -146,8 +149,8 @@ const EducatorResetPassword = () => {
 
                 </Stack>
                </Box>
-               {message.success && <p style={{ color: 'green', fontSize: '32px',textAlign:"center" }}>{message.success}</p>}
-               {message.error && <p style={{ color: 'red', fontSize: '32px',textAlign:"center" }}>{message.error}</p>}
+               {/* {message.success && <p style={{ color: 'green', fontSize: '32px',textAlign:"center" }}>{message.success}</p>}
+               {message.error && <p style={{ color: 'red', fontSize: '32px',textAlign:"center" }}>{message.error}</p>} */}
 
     </Container>
     <Footer/>

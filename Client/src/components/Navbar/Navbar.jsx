@@ -48,7 +48,7 @@ const Navbar = ({ contactbg, aboutBg, homebg }) => {
 
     return (
         <>
-            <AppBar position="static" sx={{ backgroundColor: 'transparent', backgroundImage: `url(${contactbg})`, ...aboutBg, ...homebg }}>
+            <AppBar position="static" sx={{ backgroundColor: 'transparent', backgroundImage: `url(${contactbg})`, ...aboutBg, ...homebg,zIndex:10,boxShadow:"none" }}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters
                         sx={{
@@ -140,7 +140,7 @@ const Navbar = ({ contactbg, aboutBg, homebg }) => {
                             <Link to="/" >
                                 <Box component="img" src={LogoHub} sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} ></Box>
                             </Link>
-                            <Link style={{ textDecoration: "none" }}>
+                            <Link  to="/" style={{ textDecoration: "none" }}>
                                 <Typography
                                     variant="h5"
                                     color='primary'
@@ -154,6 +154,7 @@ const Navbar = ({ contactbg, aboutBg, homebg }) => {
                                         fontWeight: 700,
                                         letterSpacing: '.3rem',
                                         textDecoration: 'none',
+                                        zIndex:10
                                     }}
                                 >
                                     LearnHub

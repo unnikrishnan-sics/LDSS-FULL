@@ -142,11 +142,12 @@ const getTheraphistById=async(req,res)=>{
 const editTheraphistById = async (req, res) => {
     try {
         const theraphistId = req.params.id;
+        const profilePic=req.file;
         const { name, email, phone, address } = req.body;
 
         const updatedTheraphist = await theraphistModel.findByIdAndUpdate(
             theraphistId,
-            { name, email, phone, address },
+            { name, email, phone, address,profilePic },
             { new: true }
         );
 

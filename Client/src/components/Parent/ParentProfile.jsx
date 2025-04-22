@@ -129,19 +129,22 @@ const ParentProfile = () => {
             errorMessage.address = "address should not be empty"
             isValid = false;
         }
-        if (!data.phone.trim()) {
+        if (!data.phone) {
             errorMessage.phone = "phone should not be empty"
             isValid = false;
         }
-        else if (data.phone.length !== 10) {
-            errorMessage.phone = "phone should be 10 digit"
+        else if (!/^\d{10}$/.test(data.phone)) {
+            errorMessage.phone = "Phone number must be exactly 10 digits";
             isValid = false;
         }
+        
 
         setError(errorMessage);
         return isValid;
 
     };
+
+    console.log(data);
     // const [message, setMessage] = useState({
     //     success: "",
     //     error: ""
@@ -162,7 +165,7 @@ const ParentProfile = () => {
 
         console.log(data);
         const token = localStorage.getItem("token");
-        const updated = await axios.post(`http://localhost:4000/ldss/parent/updateparent/${parentDetails._id}`, data, {
+        const updated = await axios.post(`http://localhost:4000/ldss/parent/updateparent/${parentDetails._id}`, formData, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -220,7 +223,7 @@ const ParentProfile = () => {
             profilePic: null, // leave this null so user can choose a new one
         });
         setImagePreview(parentDetails?.profilePic?.filename 
-            ? `http://localhost:4000/uploads/${parentDetails.profilePic.filename}` 
+            ? `http://localhost:4000/uploads/${parentDetails?.profilePic?.filename}` 
             : null);
         setEditOpen(true);
     }

@@ -42,7 +42,7 @@ const navigate=useNavigate();
         if(response.data.message===" No theraphist found with this email."){
            return toast.error("No theraphist found with this email");
         }
-        toast.info("register your new password");
+        // toast.info("register your new password");
         navigate(`/theraphist/resetpassword/${email}`);
 
     }

@@ -20,12 +20,13 @@ import SmsOutlinedIcon from '@mui/icons-material/SmsOutlined';
 
 const pages = [
   { label: 'Home', path: '/theraphist/home' },
-  { label: 'Child', path: '/' },
-  { label: 'Plan', path: '/' },
-  { label: 'Meetings', path: '/' },
-  { label: 'Activities', path: '/' },
   { label: 'About', path: '/theraphist/about' },
-  { label: 'Contact', path: '/theraphist/contact' }
+  { label: 'Contact', path: '/theraphist/contact' },
+  { label: 'Child', path: '#' },
+  { label: 'Plan', path: '#' },
+  { label: 'Meetings', path: '#' },
+  { label: 'Activities', path: '#' }
+  
 ];
 
 const TheraphistNavbar = ({ homebg = {},aboutBg={}, profilebg = {}, navigateToProfile = () => { }, theraphistdetails={},contactbg={} }) => {

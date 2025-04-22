@@ -142,11 +142,12 @@ const getEducatorById=async(req,res)=>{
 const editEducatorById = async (req, res) => {
     try {
         const educatorId = req.params.id;
+        const profilePic=req.file;
         const { name, email, phone, address } = req.body;
 
         const updatedEducator = await educatorModel.findByIdAndUpdate(
             educatorId,
-            { name, email, phone, address },
+            { name, email, phone, address,profilePic },
             { new: true }
         );
 

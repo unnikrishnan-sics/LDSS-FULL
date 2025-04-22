@@ -141,11 +141,12 @@ const getParentById=async(req,res)=>{
 const editParentById = async (req, res) => {
     try {
         const parentId = req.params.id;
+        const profilePic=req.file;
         const { name, email, phone, address } = req.body;
 
         const updatedParent = await parentModel.findByIdAndUpdate(
             parentId,
-            { name, email, phone, address },
+            { name, email, phone, address,profilePic },
             { new: true }
         );
 

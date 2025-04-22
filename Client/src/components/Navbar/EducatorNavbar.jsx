@@ -20,15 +20,16 @@ import SmsOutlinedIcon from '@mui/icons-material/SmsOutlined';
 
 const pages = [
     { label: 'Home', path: '/educator/home' },
-    { label: 'All students', path: '/' },
-    { label: 'Parents', path: '/' },
-    { label: 'Meetings', path: '/' },
-    { label: 'Activities', path: '/' },
     { label: 'About', path: '/educator/about' },
-    { label: 'Contact', path: '/educator/contact' }
+    { label: 'Contact', path: '/educator/contact' },
+    { label: 'All students', path: '#' },
+    { label: 'Parents', path: '#' },
+    { label: 'Meetings', path: '#' },
+    { label: 'Activities', path: '#' }
+    
 ];
 
-const EducatorNavbar = ({homebg={},aboutBg={},contactbg={},navigateToProfile=()=>{},profilebg={},educatorDetails={}}) => {
+const EducatorNavbar = ({homebg={},aboutBg={},contactbg={},navigateToProfile=()=>{ },profilebg={},educatorDetails={}}) => {
     const [anchorElNav, setAnchorElNav] = React.useState(null);
     const [anchorElUser, setAnchorElUser] = React.useState(null);
 
