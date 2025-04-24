@@ -51,7 +51,7 @@ const EducatorNavbar = ({homebg={},aboutBg={},contactbg={},navigateToProfile=()=
     const location = useLocation();
     return (
         <>
-            <AppBar position="static" sx={{ backgroundColor: 'transparent',backgroundImage: `url(${contactbg})`, ...homebg,...aboutBg,...profilebg }}>
+            <AppBar position="static" sx={{zIndex:100, backgroundColor: 'transparent',backgroundImage: `url(${contactbg})`, ...homebg,...aboutBg,...profilebg }}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters
                         sx={{

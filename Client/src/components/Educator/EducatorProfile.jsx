@@ -105,11 +105,11 @@ const EducatorProfile = () => {
         let errorMessage = {};
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!data.name.trim()) {
-            errorMessage.name = "name should not be empty"
+            errorMessage.name = "Name should not be empty"
             isValid = false;
         }
         else if (data.name.length < 3 || data.name.length > 20) {
-            errorMessage.name = "name should be 3 to 20 char length"
+            errorMessage.name = "Name should be 3 to 20 char length"
             isValid = false;
 
         }
@@ -123,15 +123,15 @@ const EducatorProfile = () => {
         }
 
         if (data.address.length < 10) {
-            errorMessage.address = "address should be 10 char length"
+            errorMessage.address = "Address should be 10 char length"
             isValid = false;
         }
         else if (!data.address.trim()) {
-            errorMessage.address = "address should not be empty"
+            errorMessage.address = "Address should not be empty"
             isValid = false;
         }
         if (!data.phone) {
-            errorMessage.phone = "phone should not be empty"
+            errorMessage.phone = "Phone should not be empty"
             isValid = false;
         }
         else if (!/^\d{10}$/.test(data.phone)) {

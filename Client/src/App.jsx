@@ -35,6 +35,7 @@ import TheraphistHome from './components/Theraphist/TheraphistHome';
 import TheraphistAbout from './components/Theraphist/TheraphistAbout';
 import TheraphistContact from './components/Theraphist/TheraphistContact';
 import TheraphistProfile from './components/Theraphist/TheraphistProfile';
+import ParentChildProfile from './components/Parent/ParentChildProfile';
 
 const App = () => {
   const theme = createTheme({
@@ -66,6 +67,7 @@ const App = () => {
           <Route path='/parent/profile' element={<ParentProfile/>}/>
           <Route path='/parent/about' element={<ParentAboutUs/>}/>
           <Route path='/parent/contact' element={<ParentContactUs/>}/>
+          <Route path='/parent/childprofile' element={<ParentChildProfile/>}/>
 
           {/* admin */}
           <Route path='/admin/login' element={<AdminLogin />} />

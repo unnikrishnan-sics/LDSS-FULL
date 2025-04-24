@@ -32,7 +32,7 @@ const TheraphistAbout = () => {
                 position
                     : "relative", ...aboutBg
             }}>
-                <Box component="img" src={background} sx={{ position: "absolute", bottom: 0, left: 0, objectFit: 'cover', zIndex: 1 }}></Box>
+                <Box component="img" src={background} sx={{ position: "absolute", bottom: 0, left: 0, objectFit: 'cover', zIndex: -10 }}></Box>
                 <Box component="img" src={background2} sx={{ position: "absolute", top: 90, left: 100, objectFit: 'cover', zIndex: 2 }}></Box>
                 <Box component="img" src={background3} sx={{ position: "absolute", bottom: 0, left: 350, objectFit: 'cover', zIndex: 2 }}></Box>
                 <Box display={"flex"} justifyContent={"center"} flexDirection={"column"} sx={{ gap: "40px", margin: "80px 70px", zIndex: 1 }}>

@@ -51,7 +51,7 @@ const TheraphistNavbar = ({ homebg = {},aboutBg={}, profilebg = {}, navigateToPr
   const location = useLocation();
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: 'transparent', backgroundImage: `url(${contactbg})`,...profilebg, ...aboutBg, ...homebg }}>
+      <AppBar position="static" sx={{ backgroundColor: 'transparent',zIndex:100, backgroundImage: `url(${contactbg})`,...profilebg, ...aboutBg, ...homebg }}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters
                         sx={{

@@ -52,7 +52,7 @@ const ParentNavbar = ({ homebg = {},aboutBg={}, profilebg = {}, navigateToProfil
     const location = useLocation();
     return (
         <>
-            <AppBar position="static" sx={{ backgroundColor: 'transparent', backgroundImage: `url(${contactbg})`,...profilebg, ...aboutBg, ...homebg }}>
+            <AppBar position="static" sx={{ backgroundColor: 'transparent', backgroundImage: `url(${contactbg})`,...profilebg, ...aboutBg, ...homebg ,zIndex:100}}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters
                         sx={{

@@ -15,14 +15,13 @@ import aboutbg1 from "../../assets/aboutbg.png";
 const AboutUs = () => {
     const aboutBg = {
         background: "#F6F7F9",
-        zIndex:"-10"
+        // zIndex:"10"
     }
     return (
         <>
             <Navbar aboutBg={aboutBg}/>
             <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{
-                position
-                    : "relative", ...aboutBg
+                position: "relative",zIndex:-10, ...aboutBg
             }}>
                 <Box component="img" src={background} sx={{ position: "absolute", bottom: 0, left: 0, objectFit: 'cover', zIndex: 1 }}></Box>
                 <Box component="img" src={background2} sx={{ position: "absolute", top: 90, left: 100, objectFit: 'cover', zIndex: 2 }}></Box>
@@ -33,9 +32,9 @@ const AboutUs = () => {
                     <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>We are dedicated to providing children with learning disabilities the support <br /> they need to thrive. By leveraging AI-driven insights, we bridge the gap <br /> between parents, educators, and therapists, creating a seamless, <br /> personalized, and inclusive learning experience.</Typography>
 
                 </Box>
-                <Box component="img" alt='bg' src={aboutbg}></Box>
+                <Box component="img" alt='bg' src={aboutbg} sx={{zIndex:-2}}></Box>
             </Box>
-            <Box display={"flex"} justifyContent={"space-around"} alignItems={"center"} sx={{ margin: "100px", position: "relative" }}>
+            <Box display={"flex"} justifyContent={"space-around"} alignItems={"center"} sx={{ margin: "100px", position: "relative",zIndex:-3 }}>
                 <Box component="img" src={background2} sx={{ position: "absolute", top: -25, left: 570, objectFit: 'cover', zIndex: -1 }}></Box>
                 <Box component="img" src={background2} sx={{ position: "absolute", top: 310, left: 50, objectFit: 'cover', zIndex: -1 }}></Box>
                 <Box component="img" src={aboutSocial} alt='img'></Box>
