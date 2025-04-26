@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import EducatorNavbar from '../Navbar/EducatorNavbar';
 import { Avatar, Box, Breadcrumbs, Button, Container, Fade, Modal, Stack, Typography } from '@mui/material'
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Links, useNavigate } from 'react-router-dom';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import BorderColorOutlinedIcon from '@mui/icons-material/BorderColorOutlined';
 import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
@@ -82,22 +82,22 @@ const EducatorProfile = () => {
     };
     const [educatorDetails, setEducatorDetails] = useState({});
 
-    useEffect( () => {
+    useEffect(() => {
         const educatorDetail = localStorage.getItem("educatorDetails");
         if (educatorDetail) {
             setEducatorDetails(JSON.parse(educatorDetail));
 
         }
-   
+
     }, []);
 
     // logging out and not returning to profile page
 
     useEffect(() => {
         if (localStorage.getItem("educatorDetails") == null) {
-          navigate("/");
+            navigate("/");
         }
-      });
+    });
 
     const [error, setError] = useState({})
     const validation = () => {
@@ -163,7 +163,7 @@ const EducatorProfile = () => {
 
         console.log(data);
         const token = localStorage.getItem("token");
-        const updated = await axios.post(`http://localhost:4000/ldss/educator/updateeducator/${educatorDetails._id}`,formData, {
+        const updated = await axios.post(`http://localhost:4000/ldss/educator/updateeducator/${educatorDetails._id}`, formData, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 // 'Content-Type': 'multipart/form-data'
@@ -182,20 +182,20 @@ const EducatorProfile = () => {
             //     success: "educator detail updated in database"
             // });
             toast.success("Educator updated successfully.")
-            
+
 
             const token = localStorage.getItem("token");
-    const educatorDetail = JSON.parse(localStorage.getItem("educatorDetails"));
-    const res = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${educatorDetails._id}`, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-    localStorage.setItem("educatorDetails", JSON.stringify(res.data.educator));
-    setEducatorDetails(res.data.educator);
+            const educatorDetail = JSON.parse(localStorage.getItem("educatorDetails"));
+            const res = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${educatorDetails._id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            localStorage.setItem("educatorDetails", JSON.stringify(res.data.educator));
+            setEducatorDetails(res.data.educator);
 
-    // Close the modal
-    setEditOpen(false);
+            // Close the modal
+            setEditOpen(false);
 
         }
         else {
@@ -221,8 +221,8 @@ const EducatorProfile = () => {
             phone: educatorDetails.phone || "",
             profilePic: null, // leave this null so user can choose a new one
         });
-        setImagePreview(educatorDetails?.profilePic?.filename 
-            ? `http://localhost:4000/uploads/${educatorDetails.profilePic.filename}` 
+        setImagePreview(educatorDetails?.profilePic?.filename
+            ? `http://localhost:4000/uploads/${educatorDetails.profilePic.filename}`
             : null);
         setEditOpen(true);
     }
@@ -238,12 +238,23 @@ const EducatorProfile = () => {
         toast.success("you logged out");
 
     }
-  return (
-    <>
-      <EducatorNavbar profilebg={profilebg} educatorDetails={educatorDetails}/>
+    // const [educatorFullDetails,setEducatorFullDetails]=useState({});
+    // const getEducatorDetails=()=>{
+    //     // const token = localStorage.getItem("token");
+    //     const educatorDetail = JSON.parse(localStorage.getItem("educatorDetails"));
+    //     setEducatorFullDetails(educatorDetail);
+    // }
+    // useEffect(()=>{
+    //     getEducatorDetails();
+    // },[]);
+    // console.log(educatorFullDetails);
 
-       {/* logout modal */}
-       <div>
+    return (
+        <>
+            <EducatorNavbar profilebg={profilebg} educatorDetails={educatorDetails} />
+
+            {/* logout modal */}
+            <div>
                 <Modal
                     aria-labelledby="transition-modal-title"
                     aria-describedby="transition-modal-description"
@@ -366,7 +377,7 @@ const EducatorProfile = () => {
                                                 />
                                                 {error.phone && <span style={{ color: 'red', fontSize: '12px' }}>{error.phone}</span>}
 
-                                                
+
                                             </div>
                                         </Stack>
 
@@ -392,19 +403,26 @@ const EducatorProfile = () => {
             </div>
 
 
-
             {/* edit modal ends */}
             <Box sx={{ background: "white" }}>
                 <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ height: "46px", background: "#DBE8FA" }}>
                     <Typography color='primary' textAlign={"center"} sx={{ fontSize: "18px", fontWeight: "600" }}>Profile</Typography>
                 </Box>
+                {!educatorDetails.languages && <Link to='/educator/personalinfo' >
+                    <Button variant="contained" color='secondary' sx={{
+                        borderRadius: "15px", mt
+                            : "10px", p: "10px 20px", width: "100%"
+                    }}>Add personal details</Button>
+                </Link>}
                 <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ mt: "20px", ml: "50px", mr: "50px", height: '320px' }}>
                     <Breadcrumbs aria-label="breadcrumb" separator="›">
-                        <Link style={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F", textDecoration: "none" }} underline="hover" to="/">
+                        <Link style={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F", textDecoration: "none" }} underline="hover" to="/educator/home">
                             Home
                         </Link>
                         <Typography color='primary' sx={{ fontSize: "12px", fontWeight: "500" }}>Profile</Typography>
                     </Breadcrumbs>
+
+
                     <Box display={"flex"} justifyContent={"space-between"} alignItems={"center"} sx={{ height: "260px", background: '#F6F7F9', borderRadius: "20px", width: "100%", padding: "0px 60px" }}>
                         <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ height: "180px", gap: "70px" }}>
                             {
@@ -446,12 +464,60 @@ const EducatorProfile = () => {
                             <Button startIcon={<LogoutOutlinedIcon />} variant="text" onClick={handleOpen}>Logout</Button>
                         </Box>
                     </Box>
+                    {/* personal info */}
+
+                    {educatorDetails.certification &&
+                        <Box display={"flex"} justifyContent={"space-between"} alignItems={"start"} sx={{ height: "323px", background: '#F6F7F9', borderRadius: "20px", width: "100%", padding: "20px 60px", mt: "50px", flexDirection: "column" }}>
+                            <Box display={"flex"} justifyContent={"center"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "30px" }} >
+                                <Box>
+                                    <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
+                                        Personal Info
+                                        <BorderColorOutlinedIcon />
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ gap: "400px" }} width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"start"}>
+                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3}>
+                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Educational Qualifications</Typography>
+                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{educatorDetails.educationalQualification
+                                            }</Typography>
+                                        </Box>
+                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Language</Typography>
+                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{educatorDetails.languages}</Typography>
+                                        </Box>
+                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Certification</Typography>
+                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Adobe Certified Professional in Photoshop & Illustrator</Typography>
+                                        </Box>
+                                    </Box>
+                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3} sx={{ borderLeft: "1px solid black" }}>
+                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={5}>
+                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Years of Experience</Typography>
+                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{educatorDetails.yearsOfExperience
+                                            }</Typography>
+                                        </Box>
+                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={5}>
+                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Availablity</Typography>
+                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{educatorDetails.availability
+                                            }</Typography>
+                                        </Box>
+
+                                    </Box>
+                                </Box>
+                            </Box>
+
+
+
+
+                        </Box>
+                    }
                 </Box>
 
 
             </Box>
-    </>
-  )
+        </>
+    )
 }
 
 export default EducatorProfile

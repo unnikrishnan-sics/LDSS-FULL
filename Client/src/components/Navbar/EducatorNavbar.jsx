@@ -22,7 +22,7 @@ const pages = [
     { label: 'Home', path: '/educator/home' },
     { label: 'About', path: '/educator/about' },
     { label: 'Contact', path: '/educator/contact' },
-    { label: 'All students', path: '#' },
+    { label: 'All students', path: '/educator/allstudents' },
     { label: 'Parents', path: '#' },
     { label: 'Meetings', path: '#' },
     { label: 'Activities', path: '#' }
@@ -51,7 +51,7 @@ const EducatorNavbar = ({homebg={},aboutBg={},contactbg={},navigateToProfile=()=
     const location = useLocation();
     return (
         <>
-            <AppBar position="static" sx={{zIndex:100, backgroundColor: 'transparent',backgroundImage: `url(${contactbg})`, ...homebg,...aboutBg,...profilebg }}>
+            <AppBar position="static" sx={{zIndex:100,boxShadow:"none", backgroundColor: 'transparent',backgroundImage: `url(${contactbg})`, ...homebg,...aboutBg,...profilebg }}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters
                         sx={{

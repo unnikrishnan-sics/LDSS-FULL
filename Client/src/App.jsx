@@ -36,6 +36,9 @@ import TheraphistAbout from './components/Theraphist/TheraphistAbout';
 import TheraphistContact from './components/Theraphist/TheraphistContact';
 import TheraphistProfile from './components/Theraphist/TheraphistProfile';
 import ParentChildProfile from './components/Parent/ParentChildProfile';
+import EducatorAllStudents from './components/Educator/EducatorAllStudents';
+import EducatorLearningPlan from './components/Educator/EducatorLearningPlan';
+import ParentAllEducator from './components/Parent/ParentAllEducator';
 
 const App = () => {
   const theme = createTheme({
@@ -68,6 +71,7 @@ const App = () => {
           <Route path='/parent/about' element={<ParentAboutUs/>}/>
           <Route path='/parent/contact' element={<ParentContactUs/>}/>
           <Route path='/parent/childprofile' element={<ParentChildProfile/>}/>
+          <Route path='/parent/viewalleducators' element={<ParentAllEducator/>}/>
 
           {/* admin */}
           <Route path='/admin/login' element={<AdminLogin />} />
@@ -84,6 +88,8 @@ const App = () => {
           <Route path='/educator/profile' element={<EducatorProfile/>} />
           <Route path='/educator/about' element={<EducatorAbout/>} />
           <Route path='/educator/contact' element={<EducatorContact/>} />
+          <Route path='/educator/allstudents' element={<EducatorAllStudents/>} />
+          <Route path='/educator/addlearningplan' element={<EducatorLearningPlan/>} />
 
           {/* theraphist */}
           <Route path='/theraphist/registration' element={<TheraphistRegistration />} />

@@ -22,7 +22,7 @@ const pages = [
     { label: 'Home', path: '/parent/home' },
     { label: 'About', path: '/parent/about' },
     { label: 'Contact', path: '/parent/contact' },
-    { label: 'Child', path: '#' },
+    { label: 'Child', path: '/parent/childprofile' },
     { label: 'Plan', path: '#' },
     { label: 'Meetings', path: '#' },
     { label: 'Activities', path: '#' },
@@ -52,7 +52,7 @@ const ParentNavbar = ({ homebg = {},aboutBg={}, profilebg = {}, navigateToProfil
     const location = useLocation();
     return (
         <>
-            <AppBar position="static" sx={{ backgroundColor: 'transparent', backgroundImage: `url(${contactbg})`,...profilebg, ...aboutBg, ...homebg ,zIndex:100}}>
+            <AppBar position="static" sx={{ backgroundColor: 'transparent',boxShadow:"none", backgroundImage: `url(${contactbg})`,...profilebg, ...aboutBg, ...homebg ,zIndex:100}}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters
                         sx={{

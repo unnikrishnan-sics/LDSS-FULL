@@ -18,7 +18,11 @@ const storage=multer.diskStorage({
 })
 const uploadProfilePic=multer(
     {storage:storage}
-    ).single("profilePic")
+    ).single("profilePic");
+
+    const uploadCertification=multer(
+        {storage:storage}
+    ).single("certification")
 
 const educatorRegister= async (req,res)=>{
     try {
@@ -162,5 +166,35 @@ const editEducatorById = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-module.exports={uploadProfilePic, educatorRegister,educatorLogin,educatorForgotPassword,educatorResetPassword,getEducatorById,editEducatorById};
+
+        
+ const addEducatorPersonal=async(req,res)=>{
+    try {
+        const{educationalQualification,yearsOfExperience,languages,availability}=req.body;
+        const certification=req.file;
+        const educatorId=req.params.id;
+        const educator=await educatorModel.findById(educatorId);
+        if(!educator){
+            return res.json({message:"No educator found with this id."})
+        };
+        educator.educationalQualification=educationalQualification;
+        educator.yearsOfExperience=yearsOfExperience;
+        educator.languages=languages;
+        educator.availability=availability;
+        educator.certification=certification;
+        await educator.save();
+        res.json({
+            message:"educator personal details added successfully.",
+            educator:educator
+        })
+        
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            message:error.message
+        })
+    }
+ }
+
+module.exports={uploadProfilePic,uploadCertification, educatorRegister,educatorLogin,educatorForgotPassword,educatorResetPassword,getEducatorById,editEducatorById,addEducatorPersonal};
 

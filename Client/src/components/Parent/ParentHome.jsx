@@ -326,7 +326,7 @@ const ParentHome = () => {
 
                 </Box>
                 <Box display={'flex'} alignItems={'flex-end'} justifyContent={'flex-end'} sx={{marginRight:"150px",paddingTop:"30px"}}>
-                <Link><Typography>view more <span><ArrowRightAltIcon/></span></Typography></Link>
+                <Link to="/parent/viewalleducators"><Typography>view more <span><ArrowRightAltIcon/></span></Typography></Link>
                 </Box>
 
 
