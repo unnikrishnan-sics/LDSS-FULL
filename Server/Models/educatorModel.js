@@ -64,6 +64,7 @@ const educatorSchema = mongoose.Schema({
         type: Object,
         require:true
     },
+    
 
 
 }, { timeStamps: true }

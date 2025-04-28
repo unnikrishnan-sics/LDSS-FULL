@@ -41,6 +41,7 @@ router.post("/educator/resetpassword/:email",educatorController.educatorResetPas
 router.get("/educator/geteducator/:id",protectedRoute.protectedRoute,educatorController.getEducatorById);
 router.post("/educator/updateeducator/:id",protectedRoute.protectedRoute,educatorController.uploadProfilePic,educatorController.editEducatorById);
 router.post("/educator/addpersonal/:id",protectedRoute.protectedRoute,educatorController.uploadCertification,educatorController.addEducatorPersonal);
+router.get("/educator/getalleducators",protectedRoute.protectedRoute,educatorController.getAllEducators);
 
 // theraphist
 

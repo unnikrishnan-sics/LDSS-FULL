@@ -43,9 +43,9 @@ const ParentAllEducator = () => {
                 </Box>
 
                 {/* all educators */}
-                <Grid container spacing={2} sx={{ m: "20px 50px" }}>
-                    <Grid item xs={12} sm={6} md={3} lg={4}>
-                        <Card sx={{ maxWidth: "410px", height: "197px", borderRadius: "20px", padding: "20px" }}>
+                <Grid container spacing={2} sx={{ p: "20px 50px" }}>
+                    <Grid item xs={12} sm={6} md={4} width={"32%"}>
+                        <Card sx={{ width: "100%", height: "197px", borderRadius: "20px", padding: "20px" }}>
                             <CardActionArea>
                                 <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
                                     <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
@@ -92,12 +92,103 @@ const ParentAllEducator = () => {
                             </CardActionArea>
                         </Card>
                     </Grid>
-                    <Grid size={4}>
-                        <Box>4</Box>
+                    <Grid item xs={12} sm={6} md={4} width={"32%"} >
+                        <Card sx={{ width: "100%", height: "197px", borderRadius: "20px", padding: "20px" }}>
+                            <CardActionArea>
+                                <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
+                                    <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
+                                        <CardMedia
+                                            component="img"
+                                            sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
+                                            image={image68}
+                                            alt="Profile"
+                                        />
+                                        <CardContent
+                                            sx={{
+                                                height: "150px",
+                                                overflow: "hidden",
+                                                padding: "10px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                justifyContent: "space-between"
+                                            }}
+                                        >
+                                            <Box>
+                                                <Typography variant="h6" color='primary'>
+                                                    Name
+                                                </Typography>
+                                                <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
+                                                    Qualification
+                                                </Typography>
+                                                <Box><StarOutlineOutlinedIcon fontSize="small" /></Box>
+                                            </Box>
+
+                                            <Box sx={{ borderBottom: "1px solid black" }} />
+
+                                            <Box>
+                                                <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
+                                                    3+ years Experience
+                                                </Typography>
+                                                <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
+                                                    Monday to Friday, 10 AM – 6 PM
+                                                </Typography>
+                                                <Box><Link>View all</Link></Box>
+                                            </Box>
+                                        </CardContent>
+                                    </Box>
+                                </Box>
+                            </CardActionArea>
+                        </Card>
                     </Grid>
-                    <Grid size={4}>
-                        <Box>4</Box>
+                    <Grid item xs={12} sm={6} md={4} width={"32%"} >
+                        <Card sx={{ width: "100%", height: "197px", borderRadius: "20px", padding: "20px" }}>
+                            <CardActionArea>
+                                <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
+                                    <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
+                                        <CardMedia
+                                            component="img"
+                                            sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
+                                            image={image68}
+                                            alt="Profile"
+                                        />
+                                        <CardContent
+                                            sx={{
+                                                height: "150px",
+                                                overflow: "hidden",
+                                                padding: "10px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                justifyContent: "space-between"
+                                            }}
+                                        >
+                                            <Box>
+                                                <Typography variant="h6" color='primary'>
+                                                    Name
+                                                </Typography>
+                                                <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
+                                                    Qualification
+                                                </Typography>
+                                                <Box><StarOutlineOutlinedIcon fontSize="small" /></Box>
+                                            </Box>
+
+                                            <Box sx={{ borderBottom: "1px solid black" }} />
+
+                                            <Box>
+                                                <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
+                                                    3+ years Experience
+                                                </Typography>
+                                                <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
+                                                    Monday to Friday, 10 AM – 6 PM
+                                                </Typography>
+                                                <Box><Link>View all</Link></Box>
+                                            </Box>
+                                        </CardContent>
+                                    </Box>
+                                </Box>
+                            </CardActionArea>
+                        </Card>
                     </Grid>
+                    
                 </Grid>
 
             </Box>

@@ -37,7 +37,8 @@ const educatorRegister= async (req,res)=>{
             address,
             phone,
             agreed,
-            profilePic
+            profilePic,
+            
         });
         
         let existingEducator=await educatorModel.findOne({email});
@@ -195,6 +196,26 @@ const editEducatorById = async (req, res) => {
         })
     }
  }
+ const getAllEducators=async(req,res)=>{
+    try {
 
-module.exports={uploadProfilePic,uploadCertification, educatorRegister,educatorLogin,educatorForgotPassword,educatorResetPassword,getEducatorById,editEducatorById,addEducatorPersonal};
+        const educators=await educatorModel.find();
+        if(!educators){
+            return res.json({message:"No educators found."})
+        }
+        res.json({
+            message:"educators found successfully.",
+            educators:educators
+        })
+
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            message:error.message
+        })
+    }
+
+ }
+
+module.exports={uploadProfilePic,uploadCertification, educatorRegister,educatorLogin,educatorForgotPassword,educatorResetPassword,getEducatorById,editEducatorById,addEducatorPersonal,getAllEducators};
 
