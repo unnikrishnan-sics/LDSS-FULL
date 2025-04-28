@@ -13,6 +13,8 @@ const adminController=require("./Controller/adminController");
 
 const childController=require("./Controller/childController");
 
+const requestController=require("./Controller/requestController");
+
 // admin
 
 router.post("/admin/login",adminController.adminLogin);
@@ -51,5 +53,11 @@ router.post("/theraphist/forgotpassword",theraphistController.theraphistForgotPa
 router.post("/theraphist/resetpassword/:email",theraphistController.theraphistResetPassword);
 router.get("/theraphist/gettheraphist/:id",protectedRoute.protectedRoute,theraphistController.getTheraphistById);
 router.post("/theraphist/updatetheraphist/:id",protectedRoute.protectedRoute,theraphistController.uploadProfilePic,theraphistController.editTheraphistById);
+router.get("/theraphist/getalltheraphist",protectedRoute.protectedRoute,theraphistController.getAllTheraphists);
+router.post("/theraphist/addpersonal/:id",protectedRoute.protectedRoute,theraphistController.uploadCertification,theraphistController.addTheraphistPersonal);
+
+// request
+
+router.post("/request/sendrequest",protectedRoute.protectedRoute,requestController.sendRequest);
 
 module.exports=router;

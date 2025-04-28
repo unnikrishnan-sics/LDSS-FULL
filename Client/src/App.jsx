@@ -39,6 +39,7 @@ import ParentChildProfile from './components/Parent/ParentChildProfile';
 import EducatorAllStudents from './components/Educator/EducatorAllStudents';
 import EducatorLearningPlan from './components/Educator/EducatorLearningPlan';
 import ParentAllEducator from './components/Parent/ParentAllEducator';
+import ParentAllTheraphist from './components/Parent/ParentAllTheraphist';
 
 const App = () => {
   const theme = createTheme({
@@ -72,6 +73,7 @@ const App = () => {
           <Route path='/parent/contact' element={<ParentContactUs/>}/>
           <Route path='/parent/childprofile' element={<ParentChildProfile/>}/>
           <Route path='/parent/viewalleducators' element={<ParentAllEducator/>}/>
+          <Route path='/parent/viewalltheraphist' element={<ParentAllTheraphist/>}/>
 
           {/* admin */}
           <Route path='/admin/login' element={<AdminLogin />} />

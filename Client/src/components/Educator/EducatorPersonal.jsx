@@ -94,7 +94,7 @@ const EducatorPersonal = () => {
             isValid = true;
         }
         if (!data.languages) {
-            errorMessage.location = "Language is required";
+            errorMessage.languages = "Language is required";
             isValid = true;
         }
         if (!data.availability) {

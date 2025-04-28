@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import ParentNavbar from '../Navbar/ParentNavbar';
 import "../../Styles/LandingPage.css";
 import Navbar from '../Navbar/Navbar';
-import { Box, Button, Container, Divider, Fade, Grid, Modal, Stack, Typography } from '@mui/material';
+import {Avatar, Box, Button, Container, Divider, Fade, Grid, Modal, Stack, Typography } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
 import background from "../../assets/Frame 12@2x.png";
@@ -34,9 +34,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
 import {jwtDecode} from 'jwt-decode';
 import axios from "axios";
-import CloseIcon from '@mui/icons-material/Close';
-import Backdrop from '@mui/material/Backdrop';
 import { toast } from 'react-toastify';
+import Backdrop from '@mui/material/Backdrop';
+import CloseIcon from '@mui/icons-material/Close';
+import PersonOutlinedIcon from '@mui/icons-material/PersonOutlined';
+import MailOutlinedIcon from '@mui/icons-material/MailOutlined';
+import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
+import PhoneEnabledOutlinedIcon from '@mui/icons-material/PhoneEnabledOutlined';
+import BorderColorOutlinedIcon from '@mui/icons-material/BorderColorOutlined';
+
 
 
 const ParentHome = () => {
@@ -70,6 +76,150 @@ const ParentHome = () => {
     const navigateToProfile=()=>{
          navigate('/parent/profile');
     }
+    // view all educators
+    const [alleducators, setAlleducators] = useState([]);
+    const fetchAllEducators = async () => {
+        const token = localStorage.getItem("token");
+        const alleducators = await axios.get("http://localhost:4000/ldss/educator/getalleducators", {
+            headers: {
+                Authorization: `Bearer ${token}`
+
+            }
+        });
+        console.log(alleducators.data.educators);
+        setAlleducators(alleducators.data.educators);
+    }
+    useEffect(() => {
+        fetchAllEducators();
+    }, []);
+    // educator view model
+    const educatorViewstyle = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        border: '1px solid #000',
+        borderRadius: "20px",
+        boxShadow: 24,
+        p: 4,
+        height: "667px",
+        width: "1080px",
+        background: "white"
+
+    };
+    const [educatorViewOpen, setEducatorViewOpen] = useState(false);
+    const [singleEducator, setSingleEducator] = useState({});
+    const handleEducatorViewOpen = async (educatorId) => {
+        const token = localStorage.getItem("token");
+        const educator = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${educatorId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        console.log(educator.data);
+        setSingleEducator(educator.data.educator);
+
+        setEducatorViewOpen(true);
+    }
+    const handleEducatorViewClose = () => setEducatorViewOpen(false);
+
+     // parent send request to educator
+     const handleEducatorrequest=async()=>{
+        const token = localStorage.getItem("token");
+        const parentId=JSON.parse(localStorage.getItem("parentdetails"))._id;
+        const recipientId=singleEducator._id;
+        const recipientRole="educator";
+        const message="I am interested in your education services";
+        const requestData={
+            parentId,
+            recipientId,
+            recipientRole,
+            message
+        }
+        const request = await axios.post(`http://localhost:4000/ldss/request/sendrequest`,requestData,{
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        console.log(request.data);
+        if(request.data.message==="Request sent successfully."){
+            toast.success("Request sent successfully.");
+            handleEducatorViewClose();
+    }
+};
+//  all theraphist view 
+
+const [allTheraphist, setAllTheraphist] = useState([]);
+    const fetchAllTheraphist = async () => {
+        const token = localStorage.getItem("token");
+        const alltheraphist = await axios.get("http://localhost:4000/ldss/theraphist/getalltheraphist", {
+            headers: {
+                Authorization: `Bearer ${token}`
+
+            }
+        });
+        console.log(alltheraphist.data.theraphist);
+        setAllTheraphist(alltheraphist.data.theraphist);
+    }
+    useEffect(() => {
+        fetchAllTheraphist();
+    }, []);
+
+    // theraphist view model
+    const theraphistViewstyle = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        border: '1px solid #000',
+        borderRadius: "20px",
+        boxShadow: 24,
+        p: 4,
+        height: "667px",
+        width: "1080px",
+        background: "white"
+
+    };
+    const [theraphistViewOpen, setTheraphistViewOpen] = useState(false);
+    const [singleTheraphist, setSingleTheraphist] = useState({});
+    const handleTheraphistViewOpen = async (theraphistId) => {
+        const token = localStorage.getItem("token");
+        const theraphist = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${theraphistId}`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        console.log(theraphist.data);
+        setSingleTheraphist(theraphist.data.theraphist);
+
+        setTheraphistViewOpen(true);
+    }
+    const handleTheraphistViewClose = () => setTheraphistViewOpen(false);
+
+     // parent send request to theraphist
+     const handleTheraphistrequest=async()=>{
+        const token = localStorage.getItem("token");
+        const parentId=JSON.parse(localStorage.getItem("parentdetails"))._id;
+        const recipientId=singleTheraphist._id;
+        const recipientRole="theraphist";
+        const message="I am interested in your therapist services.";
+        const requestData={
+            parentId,
+            recipientId,
+            recipientRole,
+            message
+        }
+        const request = await axios.post(`http://localhost:4000/ldss/request/sendrequest`,requestData,{
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        console.log(request.data);
+        if(request.data.message==="Request sent successfully."){
+            toast.success("Request sent successfully.");
+            handleTheraphistViewClose();
+    }
+}
 
     return (
         <>
@@ -271,8 +421,8 @@ const ParentHome = () => {
                     {/* cards */}
 
                     <Grid display="flex" flexDirection="row" alignItems="center" justifyContent="center" container spacing={3} sx={{ marginTop: "100px" }}>
-                        {[1, 2, 3, 4, 5, 6].map((_, index) => (
-                            <Grid item xs={12} sm={12} md={6} lg={4} key={index}>
+                        {alleducators.slice(0,6).map((educators, index) => (
+                            <Grid item xs={12} sm={12} md={4} width={"32%"} key={index}>
                                 <Card sx={{ maxWidth: "410px", height: "197px", borderRadius: "20px", padding: "20px" }}>
                                     <CardActionArea>
                                         <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
@@ -280,7 +430,7 @@ const ParentHome = () => {
                                                 <CardMedia
                                                     component="img"
                                                     sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
-                                                    image={image68}
+                                                    image={`http://localhost:4000/uploads/${educators?.profilePic?.filename}`}
                                                     alt="Profile"
                                                 />
                                                 <CardContent
@@ -294,9 +444,7 @@ const ParentHome = () => {
                                                     }}
                                                 >
                                                     <Box>
-                                                        <Typography variant="h6" color='primary'>
-                                                            Name
-                                                        </Typography>
+                                                        <Typography variant="h6" color='primary'>{educators.name}</Typography>
                                                         <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
                                                             Qualification
                                                         </Typography>
@@ -307,12 +455,12 @@ const ParentHome = () => {
 
                                                     <Box>
                                                         <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
-                                                            3+ years Experience
+                                                            {educators.yearsOfExperience} years Experience
                                                         </Typography>
                                                         <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
-                                                            Monday to Friday, 10 AM – 6 PM
+                                                            {educators.availability}
                                                         </Typography>
-                                                        <Box><Link>View all</Link></Box>
+                                                        <Typography onClick={() => handleEducatorViewOpen(educators._id)} color='secondary'>View all</Typography>
                                                     </Box>
                                                 </CardContent>
                                             </Box>
@@ -331,6 +479,107 @@ const ParentHome = () => {
 
 
             </Container>
+            {/* educator view model */}
+            <div>
+
+                <Modal
+                    aria-labelledby="transition-modal-title"
+                    aria-describedby="transition-modal-description"
+                    open={educatorViewOpen}
+                    onClose={handleEducatorViewClose}
+                    closeAfterTransition
+                    slots={{ backdrop: Backdrop }}
+                    slotProps={{
+                        backdrop: {
+                            timeout: 500,
+                        },
+                    }}
+                >
+                    <Fade in={educatorViewOpen}>
+                        <Box sx={educatorViewstyle} display={"flex"} flexDirection={"column"} gap={5}>
+                            <Box display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Detail</Typography>
+                                <CloseIcon onClick={handleEducatorViewClose} />
+                            </Box>
+                            <Box display={"flex"} alignItems={"start"}  flexDirection={"column"}>
+                                <Box display={"flex"} alignItems={"center"} justifyContent={"center"} gap={10} width={"100%"}>
+                                    {
+                                    singleEducator.profilePic?.filename ? (<Avatar src={`http://localhost:4000/uploads/${singleEducator?.profilePic?.filename}`} sx={{ width: "180px", height: "180px" }} />)
+                                :
+                                (<Avatar sx={{ width: "180px", height: "180px" }}>{singleEducator.name?.charAt(0)}</Avatar>)    
+                                }
+                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={5} >
+                                        <Typography color='primary' variant='h5' sx={{ fontSize: "32px", fontWeight: "600" }}>{singleEducator.name} <span style={{ fontSize: "18px" }}>star</span><span style={{ fontSize: "18px" }}>(25)</span></Typography>
+                                        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "100px" }}>
+                                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px" }}>
+
+                                                <Typography> <PersonOutlinedIcon /> {singleEducator.name}</Typography>
+                                                <Typography> <MailOutlinedIcon /> {singleEducator.email}</Typography>
+                                            </Box>
+                                            {/* <Box sx={{borderLeft:"1px solid red"}}>d</Box> */}
+                                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px", borderLeft: "1px solid #CCCCCC", ml: "50px", pl: "40px" }} >
+
+                                                <Typography> <LocationOnOutlinedIcon /> {singleEducator.address}</Typography>
+                                                <Typography> <PhoneEnabledOutlinedIcon /> {singleEducator.phone}</Typography>
+
+                                            </Box>
+                                        </Box>
+
+                                    </Box>
+                                </Box>
+                                <Box display={"flex"} justifyContent={"space-between"} alignItems={"center"} sx={{ height: "323px", borderRadius: "20px", width: "100%", padding: "20px", mt: "50px", flexDirection: "column" }}>
+                                    <Box display={"flex"} justifyContent={"center"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "30px" }} >
+                                        <Box>
+                                            <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
+                                                Personal Info
+                                                <BorderColorOutlinedIcon />
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ gap: "200px" }} width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"start"}>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3}>
+                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Educational Qualifications</Typography>
+                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.educationalQualification}</Typography>
+                                                </Box>
+                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Language</Typography>
+                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.languages}</Typography>
+                                                </Box>
+                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Certification</Typography>
+                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Adobe Certified Professional in Photoshop & Illustrator</Typography>
+                                                </Box>
+                                            </Box>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3} sx={{ borderLeft: "1px solid black" }}>
+                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
+                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Years of experience</Typography>
+                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.yearsOfExperience}</Typography>
+                                                </Box>
+                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
+                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Availablity</Typography>
+                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.availability}</Typography>
+                                                </Box>
+
+
+                                            </Box>
+
+                                        </Box>
+
+                                    </Box>
+                                    <Button onClick={handleEducatorrequest} endIcon={<ArrowRightAltIcon />} variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}>Book</Button>
+                                </Box>
+
+                            </Box>
+
+
+                        </Box>
+                    </Fade>
+
+                </Modal>
+
+            </div>
+
+            {/* educator view model end */}
 
             {/* theraphist */}
 
@@ -344,8 +593,8 @@ const ParentHome = () => {
     {/* cards */}
 
     <Grid display="flex" flexDirection="row" alignItems="center" justifyContent="center" container spacing={3} sx={{ marginTop: "100px" }}>
-        {[1, 2, 3, 4, 5, 6].map((_, index) => (
-            <Grid item xs={12} sm={12} md={6} lg={4} key={index}>
+        {allTheraphist.slice(0,6).map((theraphist, index) => (
+            <Grid item xs={12} sm={12} md={4} width={"32%"} key={index}>
                 <Card sx={{ maxWidth: "410px", height: "197px", borderRadius: "20px", padding: "20px" }}>
                     <CardActionArea>
                         <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
@@ -353,7 +602,7 @@ const ParentHome = () => {
                                 <CardMedia
                                     component="img"
                                     sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
-                                    image={image68}
+                                    image={`http://localhost:4000/uploads/${theraphist.profilePic?.filename}`}
                                     alt="Profile"
                                 />
                                 <CardContent
@@ -368,10 +617,10 @@ const ParentHome = () => {
                                 >
                                     <Box>
                                         <Typography variant="h6" color='primary'>
-                                            Name
+                                            {theraphist.name}
                                         </Typography>
                                         <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
-                                            Qualification
+                                            {theraphist.educationalQualification}
                                         </Typography>
                                         <Box><StarOutlineOutlinedIcon fontSize="small" /></Box>
                                     </Box>
@@ -380,12 +629,12 @@ const ParentHome = () => {
 
                                     <Box>
                                         <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
-                                            3+ years Experience
+                                            {theraphist.yearsOfExperience} years Experience
                                         </Typography>
                                         <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
-                                            Monday to Friday, 10 AM – 6 PM
+                                            {theraphist.availability}
                                         </Typography>
-                                        <Box><Link>View all</Link></Box>
+                                        <Typography color='secondary' onClick={()=>handleTheraphistViewOpen(theraphist._id)}>View all</Typography>
                                     </Box>
                                 </CardContent>
                             </Box>
@@ -399,11 +648,109 @@ const ParentHome = () => {
 
 </Box>
 <Box display={'flex'} alignItems={'flex-end'} justifyContent={'flex-end'} sx={{marginRight:"150px",paddingTop:"30px"}}>
-<Link><Typography>view more <span><ArrowRightAltIcon/></span></Typography></Link>
+<Link to="/parent/viewalltheraphist"><Typography>view more <span><ArrowRightAltIcon/></span></Typography></Link>
 </Box>
 
 
 </Container>
+
+{/* theraphist view model */}
+<div>
+
+<Modal
+    aria-labelledby="transition-modal-title"
+    aria-describedby="transition-modal-description"
+    open={theraphistViewOpen}
+    onClose={handleTheraphistViewClose}
+    closeAfterTransition
+    slots={{ backdrop: Backdrop }}
+    slotProps={{
+        backdrop: {
+            timeout: 500,
+        },
+    }}
+>
+    <Fade in={theraphistViewOpen}>
+        <Box sx={theraphistViewstyle} display={"flex"} flexDirection={"column"} gap={5}>
+            <Box display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
+                <Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Theraphist Detail</Typography>
+                <CloseIcon onClick={handleTheraphistViewClose} />
+            </Box>
+            <Box display={"flex"} alignItems={"start"}  flexDirection={"column"}>
+                <Box display={"flex"} alignItems={"center"} justifyContent={"center"} gap={10} width={"100%"}>
+                    <Avatar sx={{ width: "180px", height: "180px" }} />
+                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={5} >
+                        <Typography color='primary' variant='h5' sx={{ fontSize: "32px", fontWeight: "600" }}>{singleTheraphist.name} <span style={{ fontSize: "18px" }}>star</span><span style={{ fontSize: "18px" }}>(25)</span></Typography>
+                        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "100px" }}>
+                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px" }}>
+
+                                <Typography> <PersonOutlinedIcon /> {singleTheraphist.name}</Typography>
+                                <Typography> <MailOutlinedIcon /> {singleTheraphist.email}</Typography>
+                            </Box>
+                            {/* <Box sx={{borderLeft:"1px solid red"}}>d</Box> */}
+                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px", borderLeft: "1px solid #CCCCCC", ml: "50px", pl: "40px" }} >
+
+                                <Typography> <LocationOnOutlinedIcon /> {singleTheraphist.address}</Typography>
+                                <Typography> <PhoneEnabledOutlinedIcon /> {singleTheraphist.phone}</Typography>
+
+                            </Box>
+                        </Box>
+
+                    </Box>
+                </Box>
+                <Box display={"flex"} justifyContent={"space-between"} alignItems={"center"} sx={{ height: "323px", borderRadius: "20px", width: "100%", padding: "20px", mt: "50px", flexDirection: "column" }}>
+                    <Box display={"flex"} justifyContent={"center"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "30px" }} >
+                        <Box>
+                            <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
+                                Personal Info
+                                <BorderColorOutlinedIcon />
+                            </Typography>
+                        </Box>
+                        <Box sx={{ gap: "200px" }} width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"start"}>
+                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3}>
+                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Educational Qualifications</Typography>
+                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.educationalQualification}</Typography>
+                                </Box>
+                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Language</Typography>
+                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.languages}</Typography>
+                                </Box>
+                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Certification</Typography>
+                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Adobe Certified Professional in Photoshop & Illustrator</Typography>
+                                </Box>
+                            </Box>
+                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3} sx={{ borderLeft: "1px solid black" }}>
+                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
+                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Years of experience</Typography>
+                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.yearsOfExperience}</Typography>
+                                </Box>
+                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
+                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Availablity</Typography>
+                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.availability}</Typography>
+                                </Box>
+
+
+                            </Box>
+
+                        </Box>
+
+                    </Box>
+                    <Button onClick={handleTheraphistrequest} endIcon={<ArrowRightAltIcon />} variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}>Book</Button>
+                </Box>
+
+            </Box>
+
+
+        </Box>
+    </Fade>
+
+</Modal>
+
+</div>
+
+{/* theraphist view model end */}
 
 <Container maxWidth="x-lg" sx={{position:"relative"}}>
                 <Box component="img" src={frame1} alt='background frame' sx={{position:"absolute",top:-50,left:0}}>
