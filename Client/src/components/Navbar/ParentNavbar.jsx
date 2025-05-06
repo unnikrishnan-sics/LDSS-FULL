@@ -23,8 +23,8 @@ const pages = [
     { label: 'About', path: '/parent/about' },
     { label: 'Contact', path: '/parent/contact' },
     { label: 'Child', path: '/parent/childprofile' },
-    { label: 'Plan', path: '#' },
-    { label: 'Meetings', path: '#' },
+    { label: 'learning', path: '/parent/learningplan' },
+    { label: 'Meetings', path: '/parent/meeting' },
     { label: 'Activities', path: '#' },
     
 ];

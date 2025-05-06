@@ -137,6 +137,26 @@ const getParentById=async(req,res)=>{
         console.log(error.message);
         res.status(500).json({message:error.message});
     }
+};
+const getAllParents=async(req,res)=>{
+    try {
+        const allparents=await parentModel.find();
+        if(!allparents){
+             return res.json({
+                message:'no parents where found'
+            })
+        };
+        return res.json({
+            message:"all parents found",
+            allparents
+        })
+        
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            message:error.message
+        })
+    }
 }
 const editParentById = async (req, res) => {
     try {
@@ -162,4 +182,4 @@ const editParentById = async (req, res) => {
     }
 };
 
-module.exports={parentRegister,uploadProfilePic,parentLogin,parentForgotPassword,parentResetPassword,getParentById,editParentById};
+module.exports={parentRegister,uploadProfilePic,parentLogin,parentForgotPassword,parentResetPassword,getParentById,getAllParents,editParentById};

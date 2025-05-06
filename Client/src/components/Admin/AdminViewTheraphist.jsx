@@ -14,12 +14,13 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import axios from 'axios';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import AdminViewSingleEducator from './Common/AdminViewSingleEducator';
+import { useLocation } from 'react-router-dom';
+import AdminViewSingleTherapist from './Common/AdminViewSingleTherapist';
 import AdminSideBar from './Common/AdminSideBar';
 import AdminLogout from './Common/AdminLogout';
 
-
-const AdminViewEducator = () => {
+const AdminViewTheraphist = () => {
+    // logout
     const [openLogout, setOpenLogout] = useState(false);
     const handleOpenLogout = () => setOpenLogout(true);
     const handleCloseLogout = () => setOpenLogout(false);
@@ -44,97 +45,95 @@ const AdminViewEducator = () => {
 
 
 
-    // fetching all educators
-    const [educator, setEducator] = useState([])
-    const [educatorDetails, setEducatorDetails] = useState([]);
-    const fetchAllEducators = async () => {
+    // fetching all theraphist
+    const [theraphist, setTheraphist] = useState([]);
+    const [theraphistDetails, setTheraphistDetails] = useState([]);
+    const fetchAllTheraphist = async () => {
         const token = localStorage.getItem("token");
-        const alleducators = await axios.get("http://localhost:4000/ldss/educator/getalleducators", {
+        const allTheraphist = await axios.get("http://localhost:4000/ldss/theraphist/getalltheraphist", {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(alleducators.data.educators);
-        const educators = alleducators.data.educators;
-        setEducator(educators)
-        const unapproved = educators.filter(e => e.isAdminApproved === false);
-        setEducatorDetails(unapproved);
+        console.log(allTheraphist.data.theraphist);
+        const theraphist = allTheraphist.data.theraphist;
+        setTheraphist(theraphist)
+        const unapproved = theraphist.filter(e => e.isAdminApproved === false);
+        setTheraphistDetails(unapproved);
 
     };
     useEffect(() => {
-        fetchAllEducators();
+        fetchAllTheraphist();
     }, []);
 
-    // const [approvedEducatorDetails,setApprovedEducatordetails]=useState([]);
-    const approvedEducators = () => {
-        const approved = educator.filter(e => e.isAdminApproved === true);
-        setEducatorDetails(approved)
+    
+    const approvedTheraphist = () => {
+        const approved = theraphist.filter(e => e.isAdminApproved === true);
+        setTheraphistDetails(approved)
 
     };
-    const [educatordetail, setEducatordetail] = useState({});
-    const [openeducator, setOpenEducator] = useState(false);
-    const handleEducatorOpen = () => setOpenEducator(true);
-    const handleEducatorClose = () => setOpenEducator(false);
+    const [theraphistdetail, setTheraphistdetail] = useState({});
+    const [openTheraphist, setOpenTheraphist] = useState(false);
+    const handleTheraphistOpen = () => setOpenTheraphist(true);
+    const handleTheraphistClose = () => setOpenTheraphist(false);
 
-    const fetchEducatorDetail = async (educatorId) => {
+    const fetchTheraphistDetail = async (theraphistId) => {
         const token = localStorage.getItem("token");
-        const educatordetail = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${educatorId}`, {
+        const theraphistdetail = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${theraphistId}`, {
             headers: {
                 Authorization: `bearer ${token}`
             }
         });
-        const educator = educatordetail.data.educator;
-        setEducatordetail(educator);
-        handleEducatorOpen();
-        console.log(educatordetail.data.educator);
+        const theraphist = theraphistdetail.data.theraphist;
+        setTheraphistdetail(theraphist);
+        handleTheraphistOpen();
+        console.log(theraphistdetail.data.theraphist);
 
     };
-    const approve = async (educatorId) => {
+    const approve = async (theraphistId) => {
         const token = localStorage.getItem("token");
-        const approve = await axios.post(`http://localhost:4000/ldss/admin/educator/accept/${educatorId}`, {}, {
+        const approve = await axios.post(`http://localhost:4000/ldss/admin/theraphist/accept/${theraphistId}`, {}, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
         console.log(approve);
 
-        fetchAllEducators();
-        setOpenEducator(false);
+        fetchAllTheraphist();
+        setOpenTheraphist(false);
 
     }
-    
+    const location = useLocation();
 
-    const rejectEducator = async (educatorId) => {
+    const rejectTheraphist = async (theraphistId) => {
         const token = localStorage.getItem("token");
-        const deleteEducator = await axios.delete(`http://localhost:4000/ldss/admin/educator/reject/${educatorId}`, {
+        const deleteTheraphiat = await axios.delete(`http://localhost:4000/ldss/admin/theraphist/reject/${theraphistId}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
-        fetchAllEducators();
-        setOpenEducator(false);
+        fetchAllTheraphist();
+        setOpenTheraphist(false);
     };
-    
-
-
-    return (
-        <>
-            <Container maxWidth="x-lg" sx={{ background: "#F6F7F9" }}>
+  return (
+    <>
+      <Container maxWidth="x-lg" sx={{ background: "#F6F7F9" }}>
                 <Grid container spacing={2} sx={{ height: "100vh", width: "100%" }}>
                     <Grid size={{ xs: 6, md: 2 }} sx={{ height: "100%", background: "white", margin: "15px 0px", borderRadius: "8px" }} display={'flex'} justifyContent={'start'} alignItems={'center'} flexDirection={'column'}>
-                <AdminSideBar/>
+                        <AdminSideBar/>
+
                     </Grid>
                     {/* Content (right part) */}
                     <Grid item xs={6} md={10} sx={{ height: "100%", display: "flex", justifyContent: "start", alignItems: "center", gap: "30px", flexDirection: "column", padding: "15px 0px", borderRadius: "8px", flexGrow: 1 }}>
                         <Box sx={{ height: "70px", background: "white", borderRadius: "8px", width: "100%" }} display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
-                            <Typography variant='h3' sx={{ fontSize: "24px", fontWeight: "500", ml: '20px' }} color='primary'>Educators</Typography>
+                            <Typography variant='h3' sx={{ fontSize: "24px", fontWeight: "500", ml: '20px' }} color='primary'>Theraphist</Typography>
                             <Button onClick={handleOpenLogout} variant="text" color='primary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }} startIcon={<LogoutIcon />}>logout</Button>
                         </Box>
 
                         {/* switch */}
                         <Box display={"flex"}>
-                            <Button sx={{ p: "8px 18px", background: "#1967D2", color: "white", borderRadius: "25px" }} onClick={fetchAllEducators}>Request</Button>
-                            <Button sx={{ p: "8px 18px", background: "white", color: "black", borderRadius: "25px" }} onClick={approvedEducators}>Educator</Button>
+                            <Button sx={{ p: "8px 18px", background: "#1967D2", color: "white", borderRadius: "25px" }} onClick={fetchAllTheraphist}>Request</Button>
+                            <Button sx={{ p: "8px 18px", background: "white", color: "black", borderRadius: "25px" }} onClick={approvedTheraphist}>Theraphist</Button>
 
 
                         </Box>
@@ -170,7 +169,7 @@ const AdminViewEducator = () => {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {educatorDetails.map((educator, index) => (
+                                            {theraphistDetails.map((theraphist, index) => (
                                                 <TableRow
                                                     key={index}
                                                     sx={{
@@ -186,16 +185,16 @@ const AdminViewEducator = () => {
                                                         {index + 1}
                                                     </TableCell>
                                                     <TableCell align="left">{
-                                                        educator.profilePic.filename ? (<Avatar src={`http://localhost:4000/uploads/${educator.profilePic.filename}`}></Avatar>)
+                                                        theraphist.profilePic.filename ? (<Avatar src={`http://localhost:4000/uploads/${theraphist.profilePic.filename}`}></Avatar>)
                                                             :
-                                                            (<Avatar src={educator.name.charAt(0)}></Avatar>)
+                                                            (<Avatar src={theraphist.name.chartAt(0)}></Avatar>)
                                                     }</TableCell>
-                                                    <TableCell align="left">{educator.name}</TableCell>
+                                                    <TableCell align="left">{theraphist.name}</TableCell>
 
-                                                    <TableCell align="left">{educator.phone}</TableCell>
-                                                    <TableCell align="left">{educator.email}</TableCell>
-                                                    <TableCell align="left">{educator.address}</TableCell>
-                                                    <TableCell align="left">{<VisibilityIcon color='secondary' onClick={() => fetchEducatorDetail(educator._id)} />}</TableCell>
+                                                    <TableCell align="left">{theraphist.phone}</TableCell>
+                                                    <TableCell align="left">{theraphist.email}</TableCell>
+                                                    <TableCell align="left">{theraphist.address}</TableCell>
+                                                    <TableCell align="left">{<VisibilityIcon color='secondary' onClick={() => fetchTheraphistDetail(theraphist._id)} />}</TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -212,7 +211,7 @@ const AdminViewEducator = () => {
                 </Grid>
 
                 <Modal
-                    open={openeducator}
+                    open={openTheraphist}
                     onClose={handleClose}
                     closeAfterTransition
                     slots={{ backdrop: Backdrop }}
@@ -222,7 +221,7 @@ const AdminViewEducator = () => {
                         },
                     }}
                 >
-                    <Fade in={openeducator}>
+                    <Fade in={openTheraphist}>
                         <Box sx={{
                             position: 'absolute',
                             top: '50%',
@@ -235,7 +234,7 @@ const AdminViewEducator = () => {
                             p: 4,
                             height: "600px"
                         }}>
-                            <AdminViewSingleEducator educatordetail={educatordetail} handleEducatorClose={handleEducatorClose} approve={approve} rejectEducator={rejectEducator} />
+                            <AdminViewSingleTherapist theraphistdetail={theraphistdetail} handleTheraphistClose={handleTheraphistClose} approve={approve} rejectTheraphist={rejectTheraphist} />
                         </Box>
                     </Fade>
                 </Modal>
@@ -243,8 +242,8 @@ const AdminViewEducator = () => {
                <AdminLogout handleCloseLogout={handleCloseLogout} openLogout={openLogout}/>
 
             </Container>
-        </>
-    )
+    </>
+  )
 }
 
-export default AdminViewEducator
+export default AdminViewTheraphist

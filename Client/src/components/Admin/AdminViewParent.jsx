@@ -16,14 +16,15 @@ import axios from 'axios';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import AdminViewSingleEducator from './Common/AdminViewSingleEducator';
 import AdminSideBar from './Common/AdminSideBar';
+import AdminViewSingleParent from './Common/AdminViewSingleParent';
 import AdminLogout from './Common/AdminLogout';
 
-
-const AdminViewEducator = () => {
+const AdminViewParent = () => {
     const [openLogout, setOpenLogout] = useState(false);
     const handleOpenLogout = () => setOpenLogout(true);
     const handleCloseLogout = () => setOpenLogout(false);
-
+    
+    
     const StyledTextField = styled(TextField)({
         '& .MuiOutlinedInput-root': {
             borderRadius: '30px', // Custom border radius
@@ -44,101 +45,58 @@ const AdminViewEducator = () => {
 
 
 
-    // fetching all educators
-    const [educator, setEducator] = useState([])
-    const [educatorDetails, setEducatorDetails] = useState([]);
-    const fetchAllEducators = async () => {
+    // fetching all parents
+    
+    const [parentDetails, setParentDetails] = useState([]);
+    const fetchAllParents = async () => {
         const token = localStorage.getItem("token");
-        const alleducators = await axios.get("http://localhost:4000/ldss/educator/getalleducators", {
+        const allparents = await axios.get("http://localhost:4000/ldss/parent/getallparents", {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(alleducators.data.educators);
-        const educators = alleducators.data.educators;
-        setEducator(educators)
-        const unapproved = educators.filter(e => e.isAdminApproved === false);
-        setEducatorDetails(unapproved);
+        console.log(allparents.data.allparents);
+        setParentDetails(allparents.data.allparents)
+        
 
     };
     useEffect(() => {
-        fetchAllEducators();
+        fetchAllParents();
     }, []);
 
-    // const [approvedEducatorDetails,setApprovedEducatordetails]=useState([]);
-    const approvedEducators = () => {
-        const approved = educator.filter(e => e.isAdminApproved === true);
-        setEducatorDetails(approved)
+    const [parentdetail, setParentdetail] = useState({});
+    const [openparent, setOpenparent] = useState(false);
+    const handleParentOpen = () => setOpenparent(true);
+    const handleParentClose = () => setOpenparent(false);
 
-    };
-    const [educatordetail, setEducatordetail] = useState({});
-    const [openeducator, setOpenEducator] = useState(false);
-    const handleEducatorOpen = () => setOpenEducator(true);
-    const handleEducatorClose = () => setOpenEducator(false);
-
-    const fetchEducatorDetail = async (educatorId) => {
+    const fetchParentDetail = async (parentId) => {
         const token = localStorage.getItem("token");
-        const educatordetail = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${educatorId}`, {
+        const parentdetail = await axios.get(`http://localhost:4000/ldss/parent/getparent/${parentId}`, {
             headers: {
                 Authorization: `bearer ${token}`
             }
         });
-        const educator = educatordetail.data.educator;
-        setEducatordetail(educator);
-        handleEducatorOpen();
-        console.log(educatordetail.data.educator);
+        const parent = parentdetail.data.parent;
+        setParentdetail(parent);
+        handleParentOpen();
+        console.log(parentdetail.data.parent);
 
     };
-    const approve = async (educatorId) => {
-        const token = localStorage.getItem("token");
-        const approve = await axios.post(`http://localhost:4000/ldss/admin/educator/accept/${educatorId}`, {}, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        console.log(approve);
-
-        fetchAllEducators();
-        setOpenEducator(false);
-
-    }
-    
-
-    const rejectEducator = async (educatorId) => {
-        const token = localStorage.getItem("token");
-        const deleteEducator = await axios.delete(`http://localhost:4000/ldss/admin/educator/reject/${educatorId}`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        fetchAllEducators();
-        setOpenEducator(false);
-    };
-    
-
-
     return (
         <>
             <Container maxWidth="x-lg" sx={{ background: "#F6F7F9" }}>
                 <Grid container spacing={2} sx={{ height: "100vh", width: "100%" }}>
                     <Grid size={{ xs: 6, md: 2 }} sx={{ height: "100%", background: "white", margin: "15px 0px", borderRadius: "8px" }} display={'flex'} justifyContent={'start'} alignItems={'center'} flexDirection={'column'}>
-                <AdminSideBar/>
+                        <AdminSideBar />
                     </Grid>
                     {/* Content (right part) */}
                     <Grid item xs={6} md={10} sx={{ height: "100%", display: "flex", justifyContent: "start", alignItems: "center", gap: "30px", flexDirection: "column", padding: "15px 0px", borderRadius: "8px", flexGrow: 1 }}>
                         <Box sx={{ height: "70px", background: "white", borderRadius: "8px", width: "100%" }} display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
-                            <Typography variant='h3' sx={{ fontSize: "24px", fontWeight: "500", ml: '20px' }} color='primary'>Educators</Typography>
+                            <Typography variant='h3' sx={{ fontSize: "24px", fontWeight: "500", ml: '20px' }} color='primary'>Parents</Typography>
                             <Button onClick={handleOpenLogout} variant="text" color='primary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }} startIcon={<LogoutIcon />}>logout</Button>
                         </Box>
 
-                        {/* switch */}
-                        <Box display={"flex"}>
-                            <Button sx={{ p: "8px 18px", background: "#1967D2", color: "white", borderRadius: "25px" }} onClick={fetchAllEducators}>Request</Button>
-                            <Button sx={{ p: "8px 18px", background: "white", color: "black", borderRadius: "25px" }} onClick={approvedEducators}>Educator</Button>
 
-
-                        </Box>
-                        {/* switch ends */}
 
                         {/* table */}
                         <Box sx={{ height: "562px", width: "100%", padding: "20px 10px" }}>
@@ -170,7 +128,7 @@ const AdminViewEducator = () => {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {educatorDetails.map((educator, index) => (
+                                            {parentDetails.map((parent, index) => (
                                                 <TableRow
                                                     key={index}
                                                     sx={{
@@ -186,16 +144,16 @@ const AdminViewEducator = () => {
                                                         {index + 1}
                                                     </TableCell>
                                                     <TableCell align="left">{
-                                                        educator.profilePic.filename ? (<Avatar src={`http://localhost:4000/uploads/${educator.profilePic.filename}`}></Avatar>)
+                                                        parent.profilePic?.filename ? (<Avatar src={`http://localhost:4000/uploads/${parent.profilePic?.filename}`}></Avatar>)
                                                             :
-                                                            (<Avatar src={educator.name.charAt(0)}></Avatar>)
+                                                            (<Avatar src={parent.name.charAt(0)}></Avatar>)
                                                     }</TableCell>
-                                                    <TableCell align="left">{educator.name}</TableCell>
+                                                    <TableCell align="left">{parent.name}</TableCell>
 
-                                                    <TableCell align="left">{educator.phone}</TableCell>
-                                                    <TableCell align="left">{educator.email}</TableCell>
-                                                    <TableCell align="left">{educator.address}</TableCell>
-                                                    <TableCell align="left">{<VisibilityIcon color='secondary' onClick={() => fetchEducatorDetail(educator._id)} />}</TableCell>
+                                                    <TableCell align="left">{parent.phone}</TableCell>
+                                                    <TableCell align="left">{parent.email}</TableCell>
+                                                    <TableCell align="left">{parent.address}</TableCell>
+                                                    <TableCell align="left">{<VisibilityIcon color='secondary' onClick={() => fetchParentDetail(parent._id)} />}</TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>
@@ -205,14 +163,14 @@ const AdminViewEducator = () => {
                             </Box>
 
                         </Box>
-                        
-                       
+
+
                     </Grid>
 
                 </Grid>
 
                 <Modal
-                    open={openeducator}
+                    open={openparent}
                     onClose={handleClose}
                     closeAfterTransition
                     slots={{ backdrop: Backdrop }}
@@ -222,7 +180,7 @@ const AdminViewEducator = () => {
                         },
                     }}
                 >
-                    <Fade in={openeducator}>
+                    <Fade in={openparent}>
                         <Box sx={{
                             position: 'absolute',
                             top: '50%',
@@ -235,7 +193,7 @@ const AdminViewEducator = () => {
                             p: 4,
                             height: "600px"
                         }}>
-                            <AdminViewSingleEducator educatordetail={educatordetail} handleEducatorClose={handleEducatorClose} approve={approve} rejectEducator={rejectEducator} />
+                            <AdminViewSingleParent parentdetail={parentdetail} handleParentClose={handleParentClose} />
                         </Box>
                     </Fade>
                 </Modal>
@@ -247,4 +205,4 @@ const AdminViewEducator = () => {
     )
 }
 
-export default AdminViewEducator
+export default AdminViewParent

@@ -40,6 +40,16 @@ import EducatorAllStudents from './components/Educator/EducatorAllStudents';
 import EducatorLearningPlan from './components/Educator/EducatorLearningPlan';
 import ParentAllEducator from './components/Parent/ParentAllEducator';
 import ParentAllTheraphist from './components/Parent/ParentAllTheraphist';
+import AdminViewTheraphist from './components/Admin/AdminViewTheraphist';
+import AdminViewParent from './components/Admin/AdminViewParent';
+import EducatorParentRequest from './components/Educator/EducatorParentRequest';
+import EducatorAcceptedParents from './components/Educator/EducatorAcceptedParents';
+import EducatorChat from './components/Educator/EducatorChat';
+import ParentLearningPlan from './components/Parent/ParentLearningPlan';
+import ParentTheraphistLearning from './components/Parent/ParentTheraphistLearning';
+import ParentEducatorLearning from './components/Parent/ParentEducatorLearning';
+import ParentMeeting from './components/Parent/ParentMeeting';
+import EducatorViewLearningPlan from './components/Educator/EducatorViewLearningPlan';
 
 const App = () => {
   const theme = createTheme({
@@ -74,11 +84,17 @@ const App = () => {
           <Route path='/parent/childprofile' element={<ParentChildProfile/>}/>
           <Route path='/parent/viewalleducators' element={<ParentAllEducator/>}/>
           <Route path='/parent/viewalltheraphist' element={<ParentAllTheraphist/>}/>
+          <Route path='/parent/learningplan' element={<ParentLearningPlan/>}/>
+          <Route path='/parent/Theraphistlearningplan' element={<ParentTheraphistLearning/>}/>
+          <Route path='/parent/educatorlearningplan' element={<ParentEducatorLearning/>}/>
+          <Route path='/parent/meeting' element={<ParentMeeting/>}/>
 
           {/* admin */}
           <Route path='/admin/login' element={<AdminLogin />} />
           <Route path='/admin/dashboard' element={<AdminDashboard />} />
           <Route path='/admin/viewEducator' element={<AdminViewEducator />} />
+          <Route path='/admin/viewtheraphist' element={<AdminViewTheraphist />} />
+          <Route path='/admin/viewparent' element={<AdminViewParent />} />
 
           {/* educator */}
           <Route path='/educator/registration' element={<EducatorRegistration />} />
@@ -91,7 +107,12 @@ const App = () => {
           <Route path='/educator/about' element={<EducatorAbout/>} />
           <Route path='/educator/contact' element={<EducatorContact/>} />
           <Route path='/educator/allstudents' element={<EducatorAllStudents/>} />
-          <Route path='/educator/addlearningplan' element={<EducatorLearningPlan/>} />
+          <Route path='/educator/addlearningplan/:childId' element={<EducatorLearningPlan/>} />
+          <Route path='/educator/parentsrequest' element={<EducatorParentRequest/>} />
+          <Route path='/educator/acceptedparents' element={<EducatorAcceptedParents/>} />
+          <Route path='/educator/chat' element={<EducatorChat/>} />
+          <Route path='/educator/viewlearningplan/:childId' element={<EducatorViewLearningPlan/>} />
+
 
           {/* theraphist */}
           <Route path='/theraphist/registration' element={<TheraphistRegistration />} />

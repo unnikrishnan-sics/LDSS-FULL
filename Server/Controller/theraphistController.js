@@ -208,6 +208,45 @@ const addTheraphistPersonal=async(req,res)=>{
             message:error.message
         })
     }
+ };
+ const theraphistRequestAccept=async(req,res)=>{
+    try {
+        const theraphistId=req.params.id;
+        const theraphistUpdate=await theraphistModel.findByIdAndUpdate(theraphistId,{isAdminApproved:true},{new:true});
+        if(!theraphistUpdate){
+           return res.json({
+                message:"problem in accepting request",
+            })
+        };
+        return res.json({
+            message:"Request accepted by admin",
+            theraphistUpdate
+        });
+        
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            message:error.message
+        })
+    }
+ };
+
+ const adminDeleteTheraphist=async(req,res)=>{
+    try {
+        const theraphistId=req.params.id;
+        const deleteTheraphist=await theraphistModel.findByIdAndDelete(theraphistId);
+        return res.json({
+            message:"rejected",
+            deleteTheraphist
+
+        })
+        
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            message:error.message
+        })
+    }
  }
-module.exports={uploadProfilePic,uploadCertification, theraphistRegister,theraphistLogin,theraphistForgotPassword,theraphistResetPassword,getTheraphistById,editTheraphistById,getAllTheraphists,addTheraphistPersonal};
+module.exports={uploadProfilePic,uploadCertification, theraphistRegister,theraphistLogin,theraphistForgotPassword,theraphistResetPassword,getTheraphistById,editTheraphistById,getAllTheraphists,addTheraphistPersonal,theraphistRequestAccept,adminDeleteTheraphist};
 

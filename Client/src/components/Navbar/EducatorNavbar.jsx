@@ -23,13 +23,13 @@ const pages = [
     { label: 'About', path: '/educator/about' },
     { label: 'Contact', path: '/educator/contact' },
     { label: 'All students', path: '/educator/allstudents' },
-    { label: 'Parents', path: '#' },
+    { label: 'Parents', path: '/educator/acceptedparents' },
     { label: 'Meetings', path: '#' },
     { label: 'Activities', path: '#' }
-    
+
 ];
 
-const EducatorNavbar = ({homebg={},aboutBg={},contactbg={},navigateToProfile=()=>{ },profilebg={},educatorDetails={}}) => {
+const EducatorNavbar = ({ homebg = {}, aboutBg = {}, contactbg = {}, navigateToProfile = () => { }, profilebg = {}, educatorDetails = {} }) => {
     const [anchorElNav, setAnchorElNav] = React.useState(null);
     const [anchorElUser, setAnchorElUser] = React.useState(null);
 
@@ -51,7 +51,7 @@ const EducatorNavbar = ({homebg={},aboutBg={},contactbg={},navigateToProfile=()=
     const location = useLocation();
     return (
         <>
-            <AppBar position="static" sx={{zIndex:100,boxShadow:"none", backgroundColor: 'transparent',backgroundImage: `url(${contactbg})`, ...homebg,...aboutBg,...profilebg }}>
+            <AppBar position="static" sx={{ zIndex: 100, boxShadow: "none", backgroundColor: 'transparent', backgroundImage: `url(${contactbg})`, ...homebg, ...aboutBg, ...profilebg }}>
                 <Container maxWidth="xl">
                     <Toolbar disableGutters
                         sx={{
@@ -172,12 +172,15 @@ const EducatorNavbar = ({homebg={},aboutBg={},contactbg={},navigateToProfile=()=
                         </Box>
                         <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ flexGrow: 0, gap: "30px" }}>
                             <NotificationsOutlinedIcon color='primary' sx={{ height: '24px' }} />
-                            <SmsOutlinedIcon color='primary' sx={{ height: '24px' }} />
+                            <Link to={`/educator/chat`}>
+                                <SmsOutlinedIcon color='primary' sx={{ height: '24px',color:location.pathname===`/educator/chat`?'#1967D2':'black' }} />
+                            </Link>
+
                             <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "30px" }}>
                                 <Typography color='secondary'>Hi,{educatorDetails.name}</Typography>
                                 {/* <Avatar/> */}
                                 {educatorDetails?.profilePic?.filename ? (
-                                    <Avatar onClick={navigateToProfile} src={`http://localhost:4000/uploads/${educatorDetails?.profilePic?.filename}`} alt={educatorDetails?.name}  />
+                                    <Avatar onClick={navigateToProfile} src={`http://localhost:4000/uploads/${educatorDetails?.profilePic?.filename}`} alt={educatorDetails?.name} />
                                 ) : (
                                     <Avatar onClick={navigateToProfile}>{educatorDetails?.name?.charAt(0)}</Avatar>
                                 )}

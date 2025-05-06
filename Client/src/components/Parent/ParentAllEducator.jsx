@@ -79,29 +79,33 @@ const ParentAllEducator = () => {
     const handleEducatorViewClose = () => setEducatorViewOpen(false);
 
     // parent send request to educator
-    const handleEducatorrequest=async()=>{
+    const handleEducatorrequest = async () => {
         const token = localStorage.getItem("token");
-        const parentId=JSON.parse(localStorage.getItem("parentdetails"))._id;
-        const recipientId=singleEducator._id;
-        const recipientRole="educator";
-        const message="I am interested in your education services";
-        const requestData={
+        const parentId = JSON.parse(localStorage.getItem("parentdetails"))._id;
+        const recipientId = singleEducator._id;
+        const recipientRole = "educator";
+        const message = "I am interested in your education services";
+        const requestData = {
             parentId,
             recipientId,
             recipientRole,
             message
         }
-        const request = await axios.post(`http://localhost:4000/ldss/request/sendrequest`,requestData,{
+        const request = await axios.post(`http://localhost:4000/ldss/request/sendrequest`, requestData, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
         console.log(request.data);
-        if(request.data.message==="Request sent successfully."){
+        if (request.data.message === "Request sent successfully.") {
             toast.success("Request sent successfully.");
             handleEducatorViewClose();
+            
+        }
+        if (request.data.message === "Request already sent") {
+            toast.error("Request already sent");
+        }
     }
-}
     return (
         <>
             <ParentNavbar parentdetails={parentdetails} navigateToProfile={navigateToProfile} />
@@ -206,13 +210,13 @@ const ParentAllEducator = () => {
                                 <Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Detail</Typography>
                                 <CloseIcon onClick={handleEducatorViewClose} />
                             </Box>
-                            <Box display={"flex"} alignItems={"start"}  flexDirection={"column"}>
+                            <Box display={"flex"} alignItems={"start"} flexDirection={"column"}>
                                 <Box display={"flex"} alignItems={"center"} justifyContent={"center"} gap={10} width={"100%"}>
                                     {
-                                    singleEducator.profilePic?.filename ? (<Avatar src={`http://localhost:4000/uploads/${singleEducator?.profilePic?.filename}`} sx={{ width: "180px", height: "180px" }} />)
-                                :
-                                (<Avatar sx={{ width: "180px", height: "180px" }}>{singleEducator.name?.charAt(0)}</Avatar>)    
-                                }
+                                        singleEducator.profilePic?.filename ? (<Avatar src={`http://localhost:4000/uploads/${singleEducator?.profilePic?.filename}`} sx={{ width: "180px", height: "180px" }} />)
+                                            :
+                                            (<Avatar sx={{ width: "180px", height: "180px" }}>{singleEducator.name?.charAt(0)}</Avatar>)
+                                    }
                                     <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={5} >
                                         <Typography color='primary' variant='h5' sx={{ fontSize: "32px", fontWeight: "600" }}>{singleEducator.name} <span style={{ fontSize: "18px" }}>star</span><span style={{ fontSize: "18px" }}>(25)</span></Typography>
                                         <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "100px" }}>
