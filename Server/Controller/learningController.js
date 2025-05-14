@@ -89,5 +89,81 @@ const deleteLearningPlanByeducator=async(req,res)=>{
             message:error.message
         })
     }
-}
-module.exports = { addLearningPlan ,getLearningPlanOfSingleStudent,deleteLearningPlanByeducator}
+};
+
+const editLearningPlanByEducator = async (req, res) => {
+    try {
+        const { educatorId, childId } = req.params;
+        const { goal, planDuration, weeks } = req.body;
+
+        // Find the existing learning plan
+        const existingPlan = await learningModel.findOne({ educatorId, childId });
+
+        if (!existingPlan) {
+            return res.status(404).json({ message: "Learning plan not found" });
+        }
+
+        // Update the fields
+        existingPlan.goal = goal;
+        existingPlan.planDuration = planDuration;
+        existingPlan.weeks = weeks;
+
+        const updatedPlan = await existingPlan.save();
+
+        res.status(200).json({
+            message: "Learning plan updated successfully",
+            updatedPlan,
+        });
+    } catch (error) {
+        console.error("Error updating learning plan:", error.message);
+        res.status(500).json({ message: error.message });
+    }
+};
+const updateLearningPlanByParent = async (req, res) => {
+    try {
+        const { childId } = req.params;
+        const {educatorId}=req.params;
+
+        // Mark the learning plan as completed
+        const updatedPlan = await learningModel.findOneAndUpdate(
+            { childId,educatorId },  // find by childId
+            { status: 'completed', updatedStatus: Date.now() },
+            { new: true } // return updated document
+        );
+
+        if (!updatedPlan) {
+            return res.status(404).json({ message: "Learning plan not found for the given child." });
+        }
+
+        res.status(200).json({
+            message: "Learning plan marked as completed.",
+            updatedPlan
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+const markActivityCompleted = async (req, res) => {
+    try {
+      const { childId, weekIndex, activityIndex } = req.params;
+  
+      const learningPlan = await learningModel.findOne({ childId });
+  
+      if (!learningPlan) return res.status(404).json({ message: "Learning plan not found" });
+  
+      learningPlan.weeks[weekIndex].activities[activityIndex].completed = true;
+      learningPlan.updatedStatus = Date.now();
+  
+      await learningPlan.save();
+  
+      res.status(200).json({ message: "Activity marked as completed", learningPlan });
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).json({ message: error.message });
+    }
+  };
+module.exports = { addLearningPlan ,getLearningPlanOfSingleStudent,deleteLearningPlanByeducator,editLearningPlanByEducator,updateLearningPlanByParent,markActivityCompleted}

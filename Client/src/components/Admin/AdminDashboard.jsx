@@ -68,6 +68,42 @@ const AdminDashboard = () => {
         const unapproved = educators.filter(e => e.isAdminApproved === false);
         setEducatorDetails(unapproved);
 
+    }; 
+    // fetching all educators count
+    const [educator, setEducator] = useState([]);
+    const fetchAllEducatorsCount = async () => {
+        const token = localStorage.getItem("token");
+        const alleducators = await axios.get("http://localhost:4000/ldss/educator/getalleducators", {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        console.log(alleducators.data.educators);
+        
+        const educators = alleducators.data.educators;
+    
+        const unapproved = educators.filter(e => e.isAdminApproved === true);
+        setEducator(unapproved);
+
+    }; 
+    
+
+    // fetching all theraphistCount
+   
+    const [theraphist, setTheraphist] = useState([]);
+    const fetchAllTheraphistCount = async () => {
+        const token = localStorage.getItem("token");
+        const allTheraphist = await axios.get("http://localhost:4000/ldss/theraphist/getalltheraphist", {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        console.log(allTheraphist.data.theraphist);
+        const theraphist = allTheraphist.data.theraphist;
+        
+        const unapproved = theraphist.filter(e => e.isAdminApproved === true);
+        setTheraphist(unapproved);;
+
     };
     
     // fetching all theraphist
@@ -93,14 +129,11 @@ const AdminDashboard = () => {
         fetchAllTheraphist();
         fetchAllParents();
         fetchAllChildren();
+        fetchAllEducatorsCount();
+        fetchAllTheraphistCount();
 
     }, []);
     
-      
-      // When theraphists are fetched, compute approved ones
-    //   useEffect(() => {
-    //     fetchApprovedEducators();
-    //   }, [educator]);
     
     
     const location=useLocation();
@@ -185,7 +218,7 @@ const AdminDashboard = () => {
 
                                 </Box>
                                 <Typography color='primary' variant='h6' sx={{ fontSize: "16px", fontWeight: "500" }}>Total Educators</Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "24px", fontWeight: "500" }}>{educatorDetails.length}</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "24px", fontWeight: "500" }}>{educator.length}</Typography>
                             </Box>
                         </Grid>
                         <Grid item xs={6} md={3} width={"24%"}>
@@ -200,7 +233,7 @@ const AdminDashboard = () => {
 
                                 </Box>
                                 <Typography color='primary' variant='h6' sx={{ fontSize: "16px", fontWeight: "500" }}>Total Theraphist</Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "24px", fontWeight: "500" }}>{theraphistDetails.length}</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "24px", fontWeight: "500" }}>{theraphist.length}</Typography>
                             </Box>
                         </Grid>
                         <Grid item xs={6} md={3} width={"24%"}>

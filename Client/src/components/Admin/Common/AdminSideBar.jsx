@@ -46,14 +46,14 @@ const AdminSideBar = () => {
                             <Typography color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>Therapist</Typography>
                         </Box>
                         </Link>
-                        <Box sx={{ height: "40px", marginBottom: "10px" }} display={'flex'} justifyContent={'start'} alignItems={'center'} gap={2}>
+                        
+                        <Link to={`/admin/addactivity`} style={{textDecoration:"none"}}>
+                        <Box sx={{ height: "40px", marginBottom: "10px",background: location.pathname=== "/admin/addactivity"? "#F0F6FE":"none"  }} display={'flex'} justifyContent={'start'} alignItems={'center'} gap={2}>
                             <ListAltIcon color='primary' sx={{ width: "24px" }} />
                             <Typography color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>Activity Library</Typography>
                         </Box>
-                        <Box sx={{ height: "40px", marginBottom: "10px" }} display={'flex'} justifyContent={'start'} alignItems={'center'} gap={2}>
-                            <NotificationsIcon color='primary' sx={{ width: "24px" }} />
-                            <Typography color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>Noitification</Typography>
-                        </Box>
+                        </Link>
+                        
 
                     </Box>
                 </Box>

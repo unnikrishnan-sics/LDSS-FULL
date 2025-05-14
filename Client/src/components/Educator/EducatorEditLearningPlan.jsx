@@ -6,7 +6,7 @@ import AddIcon from '@mui/icons-material/Add';
 import axios from "axios";
 import { toast } from 'react-toastify';
 
-const EducatorLearningPlan = () => {
+const EducatorEditLearningPlan = () => {
     const textFieldStyle = { height: "65px", width: "360px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" };
     const inputStyle = { height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' };
 
@@ -26,6 +26,21 @@ const EducatorLearningPlan = () => {
         ],
 
     });
+    // fetching the learning plan of the students
+
+    // const fetchLearningPlanOfStudent = async () => {
+    //     const token = localStorage.getItem("token");
+    //     const educatorId = (JSON.parse(localStorage.getItem("educatorDetails")))._id;
+
+
+    //     const studentPlan = await axios.get(`http://localhost:4000/ldss/educator/getstudentplan/${educatorId}/${childId}`, {
+    //         headers: {
+    //             Authorization: `Bearer ${token}`
+    //         }
+    //     });
+    //     console.log(studentPlan.data.childPlan);
+    //     setLearningPlan(studentPlan.data.childPlan);
+    // };
 
 
 
@@ -35,6 +50,9 @@ const EducatorLearningPlan = () => {
             setEducatorDetails(JSON.parse(educatorDetails));
         }
     }, []);
+    // useEffect(()=>{
+    //     fetchLearningPlanOfStudent();
+    // },[]);
 
     const navigateToProfile = () => {
         navigate('/educator/profile');
@@ -69,26 +87,23 @@ const EducatorLearningPlan = () => {
         console.log("Submitted Learning Plan:", learningPlan);
         const token = localStorage.getItem('token');
         const educatorId = (JSON.parse(localStorage.getItem("educatorDetails")))._id;
-        const payload = {
-            ...learningPlan,
-            educatorId: educatorId,
-            childId: childId
-        };
-
-        const plan = await axios.post(`http://localhost:4000/ldss/educator/addlearning`, payload, {
+    
+        const plan = await axios.put(`http://localhost:4000/ldss/educator/updateplan/${educatorId}/${childId}`, learningPlan, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
         console.log(plan);
-        if (plan.data.message === "Learning plan already added for this student.") {
-            toast.error("Learning plan already added for this student");
+        if (plan.data.message === "Learning plan updated successfully") {
+            toast.success("Learning plan updated successfully");
             navigate(`/educator/viewlearningplan/${childId}`);
         }
-        navigate(`/educator/viewlearningplan/${childId}`);
-
-
+       
     };
+
+    const handlecancel=()=>{
+        navigate(`/educator/viewlearningplan/${childId}`);
+    }
 
     return (
         <>
@@ -115,7 +130,7 @@ const EducatorLearningPlan = () => {
             </Box>
 
             <Box display="flex" flexDirection="column" gap={3} alignItems="center" sx={{ width: "774px", mx: "auto", mt: 5 }}>
-                <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "500" }}>Add Learning Plan</Typography>
+                <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "500" }}>Edit Learning Plan</Typography>
 
                 {/* Goal & Plan Duration */}
                 <Stack direction="row" spacing={3}>
@@ -203,17 +218,29 @@ const EducatorLearningPlan = () => {
                 </Box>
 
                 {/* Submit Button */}
+                <Box display={'flex'} gap={2}>
+
+                <Button
+                    variant='outlined'
+                    color='secondary'
+                    sx={{ borderRadius: "25px", height: "40px", width: '200px' }}
+                    onClick={handlecancel}
+                >
+                    Cancel
+                </Button>
                 <Button
                     variant='contained'
                     color='secondary'
                     sx={{ borderRadius: "25px", height: "40px", width: '200px' }}
                     onClick={handleSubmit}
                 >
-                    Submit
+                    Update
                 </Button>
+                
+                </Box>
             </Box>
         </>
     );
 };
 
-export default EducatorLearningPlan;
+export default EducatorEditLearningPlan;

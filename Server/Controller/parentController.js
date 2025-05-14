@@ -1,4 +1,5 @@
 const parentModel=require("../Models/parentModel");
+const requestModel=require("../Models/requestModel")
 const bcrypt=require("bcryptjs");
 const multer=require("multer");
 const jwt = require("jsonwebtoken");
@@ -182,4 +183,30 @@ const editParentById = async (req, res) => {
     }
 };
 
-module.exports={parentRegister,uploadProfilePic,parentLogin,parentForgotPassword,parentResetPassword,getParentById,getAllParents,editParentById};
+const getAcceptedEducator=async(req,res)=>{
+    try {
+        const parentId=req.params.id;
+        const acceptedEducators= await requestModel.find({
+            parentId:parentId,
+            recipientRole:"educator",
+            status:"accepted"
+        }).populate("recipientId");
+        if(acceptedEducators.length===0){
+            return res.json({
+                message:'Educator not accpted you'
+            })
+        };
+        return res.json({
+            message:"Accepted educators fetched",
+            acceptedEducators
+        });
+        
+    } catch (error) {
+        console.log(error.message);
+        res.json({
+            message:error.message
+        })
+    }
+}
+
+module.exports={parentRegister,uploadProfilePic,parentLogin,parentForgotPassword,parentResetPassword,getParentById,getAllParents,editParentById,getAcceptedEducator};

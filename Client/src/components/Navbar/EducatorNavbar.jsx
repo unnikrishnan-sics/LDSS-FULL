@@ -24,7 +24,7 @@ const pages = [
     { label: 'Contact', path: '/educator/contact' },
     { label: 'All students', path: '/educator/allstudents' },
     { label: 'Parents', path: '/educator/acceptedparents' },
-    { label: 'Meetings', path: '#' },
+    { label: 'Meetings', path: '/educator/meeting' },
     { label: 'Activities', path: '#' }
 
 ];

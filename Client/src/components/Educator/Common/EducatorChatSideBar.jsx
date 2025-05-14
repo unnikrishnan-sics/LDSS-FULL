@@ -4,6 +4,7 @@ import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import axios from 'axios';
 
 const EducatorChatSideBar = () => {
+    
     const [approvedParents, setApprovedParents] = useState([]);
     const FetchApprovedParents = async () => {
         const token = localStorage.getItem("token");

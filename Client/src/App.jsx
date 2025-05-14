@@ -50,6 +50,9 @@ import ParentTheraphistLearning from './components/Parent/ParentTheraphistLearni
 import ParentEducatorLearning from './components/Parent/ParentEducatorLearning';
 import ParentMeeting from './components/Parent/ParentMeeting';
 import EducatorViewLearningPlan from './components/Educator/EducatorViewLearningPlan';
+import EducatorEditLearningPlan from './components/Educator/EducatorEditLearningPlan';
+import EducatorMeeting from './components/Educator/EducatorMeeting';
+import AddActivity from './components/Admin/AddActivity';
 
 const App = () => {
   const theme = createTheme({
@@ -86,7 +89,7 @@ const App = () => {
           <Route path='/parent/viewalltheraphist' element={<ParentAllTheraphist/>}/>
           <Route path='/parent/learningplan' element={<ParentLearningPlan/>}/>
           <Route path='/parent/Theraphistlearningplan' element={<ParentTheraphistLearning/>}/>
-          <Route path='/parent/educatorlearningplan' element={<ParentEducatorLearning/>}/>
+          <Route path='/parent/educatorlearningplan/:childId' element={<ParentEducatorLearning/>}/>
           <Route path='/parent/meeting' element={<ParentMeeting/>}/>
 
           {/* admin */}
@@ -95,6 +98,7 @@ const App = () => {
           <Route path='/admin/viewEducator' element={<AdminViewEducator />} />
           <Route path='/admin/viewtheraphist' element={<AdminViewTheraphist />} />
           <Route path='/admin/viewparent' element={<AdminViewParent />} />
+          <Route path='/admin/addactivity' element={<AddActivity />} />
 
           {/* educator */}
           <Route path='/educator/registration' element={<EducatorRegistration />} />
@@ -108,10 +112,13 @@ const App = () => {
           <Route path='/educator/contact' element={<EducatorContact/>} />
           <Route path='/educator/allstudents' element={<EducatorAllStudents/>} />
           <Route path='/educator/addlearningplan/:childId' element={<EducatorLearningPlan/>} />
+          <Route path='/educator/editlearningplan/:childId' element={<EducatorEditLearningPlan/>} />
           <Route path='/educator/parentsrequest' element={<EducatorParentRequest/>} />
           <Route path='/educator/acceptedparents' element={<EducatorAcceptedParents/>} />
           <Route path='/educator/chat' element={<EducatorChat/>} />
           <Route path='/educator/viewlearningplan/:childId' element={<EducatorViewLearningPlan/>} />
+          <Route path='/educator/meeting' element={<EducatorMeeting/>} />
+
 
 
           {/* theraphist */}

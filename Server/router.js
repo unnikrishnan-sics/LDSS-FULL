@@ -17,6 +17,8 @@ const requestController=require("./Controller/requestController");
 
 const learningPlanController=require("./Controller/learningController");
 
+const meetingController=require("./Controller/meetingController")
+
 // admin
 
 router.post("/admin/login",adminController.adminLogin);
@@ -40,6 +42,10 @@ router.get("/parent/getchild/:id/:childId",protectedRoute.protectedRoute,childCo
 router.get("/parent/getallchild",protectedRoute.protectedRoute,childController.getallChildDetails);
 router.get("/parent/getallchildofparent/:id",protectedRoute.protectedRoute,childController.getAllChildOfParent);
 router.delete("/parent/deletechild/:id/:childId",protectedRoute.protectedRoute,childController.deleteChildByParent);
+router.get("/parent/getacceptededucator/:id",protectedRoute.protectedRoute,parentController.getAcceptedEducator);
+router.put("/parent/updatelearningplan/:childId/:educatorId",protectedRoute.protectedRoute,learningPlanController.updateLearningPlanByParent);
+router.put("/parent/complete-activity/:childId/:weekIndex/:activityIndex", protectedRoute.protectedRoute, learningPlanController.markActivityCompleted);
+router.get("/parent/getallmeeting/:id",protectedRoute.protectedRoute,meetingController.viewAllMeetingsOfParent);
 
 // educator
 
@@ -60,6 +66,12 @@ router.get("/educator/getchildrenofallapprovedparents/:id",protectedRoute.protec
 router.post("/educator/addlearning",protectedRoute.protectedRoute,learningPlanController.addLearningPlan);
 router.get("/educator/getstudentplan/:educatorId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleStudent);
 router.delete("/educator/deleteplan/:id",protectedRoute.protectedRoute,learningPlanController.deleteLearningPlanByeducator);
+router.put("/educator/updateplan/:educatorId/:childId",protectedRoute.protectedRoute,learningPlanController.editLearningPlanByEducator);
+router.post("/educator/addmeeting/:id/:childId",protectedRoute.protectedRoute,meetingController.createMeeting);
+router.get("/educator/viewmeeting/:id/:childId",protectedRoute.protectedRoute,meetingController.viewChildsMeeting);
+router.get("/educator/viewmeeting/:id",protectedRoute.protectedRoute,meetingController.viewAllmeetingsOfEducator);
+
+
 
 // theraphist
 
