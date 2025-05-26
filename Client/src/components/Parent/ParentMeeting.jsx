@@ -7,34 +7,118 @@ import FemaleIcon from '@mui/icons-material/Female';
 import DateRangeIcon from '@mui/icons-material/DateRange';
 import axiosInstance from '../../Api_service/baseUrl';
 
-
 const ParentMeeting = () => {
     const [parentdetails, setParentdetails] = useState({});
     useEffect(() => {
-
         const parentdetails = localStorage.getItem("parentdetails");
         setParentdetails(JSON.parse(parentdetails));
     }, []);
+    
     const navigate = useNavigate();
     const navigateToProfile = () => {
         navigate('/parent/profile');
     };
 
-    const [meetings,setMeetings]=useState([]);
-     const fetchMeeting=async()=>{
-        const token=localStorage.getItem("token");
-        const parentId=(JSON.parse(localStorage.getItem("parentdetails")))._id;
-        const meetings=await axiosInstance.get(`/parent/getallmeeting/${parentId}`,{
-            headers:{
+    // Dummy data for meetings
+    const dummyMeetings = [
+        {
+            _id: "1",
+            childId: {
+                name: "Rahul Sharma",
+                parentId: {
+                    name: "Amit Sharma"
+                },
+                dateOfBirth: "12/05/2015",
+                gender: "Male"
+            },
+            meetingTitle: "Parent-Teacher Conference",
+            date: "15/06/2023",
+            startTime: "10:00 AM",
+            endTime: "10:30 AM"
+        },
+        {
+            _id: "2",
+            childId: {
+                name: "Priya Patel",
+                parentId: {
+                    name: "Neha Patel"
+                },
+                dateOfBirth: "22/08/2016",
+                gender: "Female"
+            },
+            meetingTitle: "Progress Review",
+            date: "18/06/2023",
+            startTime: "02:00 PM",
+            endTime: "02:45 PM"
+        },
+        {
+            _id: "3",
+            childId: {
+                name: "Arjun Singh",
+                parentId: {
+                    name: "Vikram Singh"
+                },
+                dateOfBirth: "05/03/2015",
+                gender: "Male"
+            },
+            meetingTitle: "Behavior Discussion",
+            date: "20/06/2023",
+            startTime: "11:30 AM",
+            endTime: "12:15 PM"
+        },
+        {
+            _id: "4",
+            childId: {
+                name: "Ananya Gupta",
+                parentId: {
+                    name: "Rahul Gupta"
+                },
+                dateOfBirth: "14/11/2016",
+                gender: "Female"
+            },
+            meetingTitle: "Annual Review",
+            date: "22/06/2023",
+            startTime: "09:00 AM",
+            endTime: "09:45 AM"
+        },
+        {
+            _id: "5",
+            childId: {
+                name: "Vihaan Malhotra",
+                parentId: {
+                    name: "Sanjay Malhotra"
+                },
+                dateOfBirth: "30/01/2015",
+                gender: "Male"
+            },
+            meetingTitle: "Special Needs Discussion",
+            date: "25/06/2023",
+            startTime: "03:00 PM",
+            endTime: "03:30 PM"
+        }
+    ];
+
+    const [meetings, setMeetings] = useState(dummyMeetings);
+    
+    // Actual API call commented out and replaced with dummy data
+    /* 
+    const fetchMeeting = async () => {
+        const token = localStorage.getItem("token");
+        const parentId = (JSON.parse(localStorage.getItem("parentdetails")))._id;
+        const meetings = await axiosInstance.get(`/parent/getallmeeting/${parentId}`, {
+            headers: {
                 Authorization: `Bearer ${token}`
             }
         });
         console.log(meetings.data.meeting);
         setMeetings(meetings.data.meeting);
-     }
-     useEffect(()=>{
+    }
+    
+    useEffect(() => {
         fetchMeeting();
-     },[])
+    }, [])
+    */
+
     return (
         <>
             <ParentNavbar parentdetails={parentdetails} navigateToProfile={navigateToProfile} />
@@ -49,90 +133,77 @@ const ParentMeeting = () => {
                         </Link>
                         <Typography color='primary' sx={{ fontSize: "12px", fontWeight: "500" }}>Meetings</Typography>
                     </Breadcrumbs>
-
                 </Box>
                 <Box display={'flex'} flexDirection={'column'} gap={2}>
-                    {meetings.map((meeting,index)=>{
-                        return(
-
-                    <Box key={index} display={'flex'} alignItems={'center'} sx={{ height: "198px", background: "#F0F6FE", borderRadius: "20px",m:"20px 50px" }}>
-                        <Box sx={{m:"20px",borderRadius:"15px",border:"1px solid #CCCCCC",height:"150px",flexBasis:"40%"}} display={"flex"} justifyContent={"space-between"}>
-                            <Box sx={{ gap: "20px",p:"20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
-                                    <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                        <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Students name</Typography>
-                                        <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.childId.name}</Typography>
+                    {meetings.map((meeting, index) => {
+                        return (
+                            <Box key={index} display={'flex'} alignItems={'center'} sx={{ height: "198px", background: "#F0F6FE", borderRadius: "20px", m: "20px 50px" }}>
+                                <Box sx={{ m: "20px", borderRadius: "15px", border: "1px solid #CCCCCC", height: "150px", flexBasis: "40%" }} display={"flex"} justifyContent={"space-between"}>
+                                    <Box sx={{ gap: "20px", p: "20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
+                                            <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Students name</Typography>
+                                                <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.childId.name}</Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
+                                            <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>parent name</Typography>
+                                                <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.childId.parentId.name}</Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ borderLeft: "1px solid #CCCCCC", m: "10px 0px" }}></Box>
+                                    <Box sx={{ gap: "20px", p: "20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
+                                            <Box sx={{ color: "#1967D2" }}><DateRangeIcon /></Box>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date of birth</Typography>
+                                                <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.childId.dateOfBirth}</Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
+                                            <Box sx={{ color: "#1967D2" }}><FemaleIcon /></Box>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>gender</Typography>
+                                                <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.childId.gender}</Typography>
+                                            </Box>
+                                        </Box>
                                     </Box>
                                 </Box>
-                                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
-                                    <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                        <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>parent name</Typography>
-                                        <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.childId.parentId.name}</Typography>
+                                <Box sx={{ m: "20px", borderRadius: "15px", border: "1px solid #CCCCCC", height: "150px", flexBasis: "40%" }} display={"flex"} justifyContent={"space-between"}>
+                                    <Box sx={{ gap: "20px", p: "20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Meeting</Typography>
+                                                <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.meetingTitle}</Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date</Typography>
+                                                <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.date}</Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ borderLeft: "1px solid #CCCCCC", m: "10px 0px" }}></Box>
+                                    <Box sx={{ gap: "20px", p: "20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
+                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                                <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Time</Typography>
+                                                <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.startTime} - {meeting.endTime}</Typography>
+                                            </Box>
+                                        </Box>
                                     </Box>
                                 </Box>
+                                <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '150px', padding: '10px 35px' }}>Join</Button>
                             </Box>
-                            <Box sx={{borderLeft:"1px solid #CCCCCC",m:"10px 0px"}}></Box>
-                            <Box sx={{ gap: "20px", p:"20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
-                                    <Box sx={{ color: "#1967D2" }}><DateRangeIcon /></Box>
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                        <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date of birth</Typography>
-                                        <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.childId.dateOfBirth}</Typography>
-                                    </Box>
-                                </Box>
-                                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
-                                    <Box sx={{ color: "#1967D2" }}><FemaleIcon /></Box>
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                        <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>gender</Typography>
-                                        <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.childId.gender}</Typography>
-                                    </Box>
-                                </Box>
-
-
-                            </Box>
-
-                        </Box>
-                        <Box sx={{m:"20px",borderRadius:"15px",border:"1px solid #CCCCCC",height:"150px",flexBasis:"40%"}} display={"flex"} justifyContent={"space-between"}>
-                            <Box sx={{ gap: "20px",p:"20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
-                                    
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                        <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Meeting</Typography>
-                                        <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.meetingTitle}</Typography>
-                                    </Box>
-                                </Box>
-                                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
-                                    
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                        <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date</Typography>
-                                        <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.date}</Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                            <Box sx={{borderLeft:"1px solid #CCCCCC",m:"10px 0px"}}></Box>
-                            <Box sx={{ gap: "20px", p:"20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
-                                    
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                        <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Time</Typography>
-                                        <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{meeting.startTime} - {meeting.endTime}</Typography>
-                                    </Box>
-                                </Box>
-                                
-
-
-                            </Box>
-
-                        </Box>
-                        <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '150px', padding: '10px 35px' }}>Join</Button>
-                    </Box>
                         )
                     })}
                 </Box>
             </Box>
-
         </>
     )
 }

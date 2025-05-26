@@ -1,11 +1,9 @@
 import { Box,  Typography } from '@mui/material'
-import React from 'react';
 import adminlogo from "../../../assets/adminlogo.png"
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
 import SchoolIcon from '@mui/icons-material/School';
 import SpaIcon from '@mui/icons-material/Spa';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -17,7 +15,7 @@ const AdminSideBar = () => {
        <Box sx={{ background: "white", width: "250px", height: "100%", borderRadius: "15px" ,pl:"20px"}}>
                     <Link to={`admin/dashboard`} style={{textDecoration:'none'}}>
                     <Box sx={{ width: "122px", height: "30px", marginTop: "30px" }} display={'flex'} justifyContent={'center'} alignItems={'center'} flexDirection={'row'}>
-                        <Box component="img" src={adminlogo} sx></Box>
+                        <Box component="img" src={adminlogo} ></Box>
                         <Typography sx={{ fontSize: "18px", fontWeight: "600" }}>LearnHub</Typography>
                     </Box></Link>
 
@@ -47,8 +45,8 @@ const AdminSideBar = () => {
                         </Box>
                         </Link>
                         
-                        <Link to={`/admin/addactivity`} style={{textDecoration:"none"}}>
-                        <Box sx={{ height: "40px", marginBottom: "10px",background: location.pathname=== "/admin/addactivity"? "#F0F6FE":"none"  }} display={'flex'} justifyContent={'start'} alignItems={'center'} gap={2}>
+                        <Link to={`/admin/viewactivitylibrary`} style={{textDecoration:"none"}}>
+                        <Box sx={{ height: "40px", marginBottom: "10px",background: location.pathname=== "/admin/viewactivitylibrary"? "#F0F6FE":"none"  }} display={'flex'} justifyContent={'start'} alignItems={'center'} gap={2}>
                             <ListAltIcon color='primary' sx={{ width: "24px" }} />
                             <Typography color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>Activity Library</Typography>
                         </Box>

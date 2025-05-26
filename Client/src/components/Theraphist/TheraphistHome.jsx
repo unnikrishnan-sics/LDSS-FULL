@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import TheraphistNavbar from '../Navbar/TheraphistNavbar';
 import "../../Styles/LandingPage.css";
-import Navbar from '../Navbar/Navbar';
-import { Box, Button, Container, Divider, Fade, Grid, Modal, Stack, Typography } from '@mui/material';
+import { Box, Button, Container, Divider, Fade, Grid, Modal, Stack, Typography, Card, CardContent, CardMedia, Breadcrumbs } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
 import background from "../../assets/Frame 12@2x.png";
@@ -26,59 +25,265 @@ import keyFeatures4 from "../../assets/image 72.png";
 import frame1 from "../../assets/Frame 48095593.png";
 import frame2 from "../../assets/Frame 48095594.png";
 import Footer from '../Footer/Footer';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import CardActionArea from '@mui/material/CardActionArea';
-import { Link, useNavigate } from 'react-router-dom';
-import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
 import { jwtDecode } from 'jwt-decode';
 import axios from "axios";
-import CloseIcon from '@mui/icons-material/Close';
+import { Link, useNavigate } from 'react-router-dom';
+import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import Backdrop from '@mui/material/Backdrop';
-import { toast } from 'react-toastify';
 
 const TheraphistHome = () => {
     const homebg = {
         backgroundColor: "#F6F7F9"
     }
 
+    const [therapistDetails, setTherapistDetails] = useState({});
+    const tdetails=localStorage.getItem("theraphistDetails");
+    const [useDummyData, setUseDummyData] = useState(true);
+    const navigate = useNavigate();
 
-    const [theraphist, setTheraphist] = useState("");
-    const fetchTheraphist = async () => {
-        const token = localStorage.getItem('token');
-        const decoded = jwtDecode(token);
-        const theraphist = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        const theraphistDetails = localStorage.setItem("theraphistDetails",
-            JSON.stringify(theraphist.data.theraphist));
-        setTheraphist(theraphist.data.theraphist);
-        // console.log(parent.data.parent.name);
-        // console.log(parent.data.parent.profilePic);
-        console.log(theraphist);
-
-    }
+    // Initialize therapist details from localStorage first
     useEffect(() => {
-        fetchTheraphist();
+        const storedTherapist = localStorage.getItem("theraphistDetails");
+        if (storedTherapist) {
+            try {
+                const parsedTherapist = JSON.parse(storedTherapist);
+                if (parsedTherapist && parsedTherapist._id) {
+                    setTherapistDetails(parsedTherapist);
+                }
+            } catch (error) {
+                console.error("Error parsing stored therapist:", error);
+                localStorage.removeItem("theraphistDetails");
+            }
+        }
     }, []);
 
-    const navigate = useNavigate();
+    // Dummy data for parent requests (fallback)
+    const dummyParentRequests = [
+        {
+            _id: "request1",
+            status: "pending",
+            parentId: {
+                _id: "parent1",
+                name: "Sarah Johnson",
+                email: "sarah.johnson@example.com",
+                address: "123 Main St, Springfield, IL 62704",
+                phone: "+1 (555) 123-4567",
+                profilePic: {
+                    filename: "profile1.jpg"
+                }
+            }
+        },
+        {
+            _id: "request2",
+            status: "pending",
+            parentId: {
+                _id: "parent2",
+                name: "Michael Brown",
+                email: "michael.brown@example.com",
+                address: "456 Oak Ave, Springfield, IL 62704",
+                phone: "+1 (555) 987-6543",
+                profilePic: {
+                    filename: "profile2.jpg"
+                }
+            }
+        }
+    ];
+
+    const fetchTherapist = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error("No token found");
+                return;
+            }
+            
+            const decoded = jwtDecode(token);
+            
+            const response = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            
+            
+            if (response.data && response.data.theraphist) {
+                const therapistData = response.data.theraphist;
+                
+                // Validate before storing
+                if (therapistData && therapistData._id) {
+                    try {
+                        localStorage.setItem("theraphistDetails", JSON.stringify(therapistData));
+                        console.log("Successfully stored therapist details");
+                        setTherapistDetails(therapistData);
+                    } catch (storageError) {
+                        console.error("Failed to store in localStorage:", storageError);
+                        // Fallback to state only
+                        setTherapistDetails(therapistData);
+                    }
+                } else {
+                    console.error("Invalid therapist data structure");
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching therapist:", error);
+            // If API fails, check if we have cached data
+            const cachedData = localStorage.getItem("theraphistDetails");
+            if (cachedData) {
+                try {
+                    const parsed = JSON.parse(cachedData);
+                    if (parsed && parsed._id) {
+                        console.log("Using cached therapist data");
+                        setTherapistDetails(parsed);
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing cached data:", parseError);
+                }
+            }
+        }
+    }
+
+    const [parentRequest, setParentRequest] = useState([]);
+
+    const fetchParentsRequest = async () => {
+        if (useDummyData) {
+            setParentRequest(dummyParentRequests);
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            const therapistId = therapistDetails._id;
+            
+            if (!therapistId) {
+                console.log("No therapist ID yet, waiting...");
+                return;
+            }
+
+            const response = await axios.get(
+                `http://localhost:4000/ldss/theraphist/parentsrequest/${therapistId}`, 
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            
+            if (response.data && response.data.request) {
+                setParentRequest(response.data.request);
+            }
+        } catch (error) {
+            console.error("Failed to fetch parent requests:", error);
+            // Fallback to dummy data in case of error
+            setParentRequest(dummyParentRequests);
+            setUseDummyData(true);
+        }
+    };
+
+    useEffect(() => {
+        // Always fetch fresh data after initial load
+        fetchTherapist();
+    }, []);
+
+    useEffect(() => {
+        if (therapistDetails._id) {
+            fetchParentsRequest();
+        }
+    }, [therapistDetails]);
+
     const navigateToProfile = () => {
         navigate('/theraphist/profile');
-    }
-  return (
-    <>
-      <TheraphistNavbar theraphistdetails={theraphist} homebg={homebg} navigateToProfile={navigateToProfile}/>
-      <Container maxWidth="x-lg" sx={{ ...homebg, height: '100vh', position: "relative", overflow: "hidden", zIndex: 2 }}>
+    };
+
+    // Modal state
+    const [requestDetail, setRequestDetail] = useState({});
+    const [openParent, setOpenParent] = useState(false);
+    const handleParentOpen = () => setOpenParent(true);
+    const handleParentClose = () => setOpenParent(false);
+
+    const fetchParentByRequestId = async (requestId) => {
+        if (useDummyData) {
+            const foundRequest = dummyParentRequests.find(req => req._id === requestId);
+            if (foundRequest) {
+                setRequestDetail(foundRequest);
+                handleParentOpen();
+            }
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get(
+                `http://localhost:4000/ldss/theraphist/viewrequestedparent/${requestId}`, 
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            
+            if (response.data && response.data.viewRequest) {
+                setRequestDetail(response.data.viewRequest);
+                handleParentOpen();
+            }
+        } catch (error) {
+            console.error("Failed to fetch parent details:", error);
+        }
+    };
+
+    const acceptParentrequest = async (requestId) => {
+        if (useDummyData) {
+            setParentRequest(prev => prev.filter(req => req._id !== requestId));
+            alert(`Request ${requestId} accepted (demo)`);
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            await axios.post(
+                `http://localhost:4000/ldss/theraphist/acceptrequest/${requestId}`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            
+            setParentRequest(prev => prev.filter(req => req._id !== requestId));
+            alert("Request accepted successfully!");
+        } catch (error) {
+            console.error("Failed to accept request:", error);
+            alert("Failed to accept request");
+        }
+    };
+
+    const rejectParentrequest = async (requestId) => {
+        if (useDummyData) {
+            setParentRequest(prev => prev.filter(req => req._id !== requestId));
+            alert(`Request ${requestId} rejected (demo)`);
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("token");
+            await axios.post(
+                `http://localhost:4000/ldss/theraphist/rejectrequest/${requestId}`,
+                {},
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            
+            setParentRequest(prev => prev.filter(req => req._id !== requestId));
+            alert("Request rejected successfully!");
+        } catch (error) {
+            console.error("Failed to reject request:", error);
+            alert("Failed to reject request");
+        }
+    };
+
+    return (
+        <>
+<TheraphistNavbar theraphistDetails={therapistDetails} navigateToProfile={navigateToProfile} homebg={homebg} />
+            <Container maxWidth="x-lg" sx={{ ...homebg, height: '100vh', position: "relative", overflow: "hidden", zIndex: 2 }}>
                 <Box component="img" src={background} alt='background'
                     sx={{ position: "absolute", top: "0", left: "0", width: "100%", height: "100%", objectFit: 'cover', zIndex: -1 }}
-                >
-
-                </Box>
-                <Stack direction="row" spacing={2} sx={{ padding: "80px 50px", zIndex: 1, }}>
+                />
+                <Stack direction="row" spacing={2} sx={{ padding: "80px 50px", zIndex: 1 }}>
                     <Box sx={{ flex: 1, display: 'flex', flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
                         <Box sx={{
                             position: "relative",
@@ -93,18 +298,13 @@ const TheraphistHome = () => {
                             overflow: "hidden",
                             backgroundSize: "cover",
                             zIndex: 1,
-
-
                         }}>
-
                             <Typography variant="p" component="h6" color='primary'
                                 sx={{ fontSize: "14px", fontWeight: 500, margin: "10px 0px" }}
                             >
                                 <StarIcon sx={{ verticalAlign: 'middle', marginRight: 1, color: "#FFAE00" }} />
                                 Welcome to learn hub
                             </Typography>
-
-
                         </Box>
                         <Box>
                             <Typography variant="h1" component="h1" color='primary'
@@ -115,7 +315,7 @@ const TheraphistHome = () => {
                             <Typography variant="h1" component="h1" color='secondary'
                                 sx={{ fontSize: "56px", fontWeight: 600, marginTop: 2, margin: "10px 0px" }}
                             >
-                                Child’s Learning
+                                Child's Learning
                             </Typography>
                             <Typography variant="h1" component="h1" color='primary'
                                 sx={{ fontSize: "56px", fontWeight: 600, marginTop: 2, margin: "10px 0px" }}
@@ -127,23 +327,17 @@ const TheraphistHome = () => {
                             >
                                 A one-stop platform connecting parents, educators, and therapists to support children with learning disabilities through personalized learning plans, activity tracking, and seamless collaboration.
                             </Typography>
-
                         </Box>
-
-
                     </Box>
                     <Box sx={{ flex: 1 }}>
                         <Grid container spacing={1}
                             sx={{ width: "615px", height: "510px", position: "relative" }}
                         >
                             <Box sx={{ width: "264px", height: "62px", backgroundColor: 'white', borderRadius: "5px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "5px 3px", position: 'absolute', top: "30px", left: "-35px" }} >
-
-
                                 <Typography variant='p' color="primary" sx={{ fontSize: "14px" }}>
                                     <VerifiedIcon color='secondary' />
                                     Thousands of Verified educators & therapist!
                                 </Typography>
-
                             </Box>
                             <Box sx={{ width: "195px", height: "118px", backgroundColor: '#DBE8FA', borderRadius: "5px", padding: "5px 3px", position: 'absolute', bottom: "-85px", right: "-35px", display: "flex", alignItems: "center", justifyContent: "center" }} >
                                 <Box sx={{ width: "165px", height: "88px", backgroundColor: 'white', borderRadius: "5px", padding: "5px 3px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
@@ -156,112 +350,201 @@ const TheraphistHome = () => {
                                     <Typography>
                                         200k+ Learning
                                     </Typography>
-
                                 </Box>
                             </Box>
                             <Grid size={9}>
                                 <Box component="img" src={image68} alt='img'
-                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}>
-
-                                </Box>
+                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }} />
                             </Grid>
                             <Grid size={3}>
                                 <Box component="img" src={image69} alt='img'
-                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}>
-
-                                </Box>
+                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }} />
                             </Grid>
                             <Grid size={5}>
                                 <Box component="img" src={image70} alt='img'
-                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}>
-
-                                </Box>
+                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }} />
                             </Grid>
                             <Grid size={7}>
                                 <Box component="img" src={image71} alt='img'
-                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}>
-
-                                </Box>
+                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }} />
                             </Grid>
                         </Grid>
                     </Box>
-
                 </Stack>
-            </Container >
-            <Container maxWidth="x-lg" display={"flex"} flexDirection={"column"} alignItems={"center"} gap={"20px"} justifyContent={"center"} sx={{ height: "100%", background: "#F0F6FE", paddingBottom: "100px", mt: "100px" }}>
+            </Container>
 
-                <Box display={"flex"} flexDirection={"column"} alignItems={"center"} gap={"20px"} justifyContent={"center"} sx={{ height: "113px", }}>
-                    <Typography variant='h4' color='primary' sx={{ fontSize: "32px", fontWeight: "600", marginTop: "50px" }}>Parent's request</Typography>
-
+            {/* Parent Requests Section */}
+            <Container maxWidth="x-lg" sx={{ background: "#F0F6FE", py: 6 }}>
+                <Box display="flex" flexDirection="column" alignItems="center" sx={{ mb: 4 }}>
+                    <Typography variant='h4' color='primary' sx={{ fontSize: "32px", fontWeight: "600" }}>
+                        Parent's Requests
+                    </Typography>
                 </Box>
-                <Box>
-                    {/* cards */}
-
-                    <Grid display="flex" flexDirection="row" alignItems="center" justifyContent="center" container spacing={3} sx={{ marginTop: "100px" }}>
-                        {[1, 2, 3, 4, 5, 6].map((_, index) => (
-                            <Grid item xs={12} sm={12} md={6} lg={4} key={index}>
-                                <Card sx={{ maxWidth: "410px", height: "197px", borderRadius: "20px", padding: "20px" }}>
-                                    <CardActionArea>
-                                        <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
-                                            <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
-                                                <CardMedia
-                                                    component="img"
-                                                    sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
-                                                    image={image68}
-                                                    alt="Profile"
-                                                />
-                                                <CardContent
-                                                    sx={{
-                                                        height: "150px",
+                
+                <Box sx={{ 
+                    width: "100%", 
+                    py: 4,
+                    display: "flex",
+                    justifyContent: "center"
+                }}>
+                    <Box sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+                        gap: 3,
+                        width: "100%",
+                        maxWidth: "1200px",
+                        px: 3
+                    }}>
+                        {parentRequest.filter(request => request.status === "pending").length === 0 ? 
+                            (<Typography sx={{ 
+                                fontSize: "32px", 
+                                gridColumn: "1 / -1",
+                                textAlign: "center"
+                            }} color='primary'>No request found</Typography>)
+                            :
+                            (parentRequest.filter(request => request.status === "pending")
+                            .map((request, index) => (   
+                                <Card key={index} sx={{ 
+                                    height: "205px", 
+                                    borderRadius: "20px", 
+                                    p: "20px",
+                                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                                    '&:hover': {
+                                        transform: "translateY(-5px)",
+                                        boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                                    }
+                                }}>
+                                    <Box display="flex" alignItems="center" sx={{ height: "100%" }}>
+                                        <Box display="flex" sx={{ 
+                                            height: "100%", 
+                                            gap: "1px",
+                                            width: "100%"
+                                        }}>
+                                            <CardMedia
+                                                component="img"
+                                                sx={{ 
+                                                    height: "150px", 
+                                                    width: "150px", 
+                                                    borderRadius: "10px", 
+                                                    flexShrink: 0 
+                                                }}
+                                                image={useDummyData ? image68 : `http://localhost:4000/uploads/${request.parentId.profilePic.filename}`}
+                                                alt="Profile"
+                                            />
+                                            <Box sx={{
+                                                height: "100%",
+                                                overflow: "hidden",
+                                                pl: "10px",
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                justifyContent: "space-between",
+                                                flexGrow: 1
+                                            }}>
+                                                <Box display="flex" flexDirection="column" gap={1}>
+                                                    <Typography variant="h6" color="primary">
+                                                        {request.parentId.name}
+                                                    </Typography>
+                                                    <Typography sx={{ 
+                                                        color: '#7F7F7F', 
+                                                        fontSize: "13px", 
+                                                        fontWeight: "500",
+                                                        whiteSpace: "nowrap",
                                                         overflow: "hidden",
-                                                        padding: "10px",
-                                                        display: "flex",
-                                                        flexDirection: "column",
-                                                        justifyContent: "space-between"
-                                                    }}
-                                                >
-                                                    <Box>
-                                                        <Typography variant="h6" color='primary'>
-                                                            Name
-                                                        </Typography>
-                                                        <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
-                                                            Address
-                                                        </Typography>
-                                                        <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
-                                                            phone number
-                                                        </Typography>
-                                                        <Box><Link>View all</Link></Box>
-                                                    </Box>
+                                                        textOverflow: "ellipsis",
+                                                        maxWidth: "100%" 
+                                                    }}>
+                                                        {request.parentId.address}
+                                                    </Typography>
 
-
-
-                                                    <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
-                                                        <Button variant='text' color='secondary' sx={{ borderRadius: "25px", height: "35px", width: '100px', padding: '10px 35px',mt:"10px",border:"1px solid #1967D2" }}
-                                                            
-                                                        >Reject</Button>
-                                                        <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", height: "35px", width: '100px', padding: '10px 35px',mt:"10px" }}
-                                                            
-                                                            >Accept</Button>
-
-                                                    </Box>
-                                                </CardContent>
+                                                    <Typography sx={{ 
+                                                        color: '#7F7F7F', 
+                                                        fontSize: "13px", 
+                                                        fontWeight: "500" 
+                                                    }}>
+                                                        {request.parentId.phone}
+                                                    </Typography>
+                                                    <Button 
+                                                        onClick={() => fetchParentByRequestId(request._id)}
+                                                        sx={{ 
+                                                            alignSelf: "flex-start",
+                                                            textTransform: "none",
+                                                            color: '#1976d2',
+                                                            p: 0,
+                                                            '&:hover': {
+                                                                backgroundColor: "transparent",
+                                                                textDecoration: "underline"
+                                                            }
+                                                        }}
+                                                    >
+                                                        View Child
+                                                    </Button>
+                                                </Box>
+                                                <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
+                                                    <Button 
+                                                        onClick={() => rejectParentrequest(request._id)} 
+                                                        variant='outlined' 
+                                                        color='secondary' 
+                                                        sx={{ 
+                                                            borderRadius: "25px", 
+                                                            height: "35px", 
+                                                            width: '100px', 
+                                                            padding: '10px 35px', 
+                                                            mt: "10px",
+                                                            border: "1px solid #1967D2"
+                                                        }}
+                                                    >
+                                                        Reject
+                                                    </Button>
+                                                    <Button 
+                                                        onClick={() => acceptParentrequest(request._id)} 
+                                                        variant='contained' 
+                                                        color='secondary' 
+                                                        sx={{ 
+                                                            borderRadius: "25px", 
+                                                            height: "35px", 
+                                                            width: '100px', 
+                                                            padding: '10px 35px', 
+                                                            mt: "10px" 
+                                                        }}
+                                                    >
+                                                        Accept
+                                                    </Button>
+                                                </Box>
                                             </Box>
                                         </Box>
-                                    </CardActionArea>
+                                    </Box>
                                 </Card>
-                            </Grid>
-                        ))}
-                    </Grid>
-
-
+                            ))) 
+                        }
+                    </Box>
+                    <Box 
+                        display="flex" 
+                        justifyContent="flex-end" 
+                        sx={{ 
+                            mr: { xs: 2, md: "150px" },
+                            pt: 3.75
+                        }}
+                    >
+                        <Link 
+                            to="/therapist/parentsrequest" 
+                            style={{
+                                textDecoration: "none",
+                                display: "flex",
+                                alignItems: "center",
+                                color: "inherit"
+                            }}
+                        >
+                            <Typography sx={{ fontWeight: 500 }}>
+                                View More
+                            </Typography>
+                            <ArrowRightAltIcon sx={{ ml: 0.5 }} />
+                        </Link>
+                    </Box>
                 </Box>
-                <Box display={'flex'} alignItems={'flex-end'} justifyContent={'flex-end'} sx={{ marginRight: "150px", paddingTop: "30px" }}>
-                    <Link><Typography>view more <span><ArrowRightAltIcon /></span></Typography></Link>
-                </Box>
-
-
             </Container>
-            <Container maxWidth="x-lg" sx={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", margin: "30px 0px", height: '100vh' }}>
+
+            {/* How It Works Section */}
+            <Container maxWidth="x-lg" sx={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", my: 8 }}>
                 <Stack spacing={2} sx={{ width: "305px", height: "88px", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
                     <Box>
                         <Typography color='primary' variant='h3' sx={{ fontSize: "32px", fontWeight: "600" }}>
@@ -273,27 +556,24 @@ const TheraphistHome = () => {
                             Find the perfect learning in just a few steps
                         </Typography>
                     </Box>
-
                 </Stack>
 
-                <Stack direction="row" spacing={2} sx={{ height: "210px", display: "flex", alignItems: 'center', gap: "20px", marginTop: "90px" }}>
+                <Stack direction="row" spacing={2} sx={{ height: "210px", display: "flex", alignItems: 'center', gap: "20px", mt: 8 }}>
                     <Box sx={{ width: "400px", display: "flex", flexDirection: "column", alignItems: 'center', gap: "20px" }}>
-                        <Box component="img" src={user} sx={{}}>
-                        </Box>
+                        <Box component="img" src={user} />
                         <Box>
                             <Typography variant='h4' color='"primary' sx={{ fontSize: "18px", fontWeight: "600" }}>
                                 Build Profiles
                             </Typography>
                         </Box>
-                        <Box sx={{}}>
+                        <Box>
                             <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500", textAlign: 'justify' }}>
-                                Parents add child details; educators & <br /> therapists set expertise.
+                                Parents add child details; educators & therapists set expertise.
                             </Typography>
                         </Box>
                     </Box>
                     <Box sx={{ width: "400px", display: "flex", flexDirection: "column", alignItems: 'center', gap: "20px" }}>
-                        <Box component="img" src={elearning} sx={{}}>
-                        </Box>
+                        <Box component="img" src={elearning} />
                         <Box>
                             <Typography variant='h4' color='"primary' sx={{ fontSize: "18px", fontWeight: "600" }}>
                                 Start Learning
@@ -301,14 +581,12 @@ const TheraphistHome = () => {
                         </Box>
                         <Box>
                             <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500", textAlign: 'justify' }}>
-                                Access personalized plans, track progress,<br />
-                                and collaborate.
+                                Access personalized plans, track progress, and collaborate.
                             </Typography>
                         </Box>
                     </Box>
                     <Box sx={{ width: "400px", display: "flex", flexDirection: "column", alignItems: 'center', gap: "20px" }}>
-                        <Box component="img" src={shopping} sx={{}}>
-                        </Box>
+                        <Box component="img" src={shopping} />
                         <Box>
                             <Typography variant='h4' color='"primary' sx={{ fontSize: "18px", fontWeight: "600" }}>
                                 Monitor & Improve
@@ -316,18 +594,16 @@ const TheraphistHome = () => {
                         </Box>
                         <Box>
                             <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500", textAlign: 'justify' }}>
-                                Receive insights, expert advice, and <br />
-                                ongoing support.
+                                Receive insights, expert advice, and ongoing support.
                             </Typography>
                         </Box>
                     </Box>
-
                 </Stack>
-
             </Container>
-            <Footer/>
-    </>
-  )
-}
+            
+            <Footer />
+        </>
+    );
+};
 
-export default TheraphistHome
+export default TheraphistHome;

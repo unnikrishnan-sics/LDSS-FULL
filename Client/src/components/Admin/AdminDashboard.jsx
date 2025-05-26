@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import SchoolIcon from '@mui/icons-material/School';
 import SpaIcon from '@mui/icons-material/Spa';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { useLocation} from 'react-router-dom';
+import { Link, useLocation} from 'react-router-dom';
 import { toast } from 'react-toastify';
 import PeopleOutlineIcon from '@mui/icons-material/PeopleOutline';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
@@ -253,12 +253,21 @@ const AdminDashboard = () => {
                         </Grid>
                     </Grid>
                     {/* theraphist table starts */}
-                    <Box sx={{width:"100%",height:"450px",background:"white",borderRadius:"15px",mt:"15px"}}>
-                        {!theraphistDetails.length ? (<Typography sx={{fontSize:"18px",fontWeight:"600",pl:"20px",pt:"20px"}} color='primary' variant='h4'> No Theraphist Request</Typography>)
-                    : (<Typography sx={{fontSize:"18px",fontWeight:"600",pl:"20px",pt:"20px"}} color='primary' variant='h4'>Theraphist Request</Typography>)    
-                    }
-                        
-                    <TableContainer component={Paper} sx={{ marginTop: "30px" }}>
+<Box sx={{width:"100%",height:"450px",background:"white",borderRadius:"15px",mt:"15px"}}>
+    <div style={{display: "flex", flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
+        {!theraphistDetails.length ? (
+            <Typography sx={{fontSize:"18px",fontWeight:"600",pl:"20px",pt:"20px"}} color='primary' variant='h4'>
+                No Theraphist Request
+            </Typography>
+        ) : (
+            <Typography sx={{fontSize:"18px",fontWeight:"600",pl:"20px",pt:"20px"}} color='primary' variant='h4'>
+                Theraphist Request
+            </Typography>
+        )}
+        <Link sx={{ ml: "auto", pr: 5, pt: 2 }} to={'/admin/viewtheraphist'}> {/* Added padding and margin-left auto */}
+            <Typography variant='h6' sx={{fontSize:"14px",mr:2}}>View All</Typography>
+        </Link>
+    </div>                    <TableContainer component={Paper} sx={{ marginTop: "30px" }}>
                                     <Table sx={{ minWidth: 650, border: "none" }} aria-label="simple table">
                                         <TableHead>
                                             <TableRow>
@@ -306,56 +315,68 @@ const AdminDashboard = () => {
                     {/* theraphist table ends */}
 
                     {/* educator table starts */}
-                    <Box sx={{width:"100%",height:"450px",background:"white",borderRadius:"15px",mt:"15px"}}>
-                        {!educatorDetails.length ? (<Typography sx={{fontSize:"18px",fontWeight:"600",pl:"20px",pt:"20px"}} color='primary' variant='h4'> No Educator Request</Typography>)
-                    :(<Typography sx={{fontSize:"18px",fontWeight:"600",pl:"20px",pt:"20px"}} color='primary' variant='h4'>Educator Request</Typography>)    
-                    }
-                        
-                    <TableContainer component={Paper} sx={{ marginTop: "30px" }}>
-                                    <Table sx={{ minWidth: 650, border: "none" }} aria-label="simple table">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell sx={{ color: "#1967D2" }}>S.NO</TableCell>
-                                                <TableCell align="left" sx={{ color: "#1967D2" }}>Profile</TableCell>
-                                                <TableCell align="left" sx={{ color: "#1967D2" }}>Name</TableCell>
-                                                <TableCell align="left" sx={{ color: "#1967D2" }}>Phone Number</TableCell>
-                                                <TableCell align="left" sx={{ color: "#1967D2" }}>Email Id</TableCell>
-                                                <TableCell align="left" sx={{ color: "#1967D2" }} >Address</TableCell>
-                                                <TableCell align="left" sx={{ color: "#1967D2" }}>Action</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {educatorDetails.map((educator,index) => (
-                                                <TableRow
-                                                    key={index}
-                                                    sx={{
-                                                        '&:last-child td, &:last-child th': {
-                                                            border: 0, // Remove border for last row
-                                                        },
-                                                        '& td, & th': {
-                                                            border: 'none', // Remove all borders for cells
-                                                        }
-                                                    }}
-                                                >
-                                                    <TableCell component="th" scope="row">
-                                                        {index+1}
-                                                    </TableCell>
-                                                    <TableCell align="left">{
-                                                        educator.profilePic.filename ? (<Avatar src={`http://localhost:4000/uploads/${educator.profilePic.filename}`}></Avatar>)
-                                                            :
-                                                            (<Avatar src={educator.name.charAt(0)}></Avatar>)
-                                                    }</TableCell>
-                                                    <TableCell align="left">{educator.name}</TableCell>
-                                                    <TableCell align="left">{educator.phone}</TableCell>
-                                                    <TableCell align="left">{educator.email}</TableCell>
-                                                    <TableCell align="left">{educator.Address}</TableCell>
-                                                    <TableCell align="left">{<VisibilityIcon color='secondary'/>}</TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                    </Box>
+<Box sx={{ width: "100%", height: "450px", background: "white", borderRadius: "15px", mt: "15px" }}>
+  <Box sx={{ display: "flex", alignItems: "center", px: "20px", pt: "20px" }}>
+    {!educatorDetails.length ? (
+      <Typography sx={{ fontSize: "18px", fontWeight: "600" }} color='primary' variant='h4'>
+        No Educator Request
+      </Typography>
+    ) : (
+      <Typography sx={{ fontSize: "18px", fontWeight: "600" }} color='primary' variant='h4'>
+        Educator Request
+      </Typography>
+    )}
+    <Box sx={{ flexGrow: 1 }} /> {/* This pushes the Link to the right */}
+    <Link sx={{ textDecoration: "none", cursor: "pointer" }} to={'/admin/viewEducator'}>
+            <Typography variant='h6' sx={{fontSize:"14px",mr:2}}>View All</Typography>
+    </Link>
+  </Box>
+
+  <TableContainer component={Paper} sx={{ marginTop: "30px" }}>
+    <Table sx={{ minWidth: 650, border: "none" }} aria-label="simple table">
+      <TableHead>
+        <TableRow>
+          <TableCell sx={{ color: "#1967D2" }}>S.NO</TableCell>
+          <TableCell align="left" sx={{ color: "#1967D2" }}>Profile</TableCell>
+          <TableCell align="left" sx={{ color: "#1967D2" }}>Name</TableCell>
+          <TableCell align="left" sx={{ color: "#1967D2" }}>Phone Number</TableCell>
+          <TableCell align="left" sx={{ color: "#1967D2" }}>Email Id</TableCell>
+          <TableCell align="left" sx={{ color: "#1967D2" }}>Address</TableCell>
+          <TableCell align="left" sx={{ color: "#1967D2" }}>Action</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {educatorDetails.map((educator, index) => (
+          <TableRow
+            key={index}
+            sx={{
+              '&:last-child td, &:last-child th': { border: 0 },
+              '& td, & th': { border: 'none' }
+            }}
+          >
+            <TableCell component="th" scope="row">
+              {index + 1}
+            </TableCell>
+            <TableCell align="left">
+              {educator.profilePic.filename ? (
+                <Avatar src={`http://localhost:4000/uploads/${educator.profilePic.filename}`} />
+              ) : (
+                <Avatar>{educator.name.charAt(0)}</Avatar>
+              )}
+            </TableCell>
+            <TableCell align="left">{educator.name}</TableCell>
+            <TableCell align="left">{educator.phone}</TableCell>
+            <TableCell align="left">{educator.email}</TableCell>
+            <TableCell align="left">{educator.Address}</TableCell>
+            <TableCell align="left">
+              <VisibilityIcon color='secondary' />
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </TableContainer>
+</Box>
                     {/* educator table ends */}
                 </Box>
                 {/* logout modal */}

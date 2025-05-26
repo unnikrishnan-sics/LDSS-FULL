@@ -15,7 +15,6 @@ const AdminViewSingleEducator = ({handleEducatorClose,educatordetail,approve,rej
 
     return (
         <>
-            
                 <Box display={"flex"} alignItems={"center"} justifyContent={"space-between"} sx={{ p: "0px 10px" }}>
                     {educatordetail.isAdminApproved ? (<Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Details </Typography>)
                 :(<Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Request Details </Typography>)    
@@ -90,10 +89,6 @@ const AdminViewSingleEducator = ({handleEducatorClose,educatordetail,approve,rej
                 <Button onClick={()=>approve(educatordetail._id)} variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}>Approve</Button>
         
             </Box> }
-            
-        
-                
-            
         </>
     )
 }

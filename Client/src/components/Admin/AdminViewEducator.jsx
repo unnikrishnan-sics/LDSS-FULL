@@ -23,6 +23,8 @@ const AdminViewEducator = () => {
     const [openLogout, setOpenLogout] = useState(false);
     const handleOpenLogout = () => setOpenLogout(true);
     const handleCloseLogout = () => setOpenLogout(false);
+    const [activeTab, setActiveTab] = useState('request');
+
 
     const StyledTextField = styled(TextField)({
         '& .MuiOutlinedInput-root': {
@@ -132,12 +134,66 @@ const AdminViewEducator = () => {
                         </Box>
 
                         {/* switch */}
-                        <Box display={"flex"}>
-                            <Button sx={{ p: "8px 18px", background: "#1967D2", color: "white", borderRadius: "25px" }} onClick={fetchAllEducators}>Request</Button>
-                            <Button sx={{ p: "8px 18px", background: "white", color: "black", borderRadius: "25px" }} onClick={approvedEducators}>Educator</Button>
+<Box display="flex" justifyContent="center" sx={{ mt: 3 }}>
+  <Box
+    sx={{
+      backgroundColor: '#F6F7F9', // Background container
+      borderRadius: '30px',
+      padding: '5px',
+      display: 'inline-flex',
+      transition: 'all 0.3s ease-in-out',
+      boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.05)' // optional subtle inner shadow
+    }}
+  >
+    <Button
+      onClick={() => {
+        fetchAllEducators();
+        setActiveTab('request');
+      }}
+      sx={{
+        padding: '8px 20px',
+        backgroundColor: activeTab === 'request' ? '#1967D2' : 'transparent',
+        color: activeTab === 'request' ? '#fff' : '#000',
+        borderRadius: '25px',
+        textTransform: 'none',
+        fontWeight: 500,
+        fontSize: '14px',
+        minWidth: '120px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          backgroundColor: activeTab === 'request' ? '#1152b4' : 'rgba(0,0,0,0.04)'
+        }
+      }}
+    >
+      Request
+    </Button>
+
+    <Button
+      onClick={() => {
+        approvedEducators();
+        setActiveTab('educator');
+      }}
+      sx={{
+        padding: '8px 20px',
+        backgroundColor: activeTab === 'educator' ? '#1967D2' : 'transparent',
+        color: activeTab === 'educator' ? '#fff' : '#000',
+        borderRadius: '25px',
+        textTransform: 'none',
+        fontWeight: 500,
+        fontSize: '14px',
+        minWidth: '120px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          backgroundColor: activeTab === 'educator' ? '#1152b4' : 'rgba(0,0,0,0.04)'
+        }
+      }}
+    >
+      Educator
+    </Button>
+  </Box>
+</Box>
 
 
-                        </Box>
                         {/* switch ends */}
 
                         {/* table */}
@@ -175,7 +231,7 @@ const AdminViewEducator = () => {
                                                     key={index}
                                                     sx={{
                                                         '&:last-child td, &:last-child th': {
-                                                            border: 0, // Remove border for last row
+                                                            border: 0, 
                                                         },
                                                         '& td, & th': {
                                                             border: 'none', // Remove all borders for cells

@@ -24,6 +24,8 @@ const AdminViewTheraphist = () => {
     const [openLogout, setOpenLogout] = useState(false);
     const handleOpenLogout = () => setOpenLogout(true);
     const handleCloseLogout = () => setOpenLogout(false);
+    const [activeTab, setActiveTab] = useState('request');
+
 
     const StyledTextField = styled(TextField)({
         '& .MuiOutlinedInput-root': {
@@ -131,12 +133,65 @@ const AdminViewTheraphist = () => {
                         </Box>
 
                         {/* switch */}
-                        <Box display={"flex"}>
-                            <Button sx={{ p: "8px 18px", background: "#1967D2", color: "white", borderRadius: "25px" }} onClick={fetchAllTheraphist}>Request</Button>
-                            <Button sx={{ p: "8px 18px", background: "white", color: "black", borderRadius: "25px" }} onClick={approvedTheraphist}>Theraphist</Button>
+                        <Box display="flex" justifyContent="center" sx={{ mt: 3 }}>
+  <Box
+    sx={{
+      backgroundColor: '#F6F7F9',      // Outer background (matches overall theme)
+      borderRadius: '30px',
+      padding: '5px',
+      display: 'inline-flex',
+      transition: 'all 0.3s ease-in-out',
+      boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.05)'  // Optional subtle inner shadow
+    }}
+  >
+    <Button
+      onClick={() => {
+        fetchAllTheraphist();
+        setActiveTab('request');
+      }}
+      sx={{
+        padding: '8px 20px',
+        backgroundColor: activeTab === 'request' ? '#1967D2' : 'transparent',
+        color: activeTab === 'request' ? '#fff' : '#000',
+        borderRadius: '25px',
+        textTransform: 'none',
+        fontWeight: 500,
+        fontSize: '14px',
+        minWidth: '120px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          backgroundColor: activeTab === 'request' ? '#1152b4' : 'rgba(0,0,0,0.04)'
+        }
+      }}
+    >
+      Request
+    </Button>
 
+    <Button
+      onClick={() => {
+        approvedTheraphist();
+        setActiveTab('therapist');
+      }}
+      sx={{
+        padding: '8px 20px',
+        backgroundColor: activeTab === 'therapist' ? '#1967D2' : 'transparent',
+        color: activeTab === 'therapist' ? '#fff' : '#000',
+        borderRadius: '25px',
+        textTransform: 'none',
+        fontWeight: 500,
+        fontSize: '14px',
+        minWidth: '120px',
+        transition: 'all 0.3s ease',
+        '&:hover': {
+          backgroundColor: activeTab === 'therapist' ? '#1152b4' : 'rgba(0,0,0,0.04)'
+        }
+      }}
+    >
+      Therapist
+    </Button>
+  </Box>
+</Box>
 
-                        </Box>
                         {/* switch ends */}
 
                         {/* table */}

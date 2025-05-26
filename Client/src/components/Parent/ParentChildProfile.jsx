@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import ParentNavbar from '../Navbar/ParentNavbar'
-import { Link, data, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Box, Breadcrumbs, Button, Grid, Typography, Container, Stack } from '@mui/material';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
@@ -43,137 +43,143 @@ const editChildStyle = {
 };
 const textFieldStyle = { height: "65px", width: "360px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" }
 
-
 const ParentChildProfile = () => {
-
-
   const aboutBg = {
     background: "#F6F7F9"
   }
   const [parentdetails, setParentdetails] = useState({});
   useEffect(() => {
-    
     const parentdetails = localStorage.getItem("parentdetails");
     setParentdetails(JSON.parse(parentdetails));
   }, []);
+  
   const navigate = useNavigate();
   const navigateToProfile = () => {
     navigate('/parent/profile');
   }
+  
   // add child modal
-
   const [addChildOpen, setAddChildOpen] = React.useState(false);
   const handleAddChildOpen = () => setAddChildOpen(true);
   const handleAddChildClose = () => setAddChildOpen(false);
 
-  //  add child details
-  const [childData,setChildData]=useState({
-    name:"",
-    schoolName:"",
-    gender:"",
-    description:"",
-    dateOfBirth:""
+  // add child details
+  const [childData, setChildData] = useState({
+    name: "",
+    schoolName: "",
+    gender: "",
+    description: "",
+    dateOfBirth: ""
   });
-  const handleChange=(e)=>{
-    const {name,value}=e.target;
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
     setChildData({
       ...childData,
-      [name]:value
+      [name]: value
     })
   };
-  const handleSubmit= async(e)=>{
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const token=localStorage.getItem("token");
-    console.log(childData);
-    const child= await axios.post(`http://localhost:4000/ldss/parent/addchild/${parentdetails._id}`,childData,{
+    const token = localStorage.getItem("token");
+    const child = await axios.post(`http://localhost:4000/ldss/parent/addchild/${parentdetails._id}`, childData, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-     console.log(child.data.message);
-    if(child.data.message==="Child added successfully."){
+    if (child.data.message === "Child added successfully.") {
       toast.success("Child added successfully.");
       fetchAllChilds();
       handleAddChildClose();
+      // Reset form
+      setChildData({
+        name: "",
+        schoolName: "",
+        gender: "",
+        description: "",
+        dateOfBirth: ""
+      });
     }
   };
 
   // getting all child details
-  const [childDetails,setChildDetails]=useState([]);
-  const fetchAllChilds=async ()=>{
-    const token=localStorage.getItem("token");
-    const parentdetails=localStorage.getItem("parentdetails");
-    const parent=JSON.parse(parentdetails);
-    const child= await axios.get(`http://localhost:4000/ldss/parent/getallchild`,{
+  const [childDetails, setChildDetails] = useState([]);
+  const [filteredChildDetails, setFilteredChildDetails] = useState([]);
+  
+  const fetchAllChilds = async () => {
+    const token = localStorage.getItem("token");
+    const parentdetails = localStorage.getItem("parentdetails");
+    const parent = JSON.parse(parentdetails);
+    const child = await axios.get(`http://localhost:4000/ldss/parent/getallchild`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    const childsbyparent=child.data.child.filter((child)=>parent._id===child.parentId)
+    const childsbyparent = child.data.child.filter((child) => parent._id === child.parentId)
     setChildDetails(childsbyparent);
-    console.log(childsbyparent);
-    
+    setFilteredChildDetails(childsbyparent); // Initialize filtered list with all children
   };
-    useEffect(()=>{
+  
+  useEffect(() => {
     fetchAllChilds();
-  },[])
+  }, [])
 
   // edit child modal
-  const [currentChildId,setCurrentChildId]=useState("");
-  const [editchild,setEditChild]=useState({
-    name:"",
-    schoolName:"",
-    description:"",
-    dateOfBirth:"",
-    gender:""
+  const [currentChildId, setCurrentChildId] = useState("");
+  const [editchild, setEditChild] = useState({
+    name: "",
+    schoolName: "",
+    description: "",
+    dateOfBirth: "",
+    gender: ""
   });
 
-  const handleEditChange=(e)=>{
-    const {name,value}=e.target;
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
     setEditChild({
       ...editchild,
-      [name]:value
+      [name]: value
     })
   }
-  const fetchChildDetail=async(childId)=>{
+  
+  const fetchChildDetail = async (childId) => {
     handleEditChildOpen();
     setCurrentChildId(childId);
-    const token=localStorage.getItem("token");
-    const parentdetails=localStorage.getItem("parentdetails");
-    const parent=JSON.parse(parentdetails);
-    const child= await axios.get(`http://localhost:4000/ldss/parent/getchild/${parent._id}/${childId}`,{
+    const token = localStorage.getItem("token");
+    const parentdetails = localStorage.getItem("parentdetails");
+    const parent = JSON.parse(parentdetails);
+    const child = await axios.get(`http://localhost:4000/ldss/parent/getchild/${parent._id}/${childId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log(child);
-     setEditChild(
-      {
-        name:child.data.child.name,
-        schoolName:child.data.child.schoolName,
-        description:child.data.child.description,
-        dateOfBirth:child.data.child.dateOfBirth,
-        gender:child.data.child.gender
-      }
-    )
+    setEditChild({
+      name: child.data.child.name,
+      schoolName: child.data.child.schoolName,
+      description: child.data.child.description,
+      dateOfBirth: child.data.child.dateOfBirth,
+      gender: child.data.child.gender
+    })
   }
-  const handleEditSubmit=async(e)=>{
+  
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
-    const token=localStorage.getItem("token");
-    const parentdetails=localStorage.getItem("parentdetails");
-    const parent=JSON.parse(parentdetails);
-    const child= await axios.post(`http://localhost:4000/ldss/parent/updatechild/${parent._id}/${currentChildId}`,editchild,{
+    const token = localStorage.getItem("token");
+    const parentdetails = localStorage.getItem("parentdetails");
+    const parent = JSON.parse(parentdetails);
+    const child = await axios.post(`http://localhost:4000/ldss/parent/updatechild/${parent._id}/${currentChildId}`, editchild, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log(child.data.message);
-    if(child.data.message==="Child updated successfully."){
+    if (child.data.message === "Child updated successfully.") {
       toast.success("Child updated successfully.");
       fetchAllChilds();
       handleEditChildClose();
     }
   }
+  
   const [editChildOpen, setEditChildOpen] = React.useState(false);
   const handleEditChildOpen = () => {
     setEditChildOpen(true);
@@ -181,27 +187,38 @@ const ParentChildProfile = () => {
   const handleEditChildClose = () => setEditChildOpen(false);
 
   // delete child 
-  const handleDeleteChild=async(childId)=>{
-    const token=localStorage.getItem("token");
-    const parentdetails=localStorage.getItem("parentdetails");
-    const parent=JSON.parse(parentdetails);
-    const child= await axios.delete(`http://localhost:4000/ldss/parent/deletechild/${parent._id}/${childId}`,{
+  const handleDeleteChild = async (childId) => {
+    const token = localStorage.getItem("token");
+    const parentdetails = localStorage.getItem("parentdetails");
+    const parent = JSON.parse(parentdetails);
+    const child = await axios.delete(`http://localhost:4000/ldss/parent/deletechild/${parent._id}/${childId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log(child.data.message);
-    if(child.data.message==="Child deleted successfully."){
+    if (child.data.message === "Child deleted successfully.") {
       toast.success("Child deleted successfully.");
       fetchAllChilds();
     }
   }
+  
   // filter child by their name
-  const [searchChild,setSearchChild]=useState("");
-  const handleSearchChild=(e)=>{
-    setSearchChild(e.target.value)
+  const [searchChild, setSearchChild] = useState("");
+  
+  const handleSearchChild = (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    setSearchChild(searchTerm);
     
+    if (searchTerm === "") {
+      setFilteredChildDetails(childDetails);
+    } else {
+      const filtered = childDetails.filter(child => 
+        child.name.toLowerCase().includes(searchTerm)
+      );
+      setFilteredChildDetails(filtered);
+    }
   }
+  
   return (
     <>
       <ParentNavbar aboutBg={aboutBg} parentdetails={parentdetails} navigateToProfile={navigateToProfile} />
@@ -219,82 +236,92 @@ const ParentChildProfile = () => {
           <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={3}>
             <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={1} style={{ padding: "8px 15px", borderRadius: "25px", border: "1px solid #CCCCCC", height: "40px" }}>
               <Box sx={{ height: "100%" }}><SearchOutlinedIcon /></Box>
-              <input placeholder='search here' style={{ padding: "8px 15px", border: 0,outline:0, height: "100%" }}></input>
+              <input 
+                placeholder='search here' 
+                style={{ padding: "8px 15px", border: 0, outline: 0, height: "100%" }}
+                value={searchChild}
+                onChange={handleSearchChild}
+              />
             </Box>
-            <Button endIcon={<AddOutlinedIcon />} variant='contained' color='secondary' sx={{ borderRadius: "25px", height: "40px", width: '200px', padding: '10px 35px' }} onClick={handleAddChildOpen}
-
+            <Button 
+              endIcon={<AddOutlinedIcon />} 
+              variant='contained' 
+              color='secondary' 
+              sx={{ borderRadius: "25px", height: "40px", width: '200px', padding: '10px 35px' }} 
+              onClick={handleAddChildOpen}
             >Add Child</Button>
           </Box>
         </Box>
       </Box>
       <Grid sx={{ pt: "30px", pl: "50px", pr: "50px", width: "100%" }} container spacing={2}>
-        {childDetails.map((child,index)=>{
-          return(
-            <Grid key={index} item xs={12} md={6} width={"49%"}>
-          <Box display={"flex"} flexDirection={"column"} alignItems={"start"} sx={{ p: "50px 30px", height: "400px", background: "#F6F7F9", borderRadius: "25px", gap: "20px", width: "100%" }}>
-            <Box width={"100%"} display={"flex"} gap={5} justifyContent={"space-between"} alignItems={"center"}>
-              <Typography sx={{ fontSize: "32px", fontWeight: "600" }} color='primary' 
-              onClick={()=>{fetchChildDetail(child._id)}}
-              >{child.name} <BorderColorOutlinedIcon /></Typography>
-              <Typography sx={{ color: "#E52323" }}>
-                <DeleteOutlinedIcon 
-                onClick={()=>handleDeleteChild(child._id)}
-              /></Typography>
-
-            </Box>
-            <Box width={"100%"} display={"flex"} justifyContent={"space-between"}>
-              <Box sx={{ gap: "20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
-                  <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
+        {filteredChildDetails.length > 0 ? (
+          filteredChildDetails.map((child, index) => {
+            return (
+              <Grid key={index} item xs={12} md={6} width={"49%"}>
+                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} sx={{ p: "50px 30px", height: "400px", background: "#F6F7F9", borderRadius: "25px", gap: "20px", width: "100%" }}>
+                  <Box width={"100%"} display={"flex"} gap={5} justifyContent={"space-between"} alignItems={"center"}>
+                    <Typography sx={{ fontSize: "32px", fontWeight: "600" }} color='primary' 
+                      onClick={() => { fetchChildDetail(child._id) }}
+                    >{child.name} <BorderColorOutlinedIcon /></Typography>
+                    <Typography sx={{ color: "#E52323" }}>
+                      <DeleteOutlinedIcon 
+                        onClick={() => handleDeleteChild(child._id)}
+                      />
+                    </Typography>
+                  </Box>
+                  <Box width={"100%"} display={"flex"} justifyContent={"space-between"}>
+                    <Box sx={{ gap: "20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                      <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
+                        <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
+                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                          <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Name</Typography>
+                          <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.name}</Typography>
+                        </Box>
+                      </Box>
+                      <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
+                        <Box sx={{ color: "#1967D2" }}><ApartmentOutlinedIcon /></Box>
+                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                          <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>School name</Typography>
+                          <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.schoolName}</Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                    <Box sx={{ gap: "20px", pr: "250px", borderLeft: "1px solid #CCCCCC" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                      <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
+                        <Box sx={{ color: "#1967D2" }}><DateRangeIcon /></Box>
+                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                          <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date of birth</Typography>
+                          <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.dateOfBirth}</Typography>
+                        </Box>
+                      </Box>
+                      <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
+                        <Box sx={{ color: "#1967D2" }}><FemaleIcon /></Box>
+                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                          <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Gender</Typography>
+                          <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.gender}</Typography>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
                   <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                    <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Name</Typography>
-                    <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.name}</Typography>
+                    <Typography variant='h5' sx={{ fontSize: "18px", fontWeight: "500" }} color='secondary'>Description</Typography>
+                    <Typography variant='p' sx={{ fontSize: "14px", fontWeight: "500" }} color='primary'>{child.description}</Typography>
                   </Box>
                 </Box>
-                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
-                  <Box sx={{ color: "#1967D2" }}><ApartmentOutlinedIcon /></Box>
-                  <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                    <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>School name</Typography>
-                    <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.schoolName}</Typography>
-                  </Box>
-                </Box>
-              </Box>
-              <Box sx={{ gap: "20px", pr: "250px", borderLeft: "1px solid #CCCCCC" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
-                  <Box sx={{ color: "#1967D2" }}><DateRangeIcon /></Box>
-                  <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                    <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date of birth</Typography>
-                    <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.dateOfBirth}</Typography>
-                  </Box>
-                </Box>
-                <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
-                  <Box sx={{ color: "#1967D2" }}><FemaleIcon /></Box>
-                  <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                    <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Gender</Typography>
-                    <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.gender}</Typography>
-                  </Box>
-                </Box>
-              </Box>
-
-            </Box>
-            <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-              <Typography variant='h5' sx={{ fontSize: "18px", fontWeight: "500" }} color='secondary'>Description</Typography>
-              <Typography variant='p' sx={{ fontSize: "14px", fontWeight: "500" }} color='primary'>{child.description}</Typography>
-
-
-            </Box>
-
+              </Grid>
+            )
+          })
+        ) : (
+          <Box sx={{ width: "100%", textAlign: "center", p: 4 }}>
+            <Typography variant="h6" color="textSecondary">
+              {searchChild ? "No matching children found" : "No children added yet"}
+            </Typography>
           </Box>
-        </Grid>
-          )
-
-        })}
-        
+        )}
       </Grid>
 
       {/* add child modal start */}
       <div>
-
         <Modal
           aria-labelledby="transition-modal-title"
           aria-describedby="transition-modal-description"
@@ -316,79 +343,73 @@ const ParentChildProfile = () => {
               </Box>
               <hr />
               <Container sx={{ position: "relative", mt: "50px" }} maxWidth="x-lg">
-
                 <Box display={'flex'} alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
-
                   <Box sx={{ display: "flex", justifyContent: 'center', alignItems: "start", gap: "30px", height: "154px", flexDirection: "column", marginTop: '30px' }}>
                     <Stack direction="row" sx={{ display: "flex", gap: "15px", alignItems: "center" }}>
-
                       <div style={textFieldStyle}>
                         <label>Name</label>
-                        <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                        <input 
+                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                           name='name'
                           type='text'
+                          value={childData.name}
                           onChange={handleChange}
                         />
-                        {/* {error.name && <span style={{ color: 'red', fontSize: '12px' }}>{error.name}</span>} */}
                       </div>
-
                       <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '20px', textFieldStyle }}>
                         <label style={{}}>Gender:</label>
                         <label>
-                          <input type="radio" name="gender" value="male" onChange={handleChange} checked={childData.gender==="male"}/> Male
+                          <input type="radio" name="gender" value="male" onChange={handleChange} checked={childData.gender === "male"} /> Male
                         </label>
                         <label>
-                          <input type="radio" name="gender" value="female" onChange={handleChange} checked={childData.gender==="female"} /> Female
+                          <input type="radio" name="gender" value="female" onChange={handleChange} checked={childData.gender === "female"} /> Female
                         </label>
                         <label>
-                          <input type="radio" name="gender" value="others" onChange={handleChange} checked={childData.gender==="others"} /> Others
+                          <input type="radio" name="gender" value="others" onChange={handleChange} checked={childData.gender === "others"} /> Others
                         </label>
-                        {/* {error.address && <span style={{ color: 'red', fontSize: '12px' }}>{error.address}</span>} */}
                       </div>
                     </Stack>
                     <Stack direction={'row'} sx={{ display: "flex", gap: "15px" }}>
                       <div style={textFieldStyle}>
                         <label>School Name</label>
-                        <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                        <input 
+                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                           name='schoolName'
+                          value={childData.schoolName}
                           onChange={handleChange}
                         />
-                        {/* {error.email && <span style={{ color: 'red', fontSize: '12px' }}>{error.email}</span>} */}
                       </div>
                       <div style={textFieldStyle}>
                         <label>Date Of Birth</label>
-                        <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                        <input 
+                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                           name='dateOfBirth'
-                          type='text'
+                          type='date'
+                          value={childData.dateOfBirth}
                           onChange={handleChange}
                         />
-                        {/* {error.phone && <span style={{ color: 'red', fontSize: '12px' }}>{error.phone}</span>} */}
-
-
                       </div>
                     </Stack>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: "15px" ,width:"100%"}}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: "15px", width: "100%" }}>
                       <label>Description</label>
-                      <input style={{ height: "70px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                      <textarea 
+                        style={{ height: "70px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                         name='description'
-                        type='text'
+                        value={childData.description}
                         onChange={handleChange}
                       />
-
                     </Box>
-
                   </Box>
-                  {/*  */}
-                  <Box display={'flex'} alignItems={'center'} justifyContent={'center'} flexDirection={'column'} sx={{ width: '253px', height: "93px", gap: '10px',mt:"70px" }}>
-                    <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
-                    onClick={handleSubmit}
+                  <Box display={'flex'} alignItems={'center'} justifyContent={'center'} flexDirection={'column'} sx={{ width: '253px', height: "93px", gap: '10px', mt: "70px" }}>
+                    <Button 
+                      variant='contained' 
+                      color='secondary' 
+                      sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
+                      onClick={handleSubmit}
                     >Confirm</Button>
-
                   </Box>
                 </Box>
-
               </Container>
-
             </Box>
           </Fade>
         </Modal>
@@ -397,7 +418,6 @@ const ParentChildProfile = () => {
 
       {/* edit child modal start */}
       <div>
-
         <Modal
           aria-labelledby="transition-modal-title"
           aria-describedby="transition-modal-description"
@@ -419,93 +439,84 @@ const ParentChildProfile = () => {
               </Box>
               <hr />
               <Container sx={{ position: "relative", mt: "50px" }} maxWidth="x-lg">
-
                 <Box display={'flex'} alignItems={'center'} justifyContent={'center'} flexDirection={'column'}>
-
                   <Box sx={{ display: "flex", justifyContent: 'center', alignItems: "start", gap: "30px", height: "154px", flexDirection: "column", marginTop: '30px' }}>
                     <Stack direction="row" sx={{ display: "flex", gap: "15px", alignItems: "center" }}>
-
                       <div style={textFieldStyle}>
                         <label>Name</label>
-                        <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                        <input 
+                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                           name='name'
                           type='text'
                           value={editchild.name}
                           onChange={handleEditChange}
                         />
-                        {/* {error.name && <span style={{ color: 'red', fontSize: '12px' }}>{error.name}</span>} */}
                       </div>
-
                       <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '20px', textFieldStyle }}>
                         <label style={{}}>Gender:</label>
                         <label>
-                          <input type="radio" name="gender" value="male" onChange={handleEditChange} checked={editchild.gender==="male"}/> Male
+                          <input type="radio" name="gender" value="male" onChange={handleEditChange} checked={editchild.gender === "male"} /> Male
                         </label>
                         <label>
-                          <input type="radio" name="gender" value="female" onChange={handleEditChange} checked={editchild.gender==="female"} /> Female
+                          <input type="radio" name="gender" value="female" onChange={handleEditChange} checked={editchild.gender === "female"} /> Female
                         </label>
                         <label>
-                          <input type="radio" name="gender" value="others" onChange={handleEditChange} checked={editchild.gender==="others"} /> Others
+                          <input type="radio" name="gender" value="others" onChange={handleEditChange} checked={editchild.gender === "others"} /> Others
                         </label>
-                        {/* {error.address && <span style={{ color: 'red', fontSize: '12px' }}>{error.address}</span>} */}
                       </div>
                     </Stack>
                     <Stack direction={'row'} sx={{ display: "flex", gap: "15px" }}>
                       <div style={textFieldStyle}>
                         <label>School Name</label>
-                        <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                        <input 
+                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                           name='schoolName'
                           onChange={handleEditChange}
                           value={editchild.schoolName}
                         />
-                        {/* {error.email && <span style={{ color: 'red', fontSize: '12px' }}>{error.email}</span>} */}
                       </div>
                       <div style={textFieldStyle}>
                         <label>Date Of Birth</label>
-                        <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                        <input 
+                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                           name='dateOfBirth'
-                          type='text'
+                          type='date'
                           onChange={handleEditChange}
                           value={editchild.dateOfBirth}
                         />
-                        {/* {error.phone && <span style={{ color: 'red', fontSize: '12px' }}>{error.phone}</span>} */}
-
-
                       </div>
                     </Stack>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: "15px" ,width:"100%"}}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: "15px", width: "100%" }}>
                       <label>Description</label>
-                      <input style={{ height: "70px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                      <textarea 
+                        style={{ height: "70px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                         name='description'
-                        type='text'
                         onChange={handleEditChange}
                         value={editchild.description}
                       />
-
                     </Box>
-
                   </Box>
-                  {/*  */}
-                  <Box display={'flex'} alignItems={'center'} justifyContent={'center'} sx={{ width: '253px', height: "93px", gap: '10px',mt:"70px" }}>
-                    <Button variant='outlined' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
-                    onClick={handleEditChildClose}
+                  <Box display={'flex'} alignItems={'center'} justifyContent={'center'} sx={{ width: '253px', height: "93px", gap: '10px', mt: "70px" }}>
+                    <Button 
+                      variant='outlined' 
+                      color='secondary' 
+                      sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
+                      onClick={handleEditChildClose}
                     >Cancel</Button>
-                    <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
-                    onClick={handleEditSubmit}
+                    <Button 
+                      variant='contained' 
+                      color='secondary' 
+                      sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
+                      onClick={handleEditSubmit}
                     >Update</Button>
-
                   </Box>
                 </Box>
-
               </Container>
-
             </Box>
           </Fade>
         </Modal>
       </div>
-
-       {/* edit child modal ends */}
-
+      {/* edit child modal ends */}
     </>
   )
 }

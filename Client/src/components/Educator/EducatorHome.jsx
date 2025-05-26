@@ -33,26 +33,72 @@ const EducatorHome = () => {
     const homebg = {
         backgroundColor: "#F6F7F9"
     }
+    const [useDummyData, setUseDummyData] = useState(true);
 
-
-    const [educator, setEducator] = useState("");
+    const [educatorDetails, setEducatorDetails] = useState({});
     const fetchEducator = async () => {
         const token = localStorage.getItem('token');
         const decoded = jwtDecode(token);
-        const educator = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${decoded.id}`, {
+        const response = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${decoded.id}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
         });
-        const educatorsDetails = localStorage.setItem("educatorDetails",
-            JSON.stringify(educator.data.educator));
-        setEducator(educator.data.educator);
-        // console.log(parent.data.parent.name);
-        // console.log(parent.data.parent.profilePic);
-        console.log(educator);
-
+        const educatorData = response.data.educator;
+        localStorage.setItem("educatorDetails", JSON.stringify(educatorData));
+        setEducatorDetails(educatorData);
     }
+    const dummyParentRequests = [
+        {
+            _id: "request1",
+            status: "pending",
+            parentId: {
+                _id: "parent1",
+                name: "Sarah Johnson",
+                email: "sarah.johnson@example.com",
+                address: "123 Main St, Springfield, IL 62704",
+                phone: "+1 (555) 123-4567",
+                profilePic: {
+                    filename: "profile1.jpg"
+                }
+            }
+        },
+        {
+            _id: "request2",
+            status: "pending",
+            parentId: {
+                _id: "parent2",
+                name: "Michael Brown",
+                email: "michael.brown@example.com",
+                address: "456 Oak Ave, Springfield, IL 62704",
+                phone: "+1 (555) 987-6543",
+                profilePic: {
+                    filename: "profile2.jpg"
+                }
+            }
+        },
+        {
+            _id: "request3",
+            status: "pending",
+            parentId: {
+                _id: "parent3",
+                name: "Emily Davis",
+                email: "emily.davis@example.com",
+                address: "789 Pine Rd, Springfield, IL 62704",
+                phone: "+1 (555) 456-7890",
+                profilePic: {
+                    filename: "profile3.jpg"
+                }
+            }
+        }
+    ];
+
     useEffect(() => {
+        // Load educator details from localStorage if available
+        const storedEducator = localStorage.getItem("educatorDetails");
+        if (storedEducator) {
+            setEducatorDetails(JSON.parse(storedEducator));
+        }
         fetchEducator();
         fetchParentsRequest();
     }, []);
@@ -62,68 +108,80 @@ const EducatorHome = () => {
         navigate('/educator/profile');
     }
 
-    const [parentRequest, setParentRequest] = useState([]);
-    const fetchParentsRequest = async () => {
-        const token = localStorage.getItem("token");
-        const educatorId = JSON.parse(localStorage.getItem("educatorDetails"))._id;
-        const request = await axios.get(`http://localhost:4000/ldss/educator/parentsrequest/${educatorId}`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
 
-        const allrequest=request.data.request;
-        const unapproved=allrequest.filter((filtered)=>filtered.status==="pending");
-        setParentRequest(unapproved);
-
-        console.log(request.data.request);
-
-
-    };
-    const acceptParentrequest = async (requestId) => {
-        const token = localStorage.getItem("token");
-        const requestaccepted = await axios.put(`http://localhost:4000/ldss/educator/acceptsrequest/${requestId}`,{}, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        console.log(requestaccepted);
-        handleParentClose();
-        fetchParentsRequest();
-
-    };
-    const rejectParentrequest=async(requestId)=>{
-        const token=localStorage.getItem("token");
-        const rejectParent=await axios.delete(`http://localhost:4000/ldss/educator/rejectparent/${requestId}`,{
-            headers:{
-                Authorization: `Bearer ${token}`
-            }
-        });
-        console.log(rejectParent);
-        handleParentClose();
-        fetchParentsRequest();
-
-    };
-    // model
+    // Modal
     const [requestDetail, setRequestDetail] = useState({});
     const [openParent, setOpenParent] = useState(false);
     const handleParentOpen = () => setOpenParent(true);
     const handleParentClose = () => setOpenParent(false);
-    const fetchParentByRequestId=async(requestId)=>{
-        const token=localStorage.getItem("token");
-        const parent=await axios.get(`http://localhost:4000/ldss/educator/viewrequestedparent/${requestId}`,{
-            headers:{
+    const fetchParentByRequestId = async (requestId) => {
+        const token = localStorage.getItem("token");
+        const parent = await axios.get(`http://localhost:4000/ldss/educator/viewrequestedparent/${requestId}`, {
+            headers: {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(parent);
         setRequestDetail(parent.data.viewRequest);
         handleParentOpen();
     }
+    const [parentRequest, setParentRequest] = useState([]);
+    const fetchParentsRequest = async () => {
+        if (useDummyData) {
+            setParentRequest(dummyParentRequests);
+        } else {
+            const token = localStorage.getItem("token");
+            const educatorId = JSON.parse(localStorage.getItem("educatorDetails"))._id;
+            const request = await axios.get(`http://localhost:4000/ldss/educator/parentsrequest/${educatorId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setParentRequest(request.data.request);
+            console.log(request.data.request);
+        }
+    };
+    
+    const acceptParentrequest = async (requestId) => {
+        if (useDummyData) {
+            // Update the status in the dummy data
+            setParentRequest(prev => prev.map(req => 
+                req._id === requestId ? {...req, status: "accepted"} : req
+            ));
+            handleParentClose();
+        } else {
+            const token = localStorage.getItem("token");
+            const requestaccepted = await axios.put(`http://localhost:4000/ldss/educator/acceptsrequest/${requestId}`,{}, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            console.log(requestaccepted);
+            handleParentClose();
+            fetchParentsRequest();
+        }
+    };
+    
+    const rejectParentrequest = async(requestId) => {
+        if (useDummyData) {
+            // Remove the request from dummy data
+            setParentRequest(prev => prev.filter(req => req._id !== requestId));
+            handleParentClose();
+        } else {
+            const token = localStorage.getItem("token");
+            const rejectParent = await axios.delete(`http://localhost:4000/ldss/educator/rejectparent/${requestId}`,{
+                headers:{
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            console.log(rejectParent);
+            handleParentClose();
+            fetchParentsRequest();
+        }
+    };
+
     return (
         <>
-            <EducatorNavbar educatorDetails={educator} homebg={homebg} navigateToProfile={navigateToProfile}/>
-            <Container maxWidth="x-lg" sx={{ ...homebg, height: '100vh', position: "relative", overflow: "hidden", zIndex: 2 }}>
+            <EducatorNavbar educatorDetails={educatorDetails} homebg={homebg} navigateToProfile={navigateToProfile} />            <Container maxWidth="x-lg" sx={{ ...homebg, height: '100vh', position: "relative", overflow: "hidden", zIndex: 2 }}>
                 <Box component="img" src={background} alt='background'
                     sx={{ position: "absolute", top: "0", left: "0", width: "100%", height: "100%", objectFit: 'cover', zIndex: -1 }}
                 >
@@ -245,76 +303,138 @@ const EducatorHome = () => {
                     {parentRequest.length>0 && <Typography variant='h4' color='primary' sx={{ fontSize: "32px", fontWeight: "600", marginTop: "50px" }}>Parent's request</Typography>}
 
                 </Box>
-                <Box>
-                    {/* cards */}
-
-                    {parentRequest.length===0 ?
-                (<Typography textAlign={'center'} variant='h4' color='primary' sx={{ fontSize: "32px", fontWeight: "600", marginTop: "50px" }}>No  parents request found</Typography>) 
-                 :
-                (
-                <Grid display="flex" flexDirection="row" alignItems="center" justifyContent="center" container spacing={3} sx={{ marginTop: "100px" }}>
-                {parentRequest.map((parent, index) => (
-                    <Grid item xs={12} sm={12} md={6} lg={4} key={index}>
-                        <Card sx={{ maxWidth: "410px", height: "197px", borderRadius: "20px", padding: "20px" }}>
-                            <CardActionArea>
-                                <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
-                                    <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
-                                        <CardMedia
-                                            component="img"
-                                            sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
-                                            image={`http://localhost:4000/uploads/${parent.parentId.profilePic.filename}`}
-                                            alt="Profile"
-                                        />
-                                        <CardContent
-                                            sx={{
-                                                height: "150px",
+                    <Box sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+                        gap: 3,
+                        width: "100%",
+                        maxWidth: "1200px",
+                        px: 3
+                    }}>
+                        {parentRequest.filter(request=>request.status==="pending").length===0 ? 
+                            (<Typography sx={{ 
+                                fontSize: "32px", 
+                                gridColumn: "1 / -1",
+                                textAlign: "center"
+                            }} color='primary'>No request found</Typography>)
+                            :
+                            (parentRequest.filter(request => request.status === "pending")
+                            .map((request, index) => (   
+                                <Card key={index} sx={{ 
+                                    height: "205px", 
+                                    borderRadius: "20px", 
+                                    p: "20px",
+                                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                                    '&:hover': {
+                                        transform: "translateY(-5px)",
+                                        boxShadow: "0 4px 20px rgba(0,0,0,0.1)"
+                                    }
+                                }}>
+                                    <Box display="flex" alignItems="center" sx={{ height: "100%" }}>
+                                        <Box display="flex" sx={{ 
+                                            height: "100%", 
+                                            gap: "1px",
+                                            width: "100%"
+                                        }}>
+                                            <CardMedia
+                                                component="img"
+                                                sx={{ 
+                                                    height: "150px", 
+                                                    width: "150px", 
+                                                    borderRadius: "10px", 
+                                                    flexShrink: 0 
+                                                }}
+                                                image={useDummyData ? image68 : `http://localhost:4000/uploads/${request.parentId.profilePic.filename}`}
+                                                alt="Profile"
+                                            />
+                                            <Box sx={{
+                                                height: "100%",
                                                 overflow: "hidden",
-                                                padding: "10px",
+                                                pl: "10px",
                                                 display: "flex",
                                                 flexDirection: "column",
-                                                justifyContent: "space-between"
-                                            }}
-                                        >
-                                            <Box>
-                                                <Typography variant="h6" color='primary'>
-                                                    {parent.parentId?.name}
-                                                </Typography>
-                                                <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
-                                                    {parent.parentId.address}
-                                                </Typography>
-                                                <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
-                                                    {parent.parentId.phone}
-                                                </Typography>
-                                                <Box onClick={()=>fetchParentByRequestId(parent._id)}>View all</Box>
+                                                justifyContent: "space-between",
+                                                flexGrow: 1
+                                            }}>
+                                                <Box display="flex" flexDirection="column" gap={1}>
+                                                    <Typography variant="h6" color="primary">
+                                                        {request.parentId.name}
+                                                    </Typography>
+                                                    <Typography sx={{ 
+                                                        color: '#7F7F7F', 
+                                                        fontSize: "13px", 
+                                                        fontWeight: "500",
+                                                        whiteSpace: "nowrap",
+                                                        overflow: "hidden",
+                                                        textOverflow: "ellipsis",
+                                                        maxWidth: "100%" 
+                                                    }}>
+                                                        {request.parentId.address}
+                                                    </Typography>
+
+                                                    <Typography sx={{ 
+                                                        color: '#7F7F7F', 
+                                                        fontSize: "13px", 
+                                                        fontWeight: "500" 
+                                                    }}>
+                                                        {request.parentId.phone}
+                                                    </Typography>
+                                                    <Button 
+                                                        onClick={() => fetchParentByRequestId(request._id)}
+                                                        sx={{ 
+                                                            alignSelf: "flex-start",
+                                                            textTransform: "none",
+                                                            color: '#1976d2',
+                                                            p: 0,
+                                                            '&:hover': {
+                                                                backgroundColor: "transparent",
+                                                                textDecoration: "underline"
+                                                            }
+                                                        }}
+                                                    >
+                                                        View Child
+                                                    </Button>
+                                                </Box>
+                                                <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
+                                                    <Button 
+                                                        onClick={()=>rejectParentrequest(request._id)} 
+                                                        variant='outlined' 
+                                                        color='secondary' 
+                                                        sx={{ 
+                                                            borderRadius: "25px", 
+                                                            height: "35px", 
+                                                            width: '100px', 
+                                                            padding: '10px 35px', 
+                                                            mt: "10px",
+                                                            border: "1px solid #1967D2"
+                                                        }}
+                                                    >
+                                                        Reject
+                                                    </Button>
+                                                    <Button 
+                                                        onClick={() => acceptParentrequest(request._id)} 
+                                                        variant='contained' 
+                                                        color='secondary' 
+                                                        sx={{ 
+                                                            borderRadius: "25px", 
+                                                            height: "35px", 
+                                                            width: '100px', 
+                                                            padding: '10px 35px', 
+                                                            mt: "10px" 
+                                                        }}
+                                                    >
+                                                        Accept
+                                                    </Button>
+                                                </Box>
                                             </Box>
-
-
-
-                                            <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
-                                                <Button onClick={()=>rejectParentrequest(parent._id)} variant='text' color='secondary' sx={{ borderRadius: "25px", height: "35px", width: '100px', padding: '10px 35px',mt:"10px",border:"1px solid #1967D2" }}
-                                                    
-                                                >Reject</Button>
-                                                <Button onClick={()=>acceptParentrequest(parent._id)} variant='contained' color='secondary' sx={{ borderRadius: "25px", height: "35px", width: '100px', padding: '10px 35px',mt:"10px" }}
-                                                    
-                                                    >Accept</Button>
-
-                                            </Box>
-                                        </CardContent>
+                                        </Box>
                                     </Box>
-                                </Box>
-                            </CardActionArea>
-                        </Card>
-                    </Grid>
-                ))}
-            </Grid>)  
-                }
-
-                    
-
-
-                </Box>
+                                </Card>
+                            ))) 
+                        }
+                    </Box>
                 <Box display={'flex'} alignItems={'flex-end'} justifyContent={'flex-end'} sx={{ marginRight: "150px", paddingTop: "30px" }}>
-                    <Link to={`/educator/parentsrequest`}><Typography>view more <span><ArrowRightAltIcon /></span></Typography></Link>
+                    <Link to={`/educator/parentsrequest`}><Typography>View More <span><ArrowRightAltIcon /></span></Typography></Link>
                 </Box>
 
 
@@ -398,7 +518,6 @@ const EducatorHome = () => {
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            width: "900px",
                             bgcolor: 'background.paper',
                             border: '2px solid #000',
                             boxShadow: 24,

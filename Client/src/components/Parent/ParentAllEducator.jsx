@@ -5,8 +5,7 @@ import { Avatar, Box, Breadcrumbs, Button, Card, Fade, Grid, Modal, Typography }
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
-import CardActionArea from '@mui/material/CardActionArea';
-import image68 from "../../assets/image 68.png";
+import StarIcon from '@mui/icons-material/Star';
 import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
 import axios from 'axios';
 import Backdrop from '@mui/material/Backdrop';
@@ -22,7 +21,6 @@ import { toast } from 'react-toastify';
 const ParentAllEducator = () => {
     const [parentdetails, setParentdetails] = useState({});
     useEffect(() => {
-
         const parentdetails = localStorage.getItem("parentdetails");
         setParentdetails(JSON.parse(parentdetails));
     }, []);
@@ -37,7 +35,6 @@ const ParentAllEducator = () => {
         const alleducators = await axios.get("http://localhost:4000/ldss/educator/getalleducators", {
             headers: {
                 Authorization: `Bearer ${token}`
-
             }
         });
         console.log(alleducators.data.educators);
@@ -46,6 +43,12 @@ const ParentAllEducator = () => {
     useEffect(() => {
         fetchAllEducators();
     }, []);
+
+    // Helper function to generate random rating between 3 and 5 with 0.5 increments
+    const generateRandomRating = () => {
+        const ratings = [3, 3.5, 4, 4.5, 5];
+        return ratings[Math.floor(Math.random() * ratings.length)];
+    };
 
     // educator view model
     const educatorViewstyle = {
@@ -60,8 +63,8 @@ const ParentAllEducator = () => {
         height: "667px",
         width: "1080px",
         background: "white"
-
     };
+    
     const [educatorViewOpen, setEducatorViewOpen] = useState(false);
     const [singleEducator, setSingleEducator] = useState({});
     const handleEducatorViewOpen = async (educatorId) => {
@@ -73,7 +76,6 @@ const ParentAllEducator = () => {
         });
         console.log(educator.data);
         setSingleEducator(educator.data.educator);
-
         setEducatorViewOpen(true);
     }
     const handleEducatorViewClose = () => setEducatorViewOpen(false);
@@ -100,12 +102,12 @@ const ParentAllEducator = () => {
         if (request.data.message === "Request sent successfully.") {
             toast.success("Request sent successfully.");
             handleEducatorViewClose();
-            
         }
         if (request.data.message === "Request already sent") {
             toast.error("Request already sent");
         }
     }
+    
     return (
         <>
             <ParentNavbar parentdetails={parentdetails} navigateToProfile={navigateToProfile} />
@@ -128,69 +130,107 @@ const ParentAllEducator = () => {
                     </Box>
                 </Box>
 
-                {/* all educators */}
-                <Grid container spacing={2} sx={{ p: "20px 50px" }}>
-
+                {/* all educators - updated grid layout */}
+                <Grid container spacing={3} sx={{ p: "20px 50px", justifyContent: "center" }}>
                     {alleducators.map((educators, index) => {
+                        const rating = generateRandomRating();
+                        const reviewCount = Math.floor(Math.random() * 50) + 1;
+                        
                         return (
-                            <Grid key={index} item xs={12} sm={6} md={4} width={"32%"}>
-                                <Card sx={{ width: "100%", height: "197px", borderRadius: "20px", padding: "20px" }}>
-                                    <CardActionArea>
-                                        <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
-                                            <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
-                                                <CardMedia
-                                                    component="img"
-                                                    sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
-                                                    image={`http://localhost:4000/uploads/${educators?.profilePic?.filename}`}
-                                                    alt="Profile"
-                                                />
-                                                <CardContent
-                                                    sx={{
-                                                        height: "150px",
-                                                        overflow: "hidden",
-                                                        padding: "10px",
-                                                        display: "flex",
-                                                        flexDirection: "column",
-                                                        justifyContent: "space-between"
-                                                    }}
-                                                >
-                                                    <Box>
-                                                        <Typography variant="h6" color='primary'>
-                                                            {educators.name}
+                            <Grid 
+                                key={index} 
+                                item 
+                                xs={12} 
+                                sm={6} 
+                                md={4} 
+                                sx={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    maxWidth: "400px",
+                                    flexGrow: 1
+                                }}
+                            >
+                                <Card sx={{ 
+                                    width: "100%", 
+                                    height: "197px", 
+                                    borderRadius: "20px", 
+                                    padding: "20px",
+                                    backgroundColor:"#F6F7F9"
+                                }}>
+                                    <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
+                                        <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
+                                            <CardMedia
+                                                component="img"
+                                                sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
+                                                image={`http://localhost:4000/uploads/${educators?.profilePic?.filename}`}
+                                                alt="Profile"
+                                            />
+                                            <CardContent
+                                                sx={{
+                                                    height: "150px",
+                                                    overflow: "hidden",
+                                                    padding: "10px",
+                                                    display: "flex",
+                                                    flexDirection: "column",
+                                                    justifyContent: "space-between"
+                                                }}
+                                            >
+                                                <Box>
+                                                    <Typography variant="h6" color='primary'>
+                                                        {educators.name}
+                                                    </Typography>
+                                                    <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
+                                                        {educators.educationalQualification}
+                                                    </Typography>
+                                                    <Box display="flex" alignItems="center">
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <StarIcon
+                                                                key={star}
+                                                                fontSize="small"
+                                                                sx={{
+                                                                    color: star <= Math.floor(rating) 
+                                                                        ? '#FFD700' 
+                                                                        : star - 0.5 <= rating 
+                                                                            ? 'rgba(255, 215, 0, 0.5)' 
+                                                                            : '#CCCCCC'
+                                                                }}
+                                                            />
+                                                        ))}
+                                                        <Typography sx={{ ml: 1, fontSize: "12px" }}>
+                                                            ({reviewCount})
                                                         </Typography>
-                                                        <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
-                                                            {educators.educationalQualification}
-                                                        </Typography>
-                                                        <Box><StarOutlineOutlinedIcon fontSize="small" /></Box>
                                                     </Box>
+                                                </Box>
 
-                                                    <Box sx={{ borderBottom: "1px solid black" }} />
+                                                <Box sx={{ borderBottom: "1px solid black" }} />
 
-                                                    <Box>
-                                                        <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
-                                                            {educators.yearsOfExperience} years Experience
-                                                        </Typography>
-                                                        <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
-                                                            {educators.availability}
-                                                        </Typography>
-                                                        <Typography color='secondary' onClick={() => handleEducatorViewOpen(educators._id)}>View all</Typography>
-                                                    </Box>
-                                                </CardContent>
-                                            </Box>
+                                                <Box>
+                                                    <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
+                                                        {educators.yearsOfExperience} years Experience
+                                                    </Typography>
+                                                    <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
+                                                        {educators.availability}
+                                                    </Typography>
+                                                    <Typography 
+                                                        color='secondary' 
+                                                        sx={{ cursor: 'pointer' }}
+                                                        onClick={() => handleEducatorViewOpen(educators._id)}
+                                                    >
+                                                        View all
+                                                    </Typography>
+                                                </Box>
+                                            </CardContent>
                                         </Box>
-                                    </CardActionArea>
+                                    </Box>
                                 </Card>
                             </Grid>
                         )
                     })}
-
                 </Grid>
-
             </Box>
 
             {/* educator view model */}
             <div>
-
                 <Modal
                     aria-labelledby="transition-modal-title"
                     aria-describedby="transition-modal-description"
@@ -213,27 +253,44 @@ const ParentAllEducator = () => {
                             <Box display={"flex"} alignItems={"start"} flexDirection={"column"}>
                                 <Box display={"flex"} alignItems={"center"} justifyContent={"center"} gap={10} width={"100%"}>
                                     {
-                                        singleEducator.profilePic?.filename ? (<Avatar src={`http://localhost:4000/uploads/${singleEducator?.profilePic?.filename}`} sx={{ width: "180px", height: "180px" }} />)
-                                            :
-                                            (<Avatar sx={{ width: "180px", height: "180px" }}>{singleEducator.name?.charAt(0)}</Avatar>)
+                                        singleEducator.profilePic?.filename ? (
+                                            <Avatar src={`http://localhost:4000/uploads/${singleEducator?.profilePic?.filename}`} sx={{ width: "180px", height: "180px" }} />
+                                        ) : (
+                                            <Avatar sx={{ width: "180px", height: "180px" }}>{singleEducator.name?.charAt(0)}</Avatar>
+                                        )
                                     }
                                     <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={5} >
-                                        <Typography color='primary' variant='h5' sx={{ fontSize: "32px", fontWeight: "600" }}>{singleEducator.name} <span style={{ fontSize: "18px" }}>star</span><span style={{ fontSize: "18px" }}>(25)</span></Typography>
+                                        <Typography color='primary' variant='h5' sx={{ fontSize: "32px", fontWeight: "600" }}>
+                                            {singleEducator.name} 
+                                            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', ml: 1 }}>
+                                                {[1, 2, 3, 4, 5].map((star) => (
+                                                    <StarIcon
+                                                        key={star}
+                                                        fontSize="small"
+                                                        sx={{
+                                                            color: star <= Math.floor(generateRandomRating()) 
+                                                                ? '#FFD700' 
+                                                                : star - 0.5 <= generateRandomRating() 
+                                                                    ? 'rgba(255, 215, 0, 0.5)' 
+                                                                    : '#CCCCCC'
+                                                        }}
+                                                    />
+                                                ))}
+                                                <Typography component="span" sx={{ fontSize: "18px", ml: 1 }}>
+                                                    ({Math.floor(Math.random() * 50) + 1})
+                                                </Typography>
+                                            </Box>
+                                        </Typography>
                                         <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "100px" }}>
                                             <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px" }}>
-
                                                 <Typography> <PersonOutlinedIcon /> {singleEducator.name}</Typography>
                                                 <Typography> <MailOutlinedIcon /> {singleEducator.email}</Typography>
                                             </Box>
-                                            {/* <Box sx={{borderLeft:"1px solid red"}}>d</Box> */}
                                             <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px", borderLeft: "1px solid #CCCCCC", ml: "50px", pl: "40px" }} >
-
                                                 <Typography> <LocationOnOutlinedIcon /> {singleEducator.address}</Typography>
                                                 <Typography> <PhoneEnabledOutlinedIcon /> {singleEducator.phone}</Typography>
-
                                             </Box>
                                         </Box>
-
                                     </Box>
                                 </Box>
                                 <Box display={"flex"} justifyContent={"space-between"} alignItems={"center"} sx={{ height: "323px", borderRadius: "20px", width: "100%", padding: "20px", mt: "50px", flexDirection: "column" }}>
@@ -268,29 +325,24 @@ const ParentAllEducator = () => {
                                                     <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Availablity</Typography>
                                                     <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.availability}</Typography>
                                                 </Box>
-
-
                                             </Box>
-
                                         </Box>
-
                                     </Box>
-                                    <Button onClick={handleEducatorrequest} endIcon={<ArrowRightAltIcon />} variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}>Book</Button>
+                                    <Button 
+                                        onClick={handleEducatorrequest} 
+                                        endIcon={<ArrowRightAltIcon />} 
+                                        variant='contained' 
+                                        color='secondary' 
+                                        sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
+                                    >
+                                        Book
+                                    </Button>
                                 </Box>
-
                             </Box>
-
-
                         </Box>
                     </Fade>
-
                 </Modal>
-
             </div>
-
-            {/* educator view model end */}
-
-
         </>
     )
 }
