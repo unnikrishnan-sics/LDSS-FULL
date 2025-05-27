@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import TherapistNavbar from '../Navbar/TheraphistNavbar';
 import { Box, Breadcrumbs, Button, Grid, Stack, Typography } from '@mui/material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import axios from "axios";
 import { toast } from 'react-toastify';
+import TheraphistNavbar from '../Navbar/TheraphistNavbar';
+import { jwtDecode } from 'jwt-decode';
 
 const TherapistEditLearningPlan = () => {
     const activityContainerStyle = { 
@@ -22,7 +23,7 @@ const TherapistEditLearningPlan = () => {
     const { childId } = useParams();
     const navigate = useNavigate();
 
-    const [therapistDetails, settherapistDetails] = useState({});
+    const [therapistDetails, setTherapistDetails] = useState({});
     const [learningPlan, setLearningPlan] = useState({
         goal: 'Improve reading comprehension and math skills',
         planDuration: 3,
@@ -78,25 +79,63 @@ const TherapistEditLearningPlan = () => {
         ]
     });
 
-    // Commented out API call section - kept for reference
-    /*
-    const fetchLearningPlanOfStudent = async () => {
-        const token = localStorage.getItem("token");
-        const therapistId = (JSON.parse(localStorage.getItem("theraphistDetails")))._id;
-        const studentPlan = await axios.get(`http://localhost:4000/ldss/theraphist/getstudentplan/${therapistId}/${childId}`, {
-            headers: {
-                Authorization: `Bearer ${token}`
+    const fetchTherapistDetails = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error("No token found");
+                return;
             }
-        });
-        setLearningPlan(studentPlan.data.childPlan);
+            
+            const decoded = jwtDecode(token);
+            const response = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            
+            if (response.data && response.data.theraphist) {
+                const therapistData = response.data.theraphist;
+                setTherapistDetails(therapistData);
+                localStorage.setItem("theraphistDetails", JSON.stringify(therapistData));
+            }
+        } catch (error) {
+            console.error("Error fetching therapist:", error);
+            // Fallback to localStorage if API fails
+            const cachedData = localStorage.getItem("theraphistDetails");
+            if (cachedData) {
+                try {
+                    const parsed = JSON.parse(cachedData);
+                    if (parsed && parsed._id) {
+                        setTherapistDetails(parsed);
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing cached data:", parseError);
+                }
+            }
+        }
     };
-    */
+
+    const fetchLearningPlanOfStudent = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            const therapistId = therapistDetails._id || (JSON.parse(localStorage.getItem("theraphistDetails"))?._id);
+            if (!therapistId) return;
+
+            const studentPlan = await axios.get(`http://localhost:4000/ldss/theraphist/getstudentplan/${therapistId}/${childId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            setLearningPlan(studentPlan.data.childPlan);
+        } catch (error) {
+            console.error("Error fetching learning plan:", error);
+            toast.error("Failed to load learning plan");
+        }
+    };
 
     useEffect(() => {
-        const therapistDetails = localStorage.getItem("theraphistDetails");
-        if (therapistDetails) {
-            settherapistDetails(JSON.parse(therapistDetails));
-        }
+        fetchTherapistDetails();
         // Uncomment if using real API
         // fetchLearningPlanOfStudent();
     }, []);
@@ -134,8 +173,13 @@ const TherapistEditLearningPlan = () => {
     const handleSubmit = async () => {
         console.log("Submitted Learning Plan:", learningPlan);
         const token = localStorage.getItem('token');
-        const therapistId = (JSON.parse(localStorage.getItem("therapistDetails")))._id;
+        const therapistId = therapistDetails._id || (JSON.parse(localStorage.getItem("theraphistDetails")))?._id;
     
+        if (!therapistId) {
+            toast.error("Therapist ID not found");
+            return;
+        }
+
         try {
             const plan = await axios.put(
                 `http://localhost:4000/ldss/therapist/updateplan/${therapistId}/${childId}`, 
@@ -163,7 +207,7 @@ const TherapistEditLearningPlan = () => {
 
     return (
         <>
-            <TherapistNavbar therapistDetails={therapistDetails} navigateToProfile={navigateToProfile} />
+            <TheraphistNavbar theraphistdetails={therapistDetails} navigateToProfile={navigateToProfile} />
 
             <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "46px", background: "#DBE8FA" }}>
                 <Typography color='primary' textAlign="center" sx={{ fontSize: "18px", fontWeight: "600" }}>

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import TherapistNavbar from '../Navbar/TheraphistNavbar';
 import { Box, Breadcrumbs, Button, Grid, Stack, Typography } from '@mui/material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import AddIcon from '@mui/icons-material/Add';
 import axios from "axios";
 import { toast } from 'react-toastify';
+import TheraphistNavbar from '../Navbar/TheraphistNavbar';
 
 const TherapistAddLearningPlan = () => {
     const activityContainerStyle = { 
@@ -98,8 +98,10 @@ const TherapistAddLearningPlan = () => {
 
     return (
         <>
-            <TherapistNavbar therapistDetails={therapistDetails} navigateToProfile={navigateToProfile} />
-
+<TheraphistNavbar
+          theraphistdetails={therapistDetails}
+          navigateToProfile={navigateToProfile} 
+        />
             <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "46px", background: "#DBE8FA" }}>
                 <Typography color='primary' textAlign="center" sx={{ fontSize: "18px", fontWeight: "600" }}>
                     Learning Plan

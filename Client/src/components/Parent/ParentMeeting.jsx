@@ -19,7 +19,7 @@ const ParentMeeting = () => {
         navigate('/parent/profile');
     };
 
-    // Dummy data for meetings
+    // Updated dummy data with meet links
     const dummyMeetings = [
         {
             _id: "1",
@@ -31,10 +31,11 @@ const ParentMeeting = () => {
                 dateOfBirth: "12/05/2015",
                 gender: "Male"
             },
-            meetingTitle: "Parent-Teacher Conference",
+            meetingTitle: "Parent-Therapist Conference",
             date: "15/06/2023",
             startTime: "10:00 AM",
-            endTime: "10:30 AM"
+            endTime: "10:30 AM",
+            meetLink: "https://meet.google.com/abc-def-ghi" // Added meet link
         },
         {
             _id: "2",
@@ -49,7 +50,8 @@ const ParentMeeting = () => {
             meetingTitle: "Progress Review",
             date: "18/06/2023",
             startTime: "02:00 PM",
-            endTime: "02:45 PM"
+            endTime: "02:45 PM",
+            meetLink: "https://meet.google.com/jkl-mno-pqr" // Added meet link
         },
         {
             _id: "3",
@@ -64,7 +66,8 @@ const ParentMeeting = () => {
             meetingTitle: "Behavior Discussion",
             date: "20/06/2023",
             startTime: "11:30 AM",
-            endTime: "12:15 PM"
+            endTime: "12:15 PM",
+            meetLink: "https://meet.google.com/stu-vwx-yza" // Added meet link
         },
         {
             _id: "4",
@@ -79,7 +82,8 @@ const ParentMeeting = () => {
             meetingTitle: "Annual Review",
             date: "22/06/2023",
             startTime: "09:00 AM",
-            endTime: "09:45 AM"
+            endTime: "09:45 AM",
+            meetLink: "https://meet.google.com/123-456-789" // Added meet link
         },
         {
             _id: "5",
@@ -94,12 +98,23 @@ const ParentMeeting = () => {
             meetingTitle: "Special Needs Discussion",
             date: "25/06/2023",
             startTime: "03:00 PM",
-            endTime: "03:30 PM"
+            endTime: "03:30 PM",
+            meetLink: "https://meet.google.com/xyz-uvw-rst" // Added meet link
         }
     ];
 
     const [meetings, setMeetings] = useState(dummyMeetings);
     
+    // Function to handle joining a meeting
+    const handleJoinMeeting = (meetLink) => {
+        if (meetLink) {
+            // Open the meeting link in a new tab
+            window.open(meetLink, '_blank', 'noopener,noreferrer');
+        } else {
+            alert('No meeting link available for this meeting');
+        }
+    };
+
     // Actual API call commented out and replaced with dummy data
     /* 
     const fetchMeeting = async () => {
@@ -198,7 +213,20 @@ const ParentMeeting = () => {
                                         </Box>
                                     </Box>
                                 </Box>
-                                <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '150px', padding: '10px 35px' }}>Join</Button>
+                                <Button 
+                                    variant='contained' 
+                                    color='secondary' 
+                                    sx={{ 
+                                        borderRadius: "25px", 
+                                        marginTop: "20px", 
+                                        height: "40px", 
+                                        width: '150px', 
+                                        padding: '10px 35px' 
+                                    }}
+                                    onClick={() => handleJoinMeeting(meeting.meetLink)}
+                                >
+                                    Join
+                                </Button>
                             </Box>
                         )
                     })}

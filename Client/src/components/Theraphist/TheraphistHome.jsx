@@ -37,7 +37,6 @@ const TheraphistHome = () => {
     }
 
     const [therapistDetails, setTherapistDetails] = useState({});
-    const tdetails=localStorage.getItem("theraphistDetails");
     const [useDummyData, setUseDummyData] = useState(true);
     const navigate = useNavigate();
 
@@ -104,7 +103,6 @@ const TheraphistHome = () => {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            
             
             if (response.data && response.data.theraphist) {
                 const therapistData = response.data.theraphist;
@@ -242,7 +240,6 @@ const TheraphistHome = () => {
                     headers: { Authorization: `Bearer ${token}` }
                 }
             );
-            
             setParentRequest(prev => prev.filter(req => req._id !== requestId));
             alert("Request accepted successfully!");
         } catch (error) {
@@ -278,7 +275,7 @@ const TheraphistHome = () => {
 
     return (
         <>
-<TheraphistNavbar theraphistDetails={therapistDetails} navigateToProfile={navigateToProfile} homebg={homebg} />
+            <TheraphistNavbar theraphistdetails={therapistDetails} navigateToProfile={navigateToProfile} homebg={homebg} />
             <Container maxWidth="x-lg" sx={{ ...homebg, height: '100vh', position: "relative", overflow: "hidden", zIndex: 2 }}>
                 <Box component="img" src={background} alt='background'
                     sx={{ position: "absolute", top: "0", left: "0", width: "100%", height: "100%", objectFit: 'cover', zIndex: -1 }}

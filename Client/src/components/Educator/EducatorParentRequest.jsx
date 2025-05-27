@@ -11,7 +11,7 @@ import Backdrop from '@mui/material/Backdrop';
 
 const EducatorParentRequest = () => {
     const [useDummyData, setUseDummyData] = useState(true);
-    const [educator, setEducator] = useState("");
+    const [educator, setEducator] = useState({});
     
     // Dummy data
     const dummyEducator = {
@@ -69,25 +69,34 @@ const EducatorParentRequest = () => {
     ];
 
     const fetchEducator = async () => {
-        if (useDummyData) {
+        if (!useDummyData) {
             localStorage.setItem("educatorDetails", JSON.stringify(dummyEducator));
             setEducator(dummyEducator);
         } else {
-            const token = localStorage.getItem('token');
-            const decoded = jwtDecode(token);
-            const educator = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${decoded.id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            const educatorsDetails = localStorage.setItem("educatorDetails",
-                JSON.stringify(educator.data.educator));
-            setEducator(educator.data.educator);
-            console.log(educator);
+            try {
+                const token = localStorage.getItem('token');
+                const decoded = jwtDecode(token);
+                const educator = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${decoded.id}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+                localStorage.setItem("educatorDetails", JSON.stringify(educator.data.educator));
+                setEducator(educator.data.educator);
+            } catch (error) {
+                console.error("Error fetching educator:", error);
+            }
         }
     }
 
     useEffect(() => {
+        // First try to load from localStorage
+        const storedEducator = localStorage.getItem("educatorDetails");
+        if (storedEducator) {
+            setEducator(JSON.parse(storedEducator));
+        }
+        
+        // Then fetch fresh data
         fetchEducator();
         fetchParentsRequest();
     }, []);
@@ -102,57 +111,64 @@ const EducatorParentRequest = () => {
         if (useDummyData) {
             setParentRequest(dummyParentRequests);
         } else {
-            const token = localStorage.getItem("token");
-            const educatorId = JSON.parse(localStorage.getItem("educatorDetails"))._id;
-            const request = await axios.get(`http://localhost:4000/ldss/educator/parentsrequest/${educatorId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            setParentRequest(request.data.request);
-            console.log(request.data.request);
+            try {
+                const token = localStorage.getItem("token");
+                const educatorId = JSON.parse(localStorage.getItem("educatorDetails"))._id;
+                const request = await axios.get(`http://localhost:4000/ldss/educator/parentsrequest/${educatorId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                setParentRequest(request.data.request);
+            } catch (error) {
+                console.error("Error fetching parent requests:", error);
+            }
         }
     };
     
     const acceptParentrequest = async (requestId) => {
         if (useDummyData) {
-            // Update the status in the dummy data
             setParentRequest(prev => prev.map(req => 
                 req._id === requestId ? {...req, status: "accepted"} : req
             ));
             handleParentClose();
         } else {
-            const token = localStorage.getItem("token");
-            const requestaccepted = await axios.put(`http://localhost:4000/ldss/educator/acceptsrequest/${requestId}`,{}, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            console.log(requestaccepted);
-            handleParentClose();
-            fetchParentsRequest();
+            try {
+                const token = localStorage.getItem("token");
+                await axios.put(`http://localhost:4000/ldss/educator/acceptsrequest/${requestId}`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                handleParentClose();
+                fetchParentsRequest();
+            } catch (error) {
+                console.error("Error accepting request:", error);
+            }
         }
     };
     
     const rejectParentrequest = async(requestId) => {
         if (useDummyData) {
-            // Remove the request from dummy data
             setParentRequest(prev => prev.filter(req => req._id !== requestId));
             handleParentClose();
         } else {
-            const token = localStorage.getItem("token");
-            const rejectParent = await axios.delete(`http://localhost:4000/ldss/educator/rejectparent/${requestId}`,{
-                headers:{
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            console.log(rejectParent);
-            handleParentClose();
-            fetchParentsRequest();
+            try {
+                const token = localStorage.getItem("token");
+                await axios.delete(`http://localhost:4000/ldss/educator/rejectparent/${requestId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                handleParentClose();
+                fetchParentsRequest();
+            } catch (error) {
+                console.error("Error rejecting request:", error);
+            }
         }
     };
     
-    // model
+    // Modal state
     const [requestDetail, setRequestDetail] = useState({});
     const [openParent, setOpenParent] = useState(false);
     const handleParentOpen = () => setOpenParent(true);
@@ -166,15 +182,18 @@ const EducatorParentRequest = () => {
                 handleParentOpen();
             }
         } else {
-            const token = localStorage.getItem("token");
-            const parent = await axios.get(`http://localhost:4000/ldss/educator/viewrequestedparent/${requestId}`,{
-                headers:{
-                    Authorization: `Bearer ${token}`
-                }
-            });
-            console.log(parent);
-            setRequestDetail(parent.data.viewRequest);
-            handleParentOpen();
+            try {
+                const token = localStorage.getItem("token");
+                const parent = await axios.get(`http://localhost:4000/ldss/educator/viewrequestedparent/${requestId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                setRequestDetail(parent.data.viewRequest);
+                handleParentOpen();
+            } catch (error) {
+                console.error("Error fetching parent details:", error);
+            }
         }
     }
     
@@ -215,7 +234,7 @@ const EducatorParentRequest = () => {
                         maxWidth: "1200px",
                         px: 3
                     }}>
-                        {parentRequest.filter(request=>request.status==="pending").length===0 ? 
+                        {parentRequest.filter(request => request.status === "pending").length === 0 ? 
                             (<Typography sx={{ 
                                 fontSize: "32px", 
                                 gridColumn: "1 / -1",
@@ -301,7 +320,7 @@ const EducatorParentRequest = () => {
                                                 </Box>
                                                 <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
                                                     <Button 
-                                                        onClick={()=>rejectParentrequest(request._id)} 
+                                                        onClick={() => rejectParentrequest(request._id)} 
                                                         variant='outlined' 
                                                         color='secondary' 
                                                         sx={{ 

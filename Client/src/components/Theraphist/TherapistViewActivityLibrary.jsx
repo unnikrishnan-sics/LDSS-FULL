@@ -15,11 +15,12 @@ import {
 } from '@mui/material';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import EducatorNavbar from '../Navbar/EducatorNavbar';
-import LirbraryCardImage from '../../assets/librarycard.png';
 import TheraphistNavbar from '../Navbar/TheraphistNavbar';
+import LirbraryCardImage from '../../assets/librarycard.png';
+import { jwtDecode } from 'jwt-decode';
+import axios from 'axios';
 
-// ✅ Move dummy data outside component
+// Move dummy data outside component
 const activityCards = [
   {
     id: 1,
@@ -59,7 +60,6 @@ const activityCards = [
   }
 ];
 
-
 const StyledTextField = styled(TextField)({
   '& .MuiOutlinedInput-root': {
     borderRadius: '30px',
@@ -70,54 +70,103 @@ const StyledTextField = styled(TextField)({
 const TherapistViewActivityLibrary = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [therapistDetails, setTherapistDetails] = useState({});
+  const { id } = useParams();
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
 
   const filteredActivities = activityCards.filter((card) =>
     card.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     card.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
     card.category.toLowerCase().includes(searchTerm.toLowerCase())
-    
   );
-    const [therapistDetails, setTherapistDetails] = useState({});
-      const { id } = useParams();
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
 
-    const fetchTherapist = async () => {
-        const token = localStorage.getItem('token');
-        const decoded = jwtDecode(token);
-        const response = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        const therapistData = response.data.therapist;
-        localStorage.setItem("therapistDetails", JSON.stringify(therapistData));
-        setTherapistDetails(therapistData);
-    };
-useEffect(() => {
-      const storedTherapist = localStorage.getItem("therapistDetails");
-        if (storedTherapist) {
-            setTherapistDetails(JSON.parse(storedTherapist));
+  const fetchTherapist = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
+      
+      const decoded = jwtDecode(token);
+      
+      const response = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (response.data && response.data.theraphist) {
+        const therapistData = response.data.theraphist;
+        
+        // Validate before storing
+        if (therapistData && therapistData._id) {
+          try {
+            localStorage.setItem("theraphistDetails", JSON.stringify(therapistData));
+            console.log("Successfully stored therapist details");
+            setTherapistDetails(therapistData);
+          } catch (storageError) {
+            console.error("Failed to store in localStorage:", storageError);
+            // Fallback to state only
+            setTherapistDetails(therapistData);
+          }
+        } else {
+          console.error("Invalid therapist data structure");
         }
-        fetchTherapist();
-
-    const chatId = parseInt(id);
-    if (chatId && dummyChats[chatId]) {
-      setMessages(dummyChats[chatId]);
-    } else {
-      setMessages([]);
+      }
+    } catch (error) {
+      console.error("Error fetching therapist:", error);
+      // If API fails, check if we have cached data
+      const cachedData = localStorage.getItem("theraphistDetails");
+      if (cachedData) {
+        try {
+          const parsed = JSON.parse(cachedData);
+          if (parsed && parsed._id) {
+            console.log("Using cached therapist data");
+            setTherapistDetails(parsed);
+          }
+        } catch (parseError) {
+          console.error("Error parsing cached data:", parseError);
+        }
+      }
     }
-  }, [id]);
+  };
+
+  useEffect(() => {
+    const storedTherapist = localStorage.getItem("theraphistDetails");
+    if (storedTherapist) {
+      try {
+        const parsedTherapist = JSON.parse(storedTherapist);
+        if (parsedTherapist && parsedTherapist._id) {
+          setTherapistDetails(parsedTherapist);
+        }
+      } catch (error) {
+        console.error("Error parsing stored therapist:", error);
+        localStorage.removeItem("theraphistDetails");
+      }
+    }
+    fetchTherapist();
+  }, []);
+
+  const navigateToProfile = () => {
+    navigate('/theraphist/profile');
+  };
 
   return (
     <Box>
       {/* Main Content */}
       <Box>
         {/* Header */}
-      <TheraphistNavbar theraphistDetails={therapistDetails} navigateToProfile={() => navigate('/theraphist/profile')} />
-<Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "46px", background: "#DBE8FA" }}>
-                    <Typography color='primary' textAlign="center" sx={{ fontSize: "18px", fontWeight: "600" }}>All Students</Typography>
-                </Box>
+        <TheraphistNavbar 
+          theraphistdetails={therapistDetails}
+          navigateToProfile={navigateToProfile} 
+        />
+        
+        <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "46px", background: "#DBE8FA" }}>
+          <Typography color='primary' textAlign="center" sx={{ fontSize: "18px", fontWeight: "600" }}>Activity Library</Typography>
+        </Box>
+        
         {/* Content Area */}
         <Box sx={{ background: "white", borderRadius: "8px", p: 3 }}>
           {/* Search and Breadcrumb */}
@@ -128,7 +177,7 @@ useEffect(() => {
                   Home
                 </Link>
                 <Typography color='primary' sx={{ fontSize: "12px", fontWeight: "500" }}>
-                  Meetings
+                  Activity Library
                 </Typography>
               </Breadcrumbs>
             </Box>
@@ -214,14 +263,11 @@ useEffect(() => {
 
                     <Typography variant="body2" sx={{
                       color: "#384371",
-                      
                       fontSize: "13px"
                     }}>
                       {card.category}
                     </Typography>
                   </CardContent>
-
-                  
                 </Card>
               </Grid>
             ))}

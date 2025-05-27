@@ -73,7 +73,7 @@ const TherapistChatSideBar = () => {
           {filteredParents.map((parent) => (
             <Link 
               key={parent.id} 
-              to={`/educator/chat/${parent.id}`} 
+              to={`/therapist/chat/${parent.id}`} 
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <Box 
@@ -142,7 +142,7 @@ const TherapistChatSideBar = () => {
           {filteredEducators.map((therapist) => (
             <Link 
               key={therapist.id} 
-              to={`/educator/chat/${therapist.id}`} 
+              to={`/therapist/chat/${therapist.id}`} 
               style={{ textDecoration: 'none', color: 'inherit' }}
             >
               <Box 

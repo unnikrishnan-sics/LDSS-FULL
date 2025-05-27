@@ -31,29 +31,63 @@ const TherapistAllStudents = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const [theraphist, setTheraphist] = useState("");
-    const fetchTheraphist = async () => {
-        const token = localStorage.getItem('token');
-        const decoded = jwtDecode(token);
-        const theraphist = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        const theraphistDetails = localStorage.setItem("theraphistDetails",
-            JSON.stringify(theraphist.data.theraphist));
-        setTheraphist(theraphist.data.theraphist);
-        // console.log(parent.data.parent.name);
-        // console.log(parent.data.parent.profilePic);
-        console.log(theraphist);
+    // Initialize therapist details
+    const fetchTherapist = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.error("No token found");
+                return;
+            }
+            
+            const decoded = jwtDecode(token);
+            
+            const response = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            
+            if (response.data && response.data.theraphist) {
+                const therapistData = response.data.theraphist;
+                
+                // Validate before storing
+                if (therapistData && therapistData._id) {
+                    try {
+                        localStorage.setItem("theraphistDetails", JSON.stringify(therapistData));
+                        setTherapistDetails(therapistData);
+                    } catch (storageError) {
+                        console.error("Failed to store in localStorage:", storageError);
+                        // Fallback to state only
+                        setTherapistDetails(therapistData);
+                    }
+                } else {
+                    console.error("Invalid therapist data structure");
+                }
+            }
+        } catch (error) {
+            console.error("Error fetching therapist:", error);
+            // If API fails, check if we have cached data
+            const cachedData = localStorage.getItem("theraphistDetails");
+            if (cachedData) {
+                try {
+                    const parsed = JSON.parse(cachedData);
+                    if (parsed && parsed._id) {
+                        setTherapistDetails(parsed);
+                    }
+                } catch (parseError) {
+                    console.error("Error parsing cached data:", parseError);
+                }
+            }
+        }
+    };
 
-    }
     useEffect(() => {
         const storedTherapist = localStorage.getItem("theraphistDetails");
         if (storedTherapist) {
             setTherapistDetails(JSON.parse(storedTherapist));
         }
-        fetchTheraphist();
+        fetchTherapist();
         fetchAllChildren();
     }, []);
 
@@ -103,7 +137,7 @@ const TherapistAllStudents = () => {
                 setAllChildren(dummyChildren);
             } else {
                 const token = localStorage.getItem("token");
-                const therapistId = JSON.parse(localStorage.getItem("therapistDetails"))?._id;
+                const therapistId = therapistDetails._id;
                 const response = await axios.get(
                     `http://localhost:4000/ldss/therapist/getchildrenofallapprovedparents/${therapistId}`,
                     {
@@ -161,7 +195,7 @@ const TherapistAllStudents = () => {
 
     return (
         <>
-      <TherapistNavbar theraphistdetails={theraphist} navigateToProfile={navigateToProfile}/>
+            <TherapistNavbar theraphistdetails={therapistDetails} navigateToProfile={navigateToProfile}/>
             
             <Box sx={{ background: "white" }}>
                 {/* Header Section */}

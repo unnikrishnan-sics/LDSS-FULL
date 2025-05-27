@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import TherapistChatSideBar from './Common/TherapistChatSideBar';
 import {
   Box, Typography, Avatar, TextField, IconButton, InputAdornment,
   Divider
@@ -14,6 +13,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import TheraphistNavbar from '../Navbar/TheraphistNavbar';
 import EmailIcon from '@mui/icons-material/Email';
+import TherapistChatSideBar from './Common/TherapistChatSideBar';
 
 // Date formatting utility function
 const formatMessageDate = (dateString) => {
@@ -74,105 +74,7 @@ const dummyChats = {
       date: new Date(Date.now() - 1209600000).toISOString().split('T')[0] 
     }
   ],
-  2: [
-    { 
-      sender: 'them', 
-      text: 'Hello! I\'m Ethan\'s parent Robert Smith. How can I help?', 
-      name: 'Robert Smith', 
-      time: '10:15 AM', 
-      date: new Date(Date.now() - 172800000).toISOString().split('T')[0] 
-    }
-  ],
-  3: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is therapist Emma. I wanted to update you about Olivia\'s therapy progress.', 
-      name: 'Emma Wilson', 
-      time: '2:45 PM', 
-      date: new Date(Date.now() - 604800000).toISOString().split('T')[0] 
-    }
-  ],
-  5: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is Sophia\'s parent Jane.', 
-      name: 'Jane Doe', 
-      time: '11:00 AM', 
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0] 
-    }
-  ],
-  6: [
-    { 
-      sender: 'them', 
-      text: 'Hi there, this is Ethan\'s parent Robert.', 
-      name: 'Robert Smith', 
-      time: '9:30 AM', 
-      date: new Date(Date.now() - 259200000).toISOString().split('T')[0] 
-    }
-  ],
-  9: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is John\'s parent David.', 
-      name: 'David Connor', 
-      time: '3:15 PM', 
-      date: new Date(Date.now() - 604800000).toISOString().split('T')[0] 
-    }
-  ],
-  10: [
-    { 
-      sender: 'them', 
-      text: 'Good morning, this is Jane\'s parent.', 
-      name: 'Jane Doe', 
-      time: '8:45 AM', 
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0] 
-    }
-  ],
-  4: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is therapist Noah. I wanted to discuss Liam\'s progress.', 
-      name: 'Noah Brown', 
-      time: '4:30 PM', 
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0] 
-    }
-  ],
-  7: [
-    { 
-      sender: 'them', 
-      text: 'Hi there, this is Emma Wilson following up about Olivia\'s therapy.', 
-      name: 'Emma Wilson', 
-      time: '1:15 PM', 
-      date: new Date(Date.now() - 172800000).toISOString().split('T')[0] 
-    }
-  ],
-  8: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is Noah Brown checking in about Liam\'s therapy plan.', 
-      name: 'Noah Brown', 
-      time: '10:00 AM', 
-      date: new Date(Date.now() - 259200000).toISOString().split('T')[0] 
-    }
-  ],
-  11: [
-    { 
-      sender: 'them', 
-      text: 'Good afternoon, this is Lisa Ray from the counseling center.', 
-      name: 'Lisa Ray', 
-      time: '2:00 PM', 
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0] 
-    }
-  ],
-  12: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is Mike Taylor from the occupational therapy department.', 
-      name: 'Mike Taylor', 
-      time: '11:30 AM', 
-      date: new Date(Date.now() - 604800000).toISOString().split('T')[0] 
-    }
-  ]
+  // ... (keep all your existing dummy chat data)
 };
 
 const TherapistChat = () => {
@@ -180,31 +82,59 @@ const TherapistChat = () => {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
-  const [therapist, setTherapist] = useState({});
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [therapistDetails, setTherapistDetails] = useState({});
 
   const fetchTherapist = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("No token found");
+        return;
+      }
+      
       const decoded = jwtDecode(token);
+      
       const response = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      const therapistData = response.data.therapist;
-      localStorage.setItem("therapistDetails", JSON.stringify(therapistData));
-      setTherapist(therapistData);
-      setTherapistDetails(therapistData);
+      
+      if (response.data && response.data.theraphist) {
+        const therapistData = response.data.theraphist;
+        
+        if (therapistData && therapistData._id) {
+          try {
+            localStorage.setItem("theraphistDetails", JSON.stringify(therapistData));
+            setTherapistDetails(therapistData);
+          } catch (storageError) {
+            console.error("Failed to store in localStorage:", storageError);
+            setTherapistDetails(therapistData);
+          }
+        } else {
+          console.error("Invalid therapist data structure");
+        }
+      }
     } catch (error) {
       console.error("Error fetching therapist:", error);
+      const cachedData = localStorage.getItem("theraphistDetails");
+      if (cachedData) {
+        try {
+          const parsed = JSON.parse(cachedData);
+          if (parsed && parsed._id) {
+            setTherapistDetails(parsed);
+          }
+        } catch (parseError) {
+          console.error("Error parsing cached data:", parseError);
+        }
+      }
     }
   };
 
   useEffect(() => {
-    const storedTherapist = localStorage.getItem("therapistDetails");
+    const storedTherapist = localStorage.getItem("theraphistDetails");
     if (storedTherapist) {
       setTherapistDetails(JSON.parse(storedTherapist));
     }
@@ -243,7 +173,10 @@ const TherapistChat = () => {
 
   return (
     <>
-      <TheraphistNavbar therapistDetails={therapistDetails} navigateToProfile={() => navigate('/theraphist/profile')} />
+      <TheraphistNavbar 
+        theraphistdetails={therapistDetails} 
+        navigateToProfile={() => navigate('/theraphist/profile')} 
+      />
       <Box sx={{ 
         background: '#F6F7F9', 
         width: "100%", 
@@ -391,7 +324,6 @@ const TherapistChat = () => {
                           alignItems: 'flex-end',
                           gap: 1
                         }}>
-                          {/* Avatar - only shown for 'them' messages */}
                           {msg.sender === 'them' && (
                             <Avatar sx={{
                               width: 32,
@@ -403,7 +335,6 @@ const TherapistChat = () => {
                             </Avatar>
                           )}
 
-                          {/* Message with timestamp */}
                           <Box sx={{
                             display: 'flex',
                             flexDirection: 'column',

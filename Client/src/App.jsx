@@ -61,7 +61,7 @@ import EducatorViewActivityLibrary from './components/Educator/EducatorViewActiv
 import TherapistAllStudents from './components/Theraphist/TherapistAllStudents';
 import TherapistAddLearningPlan from './components/Theraphist/TherapistAddLearningPlan';
 import TherapistEditLearningPlan from './components/Theraphist/TherapistEditLearningPlan';
-import TherapistMeeting from './components/Theraphist/THerapistMeeting';
+import TherapistMeeting from './components/Theraphist/TherapistMeeting';
 import TherapistViewLearningPlan from './components/Theraphist/TherapistViewLearningPlan';
 import TherapistAcceptedParents from './components/Theraphist/TherapistAcceptedParents';
 import TherapistParentRequest from './components/Theraphist/TherapistParentRequest';
