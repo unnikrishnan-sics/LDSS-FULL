@@ -124,7 +124,6 @@ const AdminViewParent = () => {
                                                 <TableCell align="left" sx={{ color: "#1967D2" }}>Phone Number</TableCell>
                                                 <TableCell align="left" sx={{ color: "#1967D2" }}>Email Id</TableCell>
                                                 <TableCell align="left" sx={{ color: "#1967D2" }} >Address</TableCell>
-                                                <TableCell align="left" sx={{ color: "#1967D2" }}>Action</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -153,7 +152,6 @@ const AdminViewParent = () => {
                                                     <TableCell align="left">{parent.phone}</TableCell>
                                                     <TableCell align="left">{parent.email}</TableCell>
                                                     <TableCell align="left">{parent.address}</TableCell>
-                                                    <TableCell align="left">{<VisibilityIcon color='secondary' onClick={() => fetchParentDetail(parent._id)} />}</TableCell>
                                                 </TableRow>
                                             ))}
                                         </TableBody>

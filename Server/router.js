@@ -28,6 +28,13 @@ router.post("/admin/educator/accept/:id", protectedRoute.protectedRoute, educato
 router.delete("/admin/educator/reject/:id", protectedRoute.protectedRoute, educatorController.adminDeleteEducator);
 router.post("/admin/theraphist/accept/:id", protectedRoute.protectedRoute, theraphistController.theraphistRequestAccept);
 router.delete("/admin/theraphist/reject/:id", protectedRoute.protectedRoute, theraphistController.adminDeleteTheraphist);
+router.put(
+  '/admin/activities/:id',
+  activityController.upload.single('activityPhoto'),
+  activityController.editActivity
+);
+router.get('/admin/activity/:id',  activityController.getActivityById);
+
 
 /* ===================== PARENT ===================== */
 router.post("/parent/registration", parentController.uploadProfilePic, parentController.parentRegister);
@@ -94,13 +101,14 @@ router.get("/parent/conversations/:parentId", protectedRoute.protectedRoute, cha
 
 /* ===================== ACTIVITY ===================== */
 router.post(
-  '/ldss/addactivity',
+  '/addactivity',
   protectedRoute.protectedRoute,
   activityController.upload.single('activityPhoto'), 
   activityController.addActivity
 );
-router.get('/ldss/activity', protectedRoute.protectedRoute, activityController.getAllActivities);
-router.get('/ldss/activity/parent/:parentId', protectedRoute.protectedRoute, activityController.getActivitiesByParent);
-router.patch('/ldss/activity/complete/:activityId', protectedRoute.protectedRoute, activityController.markActivityComplete);
+router.get('/activity/getallactivities', protectedRoute.protectedRoute, activityController.getAllActivities);
+router.get('/activity/parent/:parentId', protectedRoute.protectedRoute, activityController.getActivitiesByParent);
+router.patch('/activity/complete/:activityId', protectedRoute.protectedRoute, activityController.markActivityComplete);
+
 
 module.exports = router;

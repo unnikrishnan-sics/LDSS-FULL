@@ -117,7 +117,7 @@ const App = () => {
           <Route path='/admin/viewparent' element={<AdminViewParent />} />
           <Route path='/admin/addactivity' element={<AddActivity />} />
           <Route path='/admin/viewactivitylibrary' element={<AdminViewActivityLibrary/>}/>
-          <Route path='/admin/editactivity' element={<AdminEditActivity/>}/>
+<Route path="/admin/editactivity/:id" element={<AdminEditActivity />} />
 
           {/* educator */}
           <Route path='/educator/registration' element={<EducatorRegistration />} />

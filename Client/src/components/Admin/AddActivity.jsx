@@ -79,10 +79,6 @@ if (file) {
   formData.append('activityPhoto', file);
 }
 
-    if (file) {
-      formData.append('activityPhoto', file);
-    }
-
     try {
       setStatus({ submitting: true, success: null, message: '' });
 
