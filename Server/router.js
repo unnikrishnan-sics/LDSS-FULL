@@ -18,7 +18,7 @@ const learningPlanController = require("./Controller/learningController");
 const meetingController = require("./Controller/meetingController");
 const chatController = require("./Controller/chatController");
 const activityController = require('./Controller/activityController');
-
+const meetController = require('./Controller/meetingController')
 // File Upload Config
 const upload = multer({ dest: "uploads/" });
 
@@ -28,14 +28,14 @@ router.post("/admin/educator/accept/:id", protectedRoute.protectedRoute, educato
 router.delete("/admin/educator/reject/:id", protectedRoute.protectedRoute, educatorController.adminDeleteEducator);
 router.post("/admin/theraphist/accept/:id", protectedRoute.protectedRoute, theraphistController.theraphistRequestAccept);
 router.delete("/admin/theraphist/reject/:id", protectedRoute.protectedRoute, theraphistController.adminDeleteTheraphist);
+
+
 router.put(
   '/admin/activities/:id',
   activityController.upload.single('activityPhoto'),
   activityController.editActivity
 );
 router.get('/admin/activity/:id',  activityController.getActivityById);
-
-
 /* ===================== PARENT ===================== */
 router.post("/parent/registration", parentController.uploadProfilePic, parentController.parentRegister);
 router.post("/parent/login", parentController.parentLogin);
@@ -51,9 +51,15 @@ router.get("/parent/getallchild", protectedRoute.protectedRoute, childController
 router.get("/parent/getallchildofparent/:id", protectedRoute.protectedRoute, childController.getAllChildOfParent);
 router.delete("/parent/deletechild/:id/:childId", protectedRoute.protectedRoute, childController.deleteChildByParent);
 router.get("/parent/getacceptededucator/:id", protectedRoute.protectedRoute, parentController.getAcceptedEducator);
+router.get("/parent/getacceptedtherapist/:id", protectedRoute.protectedRoute, parentController.getAcceptedTherapists);
 router.put("/parent/updatelearningplan/:childId/:educatorId", protectedRoute.protectedRoute, learningPlanController.updateLearningPlanByParent);
-router.put("/parent/complete-activity/:childId/:weekIndex/:activityIndex", protectedRoute.protectedRoute, learningPlanController.markActivityCompleted);
+router.put("/parent/updatelearningplantherapist/:childId/:therapistId", protectedRoute.protectedRoute, learningPlanController.updateLearningPlanByParentTherapist);
+router.put("/parent/completeactivity/:childId/:weekIndex/:activityIndex", protectedRoute.protectedRoute, learningPlanController.markActivityCompleted);
 router.get("/parent/getallmeeting/:id", protectedRoute.protectedRoute, meetingController.viewAllMeetingsOfParent);
+router.get("/parent/getstudentplan/:educatorId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleStudent);
+router.get("/parent/getstudentplantherapist/:therapistId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleTherapist);
+
+
 
 /* ===================== EDUCATOR ===================== */
 router.post("/educator/registration", educatorController.uploadProfilePic, educatorController.educatorRegister);
@@ -71,9 +77,10 @@ router.get("/educator/viewrequestedparent/:id", protectedRoute.protectedRoute, e
 router.get("/educator/getapprovedparents/:id", protectedRoute.protectedRoute, educatorController.viewAllApprovedParentsByEducator);
 router.get("/educator/getchildrenofallapprovedparents/:id", protectedRoute.protectedRoute, educatorController.viewAllChildsOfAllApprovedParents);
 router.post("/educator/addlearning", protectedRoute.protectedRoute, learningPlanController.addLearningPlan);
-router.get("/educator/getstudentplan/:educatorId/:childId", protectedRoute.protectedRoute, learningPlanController.getLearningPlanOfSingleStudent);
-router.delete("/educator/deleteplan/:id", protectedRoute.protectedRoute, learningPlanController.deleteLearningPlanByeducator);
+router.get("/educator/getstudentplan/:educatorId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleStudent);
+router.delete("/educator/deleteplan/:id", protectedRoute.protectedRoute, learningPlanController.deleteLearningPlanByEducator);
 router.put("/educator/updateplan/:educatorId/:childId", protectedRoute.protectedRoute, learningPlanController.editLearningPlanByEducator);
+router.post("/educator/Rating/:childId", protectedRoute.protectedRoute, learningPlanController.updateRating);
 router.post("/educator/addmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.createMeeting);
 router.get("/educator/viewmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.viewChildsMeeting);
 router.get("/educator/viewmeeting/:id", protectedRoute.protectedRoute, meetingController.viewAllmeetingsOfEducator);
@@ -87,6 +94,17 @@ router.get("/theraphist/gettheraphist/:id", protectedRoute.protectedRoute, thera
 router.post("/theraphist/updatetheraphist/:id", protectedRoute.protectedRoute, theraphistController.uploadProfilePic, theraphistController.editTheraphistById);
 router.get("/theraphist/getalltheraphist", protectedRoute.protectedRoute, theraphistController.getAllTheraphists);
 router.post("/theraphist/addpersonal/:id", protectedRoute.protectedRoute, theraphistController.uploadCertification, theraphistController.addTheraphistPersonal);
+router.get("/theraphist/parentsrequest/:id", protectedRoute.protectedRoute, theraphistController.getTherapistRequests);
+router.post("/theraphist/acceptrequest/:id", protectedRoute.protectedRoute, theraphistController.acceptParentRequest);
+router.post("/theraphist/rejectrequest/:id", protectedRoute.protectedRoute, theraphistController.rejectParentRequest);
+router.get("/theraphist/viewrequestedparent/:id", protectedRoute.protectedRoute, theraphistController.viewRequestById);
+router.get("/theraphist/getapprovedparents/:id", protectedRoute.protectedRoute, theraphistController.viewAllApprovedParentsByTherapist);
+router.get("/theraphist/getchildrenofallapprovedparents/:id", protectedRoute.protectedRoute, theraphistController.viewAllChildsOfApprovedParents);
+router.post("/theraphist/addlearning", protectedRoute.protectedRoute, learningPlanController.addLearningPlanTherapist);
+router.put("/theraphist/updateplan/:therapistId/:childId", protectedRoute.protectedRoute, learningPlanController.editLearningPlanByTherapist);
+router.get("/theraphist/getstudentplan/:therapistId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleTherapist);
+router.delete("/theraphist/deleteplan/:id", protectedRoute.protectedRoute, learningPlanController.deleteLearningTherapist);
+
 
 /* ===================== REQUEST ===================== */
 router.post("/request/sendrequest", protectedRoute.protectedRoute, requestController.sendRequest);
@@ -109,6 +127,20 @@ router.post(
 router.get('/activity/getallactivities', protectedRoute.protectedRoute, activityController.getAllActivities);
 router.get('/activity/parent/:parentId', protectedRoute.protectedRoute, activityController.getActivitiesByParent);
 router.patch('/activity/complete/:activityId', protectedRoute.protectedRoute, activityController.markActivityComplete);
+router.delete('/activity/delete/:id', protectedRoute.protectedRoute, activityController.deleteActivity);
 
+// meeting
+router.post(
+  '/ldss/meeting/:id/:childId',
+  protectedRoute.protectedRoute,
+  meetController.createMeeting
+);
+router.post("/educator/addmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.createMeeting);
+router.get("/educator/viewmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.viewChildsMeeting);
+router.get("/educator/viewmeeting/:id", protectedRoute.protectedRoute, meetingController.viewAllmeetingsOfEducator);
+router.get("/parent/getallmeeting/:id", protectedRoute.protectedRoute, meetingController.viewAllMeetingsOfParent);
+router.post("/therapist/addmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.createMeeting);
+router.get("/therapist/viewmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.viewChildsMeeting);
+router.get("/therapist/viewmeeting/:id", protectedRoute.protectedRoute, meetingController.viewAllmeetingsOfTherapist);
 
 module.exports = router;

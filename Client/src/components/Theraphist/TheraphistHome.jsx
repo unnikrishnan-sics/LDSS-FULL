@@ -30,153 +30,106 @@ import axios from "axios";
 import { Link, useNavigate } from 'react-router-dom';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import Backdrop from '@mui/material/Backdrop';
+import TherapistViewParentDetails from './Common/TherapistViewParentDetails';
 
 const TheraphistHome = () => {
     const homebg = {
         backgroundColor: "#F6F7F9"
-    }
+    };
 
     const [therapistDetails, setTherapistDetails] = useState({});
-    const [useDummyData, setUseDummyData] = useState(true);
+    const [parentRequest, setParentRequest] = useState([]);
+    const [requestDetail, setRequestDetail] = useState(null);
+    const [openParent, setOpenParent] = useState(false);
     const navigate = useNavigate();
-
-    // Initialize therapist details from localStorage first
-    useEffect(() => {
-        const storedTherapist = localStorage.getItem("theraphistDetails");
-        if (storedTherapist) {
-            try {
-                const parsedTherapist = JSON.parse(storedTherapist);
-                if (parsedTherapist && parsedTherapist._id) {
-                    setTherapistDetails(parsedTherapist);
-                }
-            } catch (error) {
-                console.error("Error parsing stored therapist:", error);
-                localStorage.removeItem("theraphistDetails");
-            }
-        }
-    }, []);
-
-    // Dummy data for parent requests (fallback)
-    const dummyParentRequests = [
-        {
-            _id: "request1",
-            status: "pending",
-            parentId: {
-                _id: "parent1",
-                name: "Sarah Johnson",
-                email: "sarah.johnson@example.com",
-                address: "123 Main St, Springfield, IL 62704",
-                phone: "+1 (555) 123-4567",
-                profilePic: {
-                    filename: "profile1.jpg"
-                }
-            }
-        },
-        {
-            _id: "request2",
-            status: "pending",
-            parentId: {
-                _id: "parent2",
-                name: "Michael Brown",
-                email: "michael.brown@example.com",
-                address: "456 Oak Ave, Springfield, IL 62704",
-                phone: "+1 (555) 987-6543",
-                profilePic: {
-                    filename: "profile2.jpg"
-                }
-            }
-        }
-    ];
 
     const fetchTherapist = async () => {
         try {
             const token = localStorage.getItem('token');
-            if (!token) {
-                console.error("No token found");
-                return;
-            }
-            
+            if (!token) return;
             const decoded = jwtDecode(token);
-            
             const response = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${decoded.id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+                headers: { Authorization: `Bearer ${token}` }
             });
-            
-            if (response.data && response.data.theraphist) {
-                const therapistData = response.data.theraphist;
-                
-                // Validate before storing
-                if (therapistData && therapistData._id) {
-                    try {
-                        localStorage.setItem("theraphistDetails", JSON.stringify(therapistData));
-                        console.log("Successfully stored therapist details");
-                        setTherapistDetails(therapistData);
-                    } catch (storageError) {
-                        console.error("Failed to store in localStorage:", storageError);
-                        // Fallback to state only
-                        setTherapistDetails(therapistData);
-                    }
-                } else {
-                    console.error("Invalid therapist data structure");
-                }
+            if (response.data?.theraphist) {
+                const data = response.data.theraphist;
+                localStorage.setItem("theraphistDetails", JSON.stringify(data));
+                setTherapistDetails(data);
             }
         } catch (error) {
             console.error("Error fetching therapist:", error);
-            // If API fails, check if we have cached data
-            const cachedData = localStorage.getItem("theraphistDetails");
-            if (cachedData) {
-                try {
-                    const parsed = JSON.parse(cachedData);
-                    if (parsed && parsed._id) {
-                        console.log("Using cached therapist data");
-                        setTherapistDetails(parsed);
-                    }
-                } catch (parseError) {
-                    console.error("Error parsing cached data:", parseError);
-                }
-            }
         }
-    }
-
-    const [parentRequest, setParentRequest] = useState([]);
+    };
 
     const fetchParentsRequest = async () => {
-        if (useDummyData) {
-            setParentRequest(dummyParentRequests);
-            return;
-        }
-
         try {
             const token = localStorage.getItem("token");
             const therapistId = therapistDetails._id;
-            
-            if (!therapistId) {
-                console.log("No therapist ID yet, waiting...");
-                return;
-            }
-
+            if (!therapistId) return;
             const response = await axios.get(
-                `http://localhost:4000/ldss/theraphist/parentsrequest/${therapistId}`, 
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
+                `http://localhost:4000/ldss/theraphist/parentsrequest/${therapistId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
             );
-            
-            if (response.data && response.data.request) {
+            if (response.data?.request) {
                 setParentRequest(response.data.request);
             }
         } catch (error) {
             console.error("Failed to fetch parent requests:", error);
-            // Fallback to dummy data in case of error
-            setParentRequest(dummyParentRequests);
-            setUseDummyData(true);
         }
     };
 
+    const fetchParentByRequestId = async (requestId) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await axios.get(
+                `http://localhost:4000/ldss/theraphist/viewrequestedparent/${requestId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            if (response.data?.viewRequest) {
+                setRequestDetail(response.data.viewRequest);
+                setOpenParent(true);
+            }
+        } catch (error) {
+            console.error("Failed to fetch parent details:", error);
+        }
+    };
+
+    const acceptParentRequest = async (requestId) => {
+        try {
+            const token = localStorage.getItem("token");
+            await axios.post(
+                `http://localhost:4000/ldss/theraphist/acceptrequest/${requestId}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            fetchParentsRequest();
+            setOpenParent(false);
+        } catch (error) {
+            console.error("Failed to accept request:", error);
+        }
+    };
+
+    const rejectParentRequest = async (requestId) => {
+        try {
+            const token = localStorage.getItem("token");
+            await axios.post(
+                `http://localhost:4000/ldss/theraphist/rejectrequest/${requestId}`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            fetchParentsRequest();
+            setOpenParent(false);
+        } catch (error) {
+            console.error("Failed to reject request:", error);
+        }
+    };
+
+    const handleParentClose = () => {
+        setOpenParent(false);
+        setRequestDetail(null);
+    };
+
     useEffect(() => {
-        // Always fetch fresh data after initial load
         fetchTherapist();
     }, []);
 
@@ -187,97 +140,16 @@ const TheraphistHome = () => {
     }, [therapistDetails]);
 
     const navigateToProfile = () => {
-        navigate('/theraphist/profile');
-    };
-
-    // Modal state
-    const [requestDetail, setRequestDetail] = useState({});
-    const [openParent, setOpenParent] = useState(false);
-    const handleParentOpen = () => setOpenParent(true);
-    const handleParentClose = () => setOpenParent(false);
-
-    const fetchParentByRequestId = async (requestId) => {
-        if (useDummyData) {
-            const foundRequest = dummyParentRequests.find(req => req._id === requestId);
-            if (foundRequest) {
-                setRequestDetail(foundRequest);
-                handleParentOpen();
-            }
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem("token");
-            const response = await axios.get(
-                `http://localhost:4000/ldss/theraphist/viewrequestedparent/${requestId}`, 
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
-            
-            if (response.data && response.data.viewRequest) {
-                setRequestDetail(response.data.viewRequest);
-                handleParentOpen();
-            }
-        } catch (error) {
-            console.error("Failed to fetch parent details:", error);
-        }
-    };
-
-    const acceptParentrequest = async (requestId) => {
-        if (useDummyData) {
-            setParentRequest(prev => prev.filter(req => req._id !== requestId));
-            alert(`Request ${requestId} accepted (demo)`);
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem("token");
-            await axios.post(
-                `http://localhost:4000/ldss/theraphist/acceptrequest/${requestId}`,
-                {},
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
-            setParentRequest(prev => prev.filter(req => req._id !== requestId));
-            alert("Request accepted successfully!");
-        } catch (error) {
-            console.error("Failed to accept request:", error);
-            alert("Failed to accept request");
-        }
-    };
-
-    const rejectParentrequest = async (requestId) => {
-        if (useDummyData) {
-            setParentRequest(prev => prev.filter(req => req._id !== requestId));
-            alert(`Request ${requestId} rejected (demo)`);
-            return;
-        }
-
-        try {
-            const token = localStorage.getItem("token");
-            await axios.post(
-                `http://localhost:4000/ldss/theraphist/rejectrequest/${requestId}`,
-                {},
-                {
-                    headers: { Authorization: `Bearer ${token}` }
-                }
-            );
-            
-            setParentRequest(prev => prev.filter(req => req._id !== requestId));
-            alert("Request rejected successfully!");
-        } catch (error) {
-            console.error("Failed to reject request:", error);
-            alert("Failed to reject request");
-        }
+        navigate('/therapist/profile');
     };
 
     return (
         <>
-            <TheraphistNavbar theraphistdetails={therapistDetails} navigateToProfile={navigateToProfile} homebg={homebg} />
-            <Container maxWidth="x-lg" sx={{ ...homebg, height: '100vh', position: "relative", overflow: "hidden", zIndex: 2 }}>
-                <Box component="img" src={background} alt='background'
+            <TheraphistNavbar
+                theraphistdetails={therapistDetails}
+                navigateToProfile={navigateToProfile}
+            />
+            <Container maxWidth="x-lg" sx={{ ...homebg, height: '100vh', position: "relative", overflow: "hidden", zIndex: 2 }}>                <Box component="img" src={background} alt='background'
                     sx={{ position: "absolute", top: "0", left: "0", width: "100%", height: "100%", objectFit: 'cover', zIndex: -1 }}
                 />
                 <Stack direction="row" spacing={2} sx={{ padding: "80px 50px", zIndex: 1 }}>
@@ -425,7 +297,7 @@ const TheraphistHome = () => {
                                                     borderRadius: "10px", 
                                                     flexShrink: 0 
                                                 }}
-                                                image={useDummyData ? image68 : `http://localhost:4000/uploads/${request.parentId.profilePic.filename}`}
+                                                image={`http://localhost:4000/uploads/${request.parentId.profilePic.filename}`}
                                                 alt="Profile"
                                             />
                                             <Box sx={{
@@ -478,7 +350,7 @@ const TheraphistHome = () => {
                                                 </Box>
                                                 <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
                                                     <Button 
-                                                        onClick={() => rejectParentrequest(request._id)} 
+                                                        onClick={() => rejectParentRequest(request._id)} 
                                                         variant='outlined' 
                                                         color='secondary' 
                                                         sx={{ 
@@ -493,7 +365,7 @@ const TheraphistHome = () => {
                                                         Reject
                                                     </Button>
                                                     <Button 
-                                                        onClick={() => acceptParentrequest(request._id)} 
+                                                        onClick={() => acceptParentRequest(request._id)} 
                                                         variant='contained' 
                                                         color='secondary' 
                                                         sx={{ 
@@ -598,6 +470,39 @@ const TheraphistHome = () => {
                 </Stack>
             </Container>
             
+                        <Modal
+                open={openParent}
+                onClose={handleParentClose}
+                closeAfterTransition
+                BackdropComponent={Backdrop}
+                BackdropProps={{ timeout: 500 }}
+            >
+                <Fade in={openParent}>
+                    <Box sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        bgcolor: 'background.paper',
+                        boxShadow: 24,
+                        p: 4,
+                        height: "720px",
+                        width: "65%",
+                        borderRadius: "20px",
+                        overflow: "hidden"
+                    }}>
+                        {requestDetail && (
+                            <TherapistViewParentDetails 
+                                acceptParentrequest={acceptParentRequest} 
+                                rejectParentrequest={rejectParentRequest} 
+                                handleParentClose={handleParentClose} 
+                                requestDetail={requestDetail}
+                            />
+                        )}
+                    </Box>
+                </Fade>
+            </Modal>
+
             <Footer />
         </>
     );
