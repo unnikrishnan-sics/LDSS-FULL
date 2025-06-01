@@ -1,11 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
-import EducatorChatSideBar from './Common/EducatorChatSideBar';
 import {
-  Box, Typography, Avatar, TextField, IconButton, InputAdornment,
-  Divider
+  Box, Typography, Avatar, TextField, IconButton,
+  Divider, CircularProgress, Button // Added Button import
 } from '@mui/material';
 import WavingHandIcon from '@mui/icons-material/WavingHand';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -14,8 +13,8 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SendOutlinedIcon from '@mui/icons-material/SendOutlined';
 import EducatorNavbar from '../Navbar/EducatorNavbar';
 import EmailIcon from '@mui/icons-material/Email';
+import EducatorChatSideBar from './Common/EducatorChatSideBar';
 
-// Date formatting utility function
 const formatMessageDate = (dateString) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -42,182 +41,255 @@ const formatMessageDate = (dateString) => {
   }
 };
 
-const dummyUsers = [
-  { id: 1, name: 'Jane Doe', avatar: 'J', role: 'parent', studentName: 'Sophia Miller', savatar: "S", email: 'jane.doe@example.com', profilePic: 'jane.jpg' },
-  { id: 2, name: 'Robert Smith', avatar: 'R', role: 'parent', studentName: 'Ethan Wilson', savatar: "E", email: 'robert.smith@example.com', profilePic: '' },
-  { id: 5, name: 'Jane Doe', avatar: 'J', role: 'parent', studentName: 'Sophia Miller', savatar: "S", email: 'jane.doe@example.com', profilePic: 'jane.jpg' },
-  { id: 6, name: 'Robert Smith', avatar: 'R', role: 'parent', studentName: 'Ethan Wilson', savatar: "E", email: 'robert.smith@example.com', profilePic: '' },
-  { id: 9, name: 'David Connor', avatar: 'D', role: 'parent', studentName: 'John Connor', savatar: "J", email: 'david.connor@example.com', profilePic: 'david.jpg' },
-  { id: 10, name: 'Jane Doe', avatar: 'J', role: 'parent', studentName: 'Jane Doe', savatar: "J", email: 'jane.doe@example.com', profilePic: '' },
-  { id: 3, name: 'Emma Wilson', avatar: 'E', role: 'therapist', studentName: 'Olivia Davis', savatar: "O", email: 'emma.wilson@therapy.org', profilePic: 'emma.jpg' },
-  { id: 4, name: 'Noah Brown', avatar: 'N', role: 'therapist', studentName: 'Liam Johnson', savatar: "L", email: 'noah.brown@therapy.org', profilePic: '' },
-  { id: 7, name: 'Emma Wilson', avatar: 'E', role: 'therapist', studentName: 'Olivia Davis', savatar: "O", email: 'emma.wilson@therapy.org', profilePic: 'emma.jpg' },
-  { id: 8, name: 'Noah Brown', avatar: 'N', role: 'therapist', studentName: 'Liam Johnson', savatar: "L", email: 'noah.brown@therapy.org', profilePic: '' },
-  { id: 11, name: 'Lisa Ray', avatar: 'L', role: 'therapist', studentName: 'Mike Ray', savatar: "M", email: 'lisa.ray@therapy.org', profilePic: 'lisa.jpg' },
-  { id: 12, name: 'Mike Taylor', avatar: 'M', role: 'therapist', studentName: 'Emma Taylor', savatar: "E", email: 'mike.taylor@therapy.org', profilePic: '' }
-];
-
-const dummyChats = {
-  1: [
-    { 
-      sender: 'me', 
-      text: 'Hello Mrs. Doe, I wanted to discuss Sophia\'s progress in math class.', 
-      name: 'You', 
-      time: '10:00 AM', 
-      date: new Date(Date.now() - 1209600000).toISOString().split('T')[0] 
-    },
-    { 
-      sender: 'them', 
-      text: 'Thank you for reaching out. How is Sophia doing?', 
-      name: 'Jane Doe', 
-      time: '10:30 AM', 
-      date: new Date(Date.now() - 1209600000).toISOString().split('T')[0] 
-    }
-  ],
-  2: [
-    { 
-      sender: 'them', 
-      text: 'Hello! I\'m Ethan\'s parent Robert Smith. How can I help?', 
-      name: 'Robert Smith', 
-      time: '10:15 AM', 
-      date: new Date(Date.now() - 172800000).toISOString().split('T')[0] 
-    }
-  ],
-  3: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is therapist Emma. I wanted to update you about Olivia\'s therapy progress.', 
-      name: 'Emma Wilson', 
-      time: '2:45 PM', 
-      date: new Date(Date.now() - 604800000).toISOString().split('T')[0] 
-    }
-  ],
-  5: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is Sophia\'s parent Jane.', 
-      name: 'Jane Doe', 
-      time: '11:00 AM', 
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0] 
-    }
-  ],
-  6: [
-    { 
-      sender: 'them', 
-      text: 'Hi there, this is Ethan\'s parent Robert.', 
-      name: 'Robert Smith', 
-      time: '9:30 AM', 
-      date: new Date(Date.now() - 259200000).toISOString().split('T')[0] 
-    }
-  ],
-  9: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is John\'s parent David.', 
-      name: 'David Connor', 
-      time: '3:15 PM', 
-      date: new Date(Date.now() - 604800000).toISOString().split('T')[0] 
-    }
-  ],
-  10: [
-    { 
-      sender: 'them', 
-      text: 'Good morning, this is Jane\'s parent.', 
-      name: 'Jane Doe', 
-      time: '8:45 AM', 
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0] 
-    }
-  ],
-  4: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is therapist Noah. I wanted to discuss Liam\'s progress.', 
-      name: 'Noah Brown', 
-      time: '4:30 PM', 
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0] 
-    }
-  ],
-  7: [
-    { 
-      sender: 'them', 
-      text: 'Hi there, this is Emma Wilson following up about Olivia\'s therapy.', 
-      name: 'Emma Wilson', 
-      time: '1:15 PM', 
-      date: new Date(Date.now() - 172800000).toISOString().split('T')[0] 
-    }
-  ],
-  8: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is Noah Brown checking in about Liam\'s therapy plan.', 
-      name: 'Noah Brown', 
-      time: '10:00 AM', 
-      date: new Date(Date.now() - 259200000).toISOString().split('T')[0] 
-    }
-  ],
-  11: [
-    { 
-      sender: 'them', 
-      text: 'Good afternoon, this is Lisa Ray from the counseling center.', 
-      name: 'Lisa Ray', 
-      time: '2:00 PM', 
-      date: new Date(Date.now() - 86400000).toISOString().split('T')[0] 
-    }
-  ],
-  12: [
-    { 
-      sender: 'them', 
-      text: 'Hello, this is Mike Taylor from the occupational therapy department.', 
-      name: 'Mike Taylor', 
-      time: '11:30 AM', 
-      date: new Date(Date.now() - 604800000).toISOString().split('T')[0] 
-    }
-  ]
-};
-
 const EducatorChat = () => {
   const { id } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
-  const [educator, setEducator] = useState({});
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [educatorDetails, setEducatorDetails] = useState({});
+  
+  // Initialize educatorDetails from localStorage, but expect it to be fetched if not found
+  const [educatorDetails, seteducatorDetails] = useState(() => {
+    const cachedData = localStorage.getItem("educatorDetails");
+    return cachedData ? JSON.parse(cachedData) : null;
+  });
+  
+  const [participantDetails, setParticipantDetails] = useState(null);
+  const [conversationId, setConversationId] = useState(null);
+  const [loading, setLoading] = useState(false); // Controls chat content loading
+  const [initialLoading, setInitialLoading] = useState(true); // Controls overall initial loading (educator details)
+  const [studentName, setStudentName] = useState('');
+  const [error, setError] = useState(null);
 
-  const fetchEducator = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
+  const fetchParticipantDetails = async (participantId) => {
     try {
-      const decoded = jwtDecode(token);
-      const response = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${decoded.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login'); // Redirect to login if token is missing
+        return;
+      }
+
+      const userType = location.state?.userType;
+      let endpoint = '';
+
+      if (userType === 'parent') {
+        endpoint = `http://localhost:4000/ldss/parent/getparent/${participantId}`;
+        setStudentName(location.state?.studentName || '');
+      } else if (userType === 'educator') {
+        endpoint = `http://localhost:4000/ldss/educator/geteducator/${participantId}`;
+        setStudentName(location.state?.studentName || ''); // Student name might be null for educator chats
+      } else {
+        return; // Invalid userType or missing
+      }
+
+      const response = await axios.get(endpoint, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      const educatorData = response.data.educator;
-      localStorage.setItem("educatorDetails", JSON.stringify(educatorData));
-      setEducator(educatorData);
-      setEducatorDetails(educatorData);
+
+      if (response.data) {
+        setParticipantDetails(userType === 'parent' ? response.data.parent : response.data.educator);
+      }
     } catch (error) {
-      console.error("Error fetching educator:", error);
+      console.error('Error fetching participant details:', error);
+      setError('Failed to load participant details.');
+      setLoading(false); // Stop loading if participant details fail
     }
   };
 
+  const getOrCreateConversation = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return null;
+      }
+
+      const decoded = jwtDecode(token);
+      const educatorId = decoded.id;
+      const userType = location.state?.userType;
+      const studentIdFromState = location.state?.studentId;
+
+      // Crucial check: If it's a parent chat, studentId is required by backend.
+      // If it's missing from state, we cannot proceed.
+      if (userType === 'parent' && !studentIdFromState) {
+        setError('Cannot start conversation: A specific student is required for parent chats. This parent might not have an associated student for you to chat about.');
+        return null;
+      }
+
+      // First try to find existing conversation
+      const existingConvs = await axios.get(
+        `http://localhost:4000/ldss/conversations/user/${educatorId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const existingConv = existingConvs.data.find(conv =>
+        conv.participants.includes(id) &&
+        conv.participants.includes(educatorId) &&
+        // For parent conversations, also ensure student matches
+        (userType !== 'parent' || String(conv.student) === String(studentIdFromState))
+      );
+
+      if (existingConv) {
+        setConversationId(existingConv._id);
+        setMessages(existingConv.messages || []);
+        return existingConv._id;
+      }
+
+      const requestData = {
+        participants: [educatorId, id],
+        participantModels: ['educator', userType]
+      };
+
+      
+      // Only add student if it's a parent conversation AND studentId is available
+      if (userType === 'parent' && studentIdFromState) {
+        requestData.student = studentIdFromState;
+      }
+      console.log(requestData);
+      
+
+      const newConv = await axios.post(
+        'http://localhost:4000/ldss/conversations',
+        requestData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setConversationId(newConv.data._id);
+      return newConv.data._id;
+    } catch (error) {
+      console.error('Error handling conversation:', error);
+      setError(error.response?.data?.message || 'Failed to create conversation. Please try again.');
+      return null;
+    }
+  };
+
+  const fetchMessages = async (convId) => { // Accept conversation ID as argument
+    if (!convId) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://localhost:4000/ldss/conversations/${convId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data) {
+        setMessages(response.data.messages || []);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setError('Failed to load messages.');
+    } finally {
+      setLoading(false); // Chat content loading is complete
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !conversationId) return;
+
+    const tempId = Date.now().toString(); // Temporary ID for optimistic update
+    try {
+      const token = localStorage.getItem('token');
+      const decoded = jwtDecode(token);
+
+      const newMsg = {
+        sender: decoded.id,
+        senderModel: 'educator',
+        content: newMessage.trim() // Trim message content
+      };
+
+      // Optimistic update: Add message to UI immediately
+      setMessages(prev => [...prev, {
+        ...newMsg,
+        _id: tempId, // Use tempId for immediate rendering
+        timestamp: new Date().toISOString(), // Use ISO string for consistency
+        read: false
+      }]);
+      setNewMessage(""); // Clear input field
+
+      // Send message to backend
+      await axios.post(
+        `http://localhost:4000/ldss/conversations/${conversationId}/messages`,
+        newMsg,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Re-fetch messages to get the actual _id and ensure consistency
+      fetchMessages(conversationId);
+      
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Revert optimistic update if send fails
+      setMessages(prev => prev.filter(msg => msg._id !== tempId));
+      setError('Failed to send message.');
+    }
+  };
+
+  // Main effect hook to manage data fetching and loading states
   useEffect(() => {
-    const storedEducator = localStorage.getItem("educatorDetails");
-    if (storedEducator) {
-      setEducatorDetails(JSON.parse(storedEducator));
-    }
-    fetchEducator();
+    const fetchAllChatData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login'); // Redirect to login if no token
+        setInitialLoading(false);
+        return;
+      }
 
-    const chatId = parseInt(id);
-    if (chatId && dummyChats[chatId]) {
-      setMessages(dummyChats[chatId]);
-    } else {
-      setMessages([]);
-    }
-  }, [id]);
+      // 1. Fetch educator details if not already loaded from cache
+      if (!educatorDetails) {
+        try {
+          const decoded = jwtDecode(token);
+          const educatorId = decoded.id;
+          const response = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${educatorId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (response.data?.educator) {
+            seteducatorDetails(response.data.educator);
+            localStorage.setItem("educatorDetails", JSON.stringify(response.data.educator));
+          } else {
+            setError('Failed to load educator profile. Data incomplete.');
+            setInitialLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Error fetching educator details:', err);
+          setError('Failed to load educator profile. Please check your connection or try again.');
+          setInitialLoading(false);
+          return;
+        }
+      }
+      
+      // 2. Fetch chat-specific data if a participant `id` is provided
+      if (id) {
+        setLoading(true); // Start loading for chat content
+        setError(null); // Clear errors when starting a new chat load
+        try {
+          await fetchParticipantDetails(id); // Fetch participant details
+          const convId = await getOrCreateConversation(); // Get or create conversation, handles student requirement
+          if (convId) { // Only fetch messages if conversation ID was successfully obtained
+            await fetchMessages(convId);
+          } else {
+            // getOrCreateConversation already set an error if it returned null
+          }
+        } catch (err) {
+          console.error('An unexpected error occurred during chat setup:', err);
+          // Only set a generic error if a more specific one hasn't been set by sub-functions
+          setError(prev => prev || 'An unexpected error occurred during chat setup.');
+        } finally {
+          setLoading(false); // Chat content loading finished (either successfully or with error)
+        }
+      } else {
+        setLoading(false); // No specific chat selected, stop chat content loading
+      }
+      setInitialLoading(false); // Overall initial loading is complete
+    };
 
+    fetchAllChatData();
+  }, [id, location.state, navigate, educatorDetails]); // Dependencies for re-running effect
+
+  // Scroll to bottom whenever messages update
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -226,24 +298,26 @@ const EducatorChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const selectedUser = dummyUsers.find(user => user.id === parseInt(id));
-
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
-    const newMsg = {
-      sender: 'me',
-      text: newMessage,
-      name: 'You',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      date: new Date().toISOString().split('T')[0]
-    };
-    setMessages(prev => [...prev, newMsg]);
-    setNewMessage("");
-  };
+  // Display initial loading spinner until educator details are loaded
+  if (initialLoading) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <>
-      <EducatorNavbar educatorDetails={educatorDetails} navigateToProfile={() => navigate('/educator/profile')} />
+      <EducatorNavbar 
+        educatordetails={educatorDetails} 
+        navigateToProfile={() => navigate('/educator/profile')} 
+      />
       <Box sx={{ 
         background: '#F6F7F9', 
         width: "100%", 
@@ -253,7 +327,22 @@ const EducatorChat = () => {
       }}>
         {/* Sidebar */}
         <Box flexBasis="20%" sx={{ height: "100%" }}>
-          <EducatorChatSideBar />
+          {educatorDetails ? (
+            <EducatorChatSideBar educatorDetails={educatorDetails} />
+          ) : (
+            // Fallback for sidebar if educatorDetails are somehow missing after initial load
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              height: '100%',
+              backgroundColor: 'white',
+              borderRadius: "12px",
+              margin: "15px"
+            }}>
+              <CircularProgress />
+            </Box>
+          )}
         </Box>
 
         {/* Main Chat Area */}
@@ -263,7 +352,40 @@ const EducatorChat = () => {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          {id && selectedUser ? (
+          {error ? (
+            <Box sx={{
+              backgroundColor: "white",
+              padding: "20px",
+              margin: "15px",
+              borderRadius: "12px",
+              width: "100%",
+              height: "90%",
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center'
+            }}>
+              <Typography color="error" variant="h6" sx={{ mb: 2 }}>
+                Error: {error}
+              </Typography>
+              <Button 
+                variant="contained" 
+                onClick={() => window.location.reload()}
+                sx={{ mt: 2 }}
+              >
+                Refresh Page
+              </Button>
+              <Button 
+                variant="outlined" 
+                onClick={() => navigate('/educator/chat')}
+                sx={{ mt: 2 }}
+              >
+                Back to Chat List
+              </Button>
+            </Box>
+          ) : id && participantDetails ? (
+            // Main chat window when a participant is selected
             <Box sx={{
               backgroundColor: "white",
               borderRadius: "12px",
@@ -273,16 +395,16 @@ const EducatorChat = () => {
               flexDirection: 'column',
               overflow: 'hidden'
             }}>
-              {/* Header with Back Button and Dual Info */}
+              {/* Header */}
               <Box sx={{ 
                 p: 2,
                 borderBottom: '1px solid #f0f0f0',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: ''
+                justifyContent: 'space-between'
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <IconButton onClick={() => navigate('/educator/chat')}>
+                  <IconButton onClick={() => navigate('/educator/chat')} sx={{ mr: 1 }}>
                     <ArrowBackIcon />
                   </IconButton>
                   <Avatar sx={{
@@ -291,176 +413,200 @@ const EducatorChat = () => {
                     fontSize: '0.875rem',
                     bgcolor: '#384371'
                   }}>
-                    {selectedUser.avatar}
+                    {participantDetails.name?.charAt(0) || ''}
                   </Avatar>
                   <Typography variant="h6" sx={{ 
                     color: '#384371',
                     ml: 1
                   }}>
-                    {selectedUser.name}
+                    {participantDetails.name}
                   </Typography>
                 </Box>
-                <Box sx={{flexGrow: 1}} />
-                <Typography variant="h6" sx={{ 
-                  color: '#384371',
-                  fontWeight: 500
-                }}>
-                  {selectedUser.studentName}'s {selectedUser.role === 'therapist' ? 'Therapist' : 'Parent'}
-                </Typography>
-                <Avatar sx={{
-                  width: 32,
-                  height: 32,
-                  fontSize: '0.875rem',
-                  bgcolor: '#384371',
-                  ml: 0.5,
-                }}>
-                  {selectedUser.savatar}
-                </Avatar>
+                {studentName && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="h6" sx={{ 
+                      color: '#384371',
+                      fontWeight: 500,
+                      mr: 0.5
+                    }}>
+                      {studentName}'s {location.state?.userType === 'parent' ? 'Parent' : 'Educator'}
+                    </Typography>
+                    <Avatar sx={{
+                      width: 32,
+                      height: 32,
+                      fontSize: '0.875rem',
+                      bgcolor: '#384371',
+                    }}>
+                      {studentName.charAt(0)}
+                    </Avatar>
+                  </Box>
+                )}
               </Box>
 
-              {/* Scrollable Content Area */}
-              <Box sx={{
-                flex: 1,
-                overflowY: 'auto',
-                '&::-webkit-scrollbar': {
-                  display: 'none'
-                }
-              }}>
-                {/* Profile Section */}
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  p: 3,
-                  pt: 4,
+              {/* Chat Content Area */}
+              {loading ? (
+                <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <Box sx={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  '&::-webkit-scrollbar': {
+                    display: 'none'
+                  },
+                  p: 2 // Padding around messages
                 }}>
-                  <Avatar sx={{ 
-                    width: 80, 
-                    height: 80, 
-                    fontSize: '2rem',
-                    bgcolor: '#384371',
-                    mb: 2
-                  }}>
-                    {selectedUser.avatar}
-                  </Avatar>
-                  <Typography variant="h5" sx={{ 
-                    color: '#384371', 
-                    fontWeight: 500,
-                    textAlign: 'center'
-                  }}>
-                    {selectedUser.name}
-                  </Typography>
+                  {/* Profile Section (always visible at top of chat content) */}
                   <Box sx={{ 
                     display: 'flex', 
+                    flexDirection: 'column', 
                     alignItems: 'center', 
-                    mt: 1 
+                    p: 3,
+                    pt: 4,
                   }}>
-                    <EmailIcon fontSize="small" color="action" sx={{ mr: 1 }} />
-                    <Typography variant="body1" color="text.secondary">
-                      {selectedUser.email}
+                    <Avatar sx={{ 
+                      width: 80, 
+                      height: 80, 
+                      fontSize: '2rem',
+                      bgcolor: '#384371',
+                      mb: 2
+                    }}>
+                      {participantDetails.name?.charAt(0) || ''}
+                    </Avatar>
+                    <Typography variant="h5" sx={{ 
+                      color: '#384371', 
+                      fontWeight: 500,
+                      textAlign: 'center'
+                    }}>
+                      {participantDetails.name}
                     </Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      mt: 1 
+                    }}>
+                      <EmailIcon fontSize="small" color="action" sx={{ mr: 1 }} />
+                      <Typography variant="body1" color="text.secondary">
+                        {participantDetails.email}
+                      </Typography>
+                    </Box>
                   </Box>
-                </Box>
 
-                {/* Messages with Date Separators */}
-                <Box sx={{ p: 2 }}>
-                  {messages.map((msg, idx) => {
-                    const showDate = idx === 0 ||
-                      messages[idx - 1].date !== msg.date ||
-                      (idx > 0 && new Date(messages[idx - 1].date).getDate() !== new Date(msg.date).getDate());
+                  {/* Messages */}
+                  <Box sx={{ py: 2 }}>
+                    {messages.map((msg, idx) => {
+                      const showDate = idx === 0 ||
+                        new Date(messages[idx - 1].timestamp).toDateString() !== new Date(msg.timestamp).toDateString();
 
-                    return (
-                      <React.Fragment key={idx}>
-                        {showDate && (
-                          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-                            <Typography variant="h5" sx={{
-                              color: '#384371',
-                              px: 2,
-                              py: 0.5,
-                              fontSize: '0.8em'
-                            }}>
-                              {formatMessageDate(msg.date)}
-                            </Typography>
-                          </Box>
-                        )}
+                      const iseducator = msg.senderModel === 'educator';
 
-                        <Box sx={{
-                          display: 'flex',
-                          mb: 2,
-                          flexDirection: msg.sender === 'me' ? 'row-reverse' : 'row',
-                          alignItems: 'flex-end',
-                          gap: 1
-                        }}>
-                          {/* Avatar - only shown for 'them' messages */}
-                          {msg.sender === 'them' && (
-                            <Avatar sx={{
-                              width: 32,
-                              height: 32,
-                              fontSize: '0.875rem',
-                              bgcolor: '#384371'
-                            }}>
-                              {selectedUser.avatar}
-                            </Avatar>
+                      return (
+                        <React.Fragment key={msg._id || idx}>
+                          {showDate && (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                              <Typography variant="h5" sx={{
+                                color: '#384371',
+                                px: 2,
+                                py: 0.5,
+                                fontSize: '0.8em',
+                                backgroundColor: '#E0E0E0',
+                                borderRadius: '15px'
+                              }}>
+                                {formatMessageDate(msg.timestamp)}
+                              </Typography>
+                            </Box>
                           )}
 
-                          {/* Message with timestamp */}
                           <Box sx={{
                             display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: msg.sender === 'me' ? 'flex-end' : 'flex-start'
+                            mb: 2,
+                            flexDirection: iseducator ? 'row-reverse' : 'row',
+                            alignItems: 'flex-end',
+                            gap: 1
                           }}>
-                            <Typography variant="caption" sx={{
-                              color: '#384371',
-                              mb: 0.5,
-                              alignSelf: msg.sender === 'me' ? 'flex-end' : 'flex-start'
-                            }}>
-                              {msg.time}
-                            </Typography>
+                            {!iseducator && (
+                              <Avatar sx={{
+                                width: 32,
+                                height: 32,
+                                fontSize: '0.875rem',
+                                bgcolor: '#384371'
+                              }}>
+                                {participantDetails.name?.charAt(0) || ''}
+                              </Avatar>
+                            )}
+
                             <Box sx={{
-                              backgroundColor: '#F0F6FE',
-                              color: 'black',
-                              px: 2,
-                              py: 1,
-                              borderRadius: '45px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: iseducator ? 'flex-end' : 'flex-start',
+                              minWidth: 0, // Allows this flex item to shrink (crucial for wrapping)
+                              flexGrow: 1 // Allows this column to grow and take available horizontal space
                             }}>
-                              {msg.text}
+                              <Typography variant="caption" sx={{
+                                color: 'text.secondary',
+                                mb: 0.5,
+                                alignSelf: iseducator ? 'flex-end' : 'flex-start'
+                              }}>
+                                {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </Typography>
+                              <Box sx={{
+                                backgroundColor: iseducator ? '#1976d2' : '#F0F6FE', // Use primary color for educator messages
+                                color: iseducator ? 'white' : 'black',
+                                px: 2,
+                                py: 1,
+                                borderRadius: '20px', // More modern rounded corners
+                                maxWidth: '70%', // Limit message bubble width
+                                overflowWrap: 'break-word', // Ensures long words break correctly
+                                wordBreak: 'normal' // Ensures normal word wrapping for other words
+                              }}>
+                                {msg.content}
+                              </Box>
                             </Box>
                           </Box>
-                        </Box>
-                      </React.Fragment>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
+                        </React.Fragment>
+                      );
+                    })}
+                    <div ref={messagesEndRef} />
+                  </Box>
                 </Box>
-              </Box>
-              <Divider sx={{backgroundColor: '#f0f0f0'}} />
+              )}
+              
               {/* Message Input */}
-              <Box sx={{ p: 2, display: 'flex'  }}>
+              <Divider sx={{backgroundColor: '#f0f0f0'}} />
+              <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
                 <TextField
                   fullWidth
                   variant="outlined"
-                  placeholder="Text..."
+                  placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSendMessage();
+                    if (e.key === 'Enter' && newMessage.trim()) handleSendMessage();
                   }}
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: '35px',
                       backgroundColor: '#FFFFFF',
-                      width: '80%',
-                      height: '80%',
-                      ml:"10%"
+                      pr: '45px', // Make space for the send icon inside the field
                     },
+                    flexGrow: 1
                   }}
                 />
-                <IconButton onClick={handleSendMessage} sx={{ right: "6%" ,position: 'absolute',}}>
-                  <SendOutlinedIcon color="primary" />
+                <IconButton 
+                  onClick={handleSendMessage} 
+                  disabled={!newMessage.trim()} // Disable if message is empty
+                  sx={{ 
+                    ml: -5, // Position send icon over the TextField's padding
+                    p: 1 // Padding for click area
+                  }}
+                >
+                  <SendOutlinedIcon color={newMessage.trim() ? "primary" : "disabled"} />
                 </IconButton>
               </Box>
             </Box>
           ) : (
+            // Default view when no chat is selected
             <Box
               sx={{
                 backgroundColor: "white",
@@ -478,22 +624,22 @@ const EducatorChat = () => {
             >
               <Typography sx={{ 
                 color: 'black', 
-                fontSize: '18px', 
-                fontWeight: "500",
+                fontSize: '24px', // Larger font for welcome
+                fontWeight: "600",
                 display: 'flex',
                 alignItems: 'center',
                 gap: 1
               }}>
-                Welcome <WavingHandIcon sx={{ color: "gold" }} /> {educatorDetails.name || 'Educator'} <AutoAwesomeIcon sx={{ color: "gold" }} />
+                Welcome <WavingHandIcon sx={{ color: "gold", fontSize: 30 }} /> {educatorDetails?.name || 'educator'} <AutoAwesomeIcon sx={{ color: "gold", fontSize: 30 }} />
               </Typography>
               <Typography sx={{ 
-                color: 'black', 
+                color: 'text.secondary', 
                 fontSize: '18px', 
                 fontWeight: "500" 
               }}>
-                Select a chat to start messaging
+                Select a chat from the sidebar to start messaging.
               </Typography>
-              <ChatIcon sx={{ fontSize: 60 }} />
+              <ChatIcon sx={{ fontSize: 80, color: 'action.disabled' }} />
             </Box>
           )}
         </Box>

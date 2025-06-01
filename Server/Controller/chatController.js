@@ -1,40 +1,57 @@
+// chatController.js
+
 const Conversation = require('../models/chatModel');
 
 const ChatController = {
-  async createConversation(req, res) {
-    const { participants, participantModels, student } = req.body;
-    if (participants.length !== 2 || participantModels.length !== 2) {
-      throw new console.log('Exactly two participants required');
+// In chatController.js - createConversation
+async createConversation(req, res) {
+  try {
+    const { participants, participantModels, student } = req.body; // Changed 'child' to 'student'
+    
+    // Validate inputs
+    if (!participants || !participantModels || 
+        participants.length !== 2 || participantModels.length !== 2) {
+      return res.status(400).json({ message: 'Exactly two participants required' });
     }
 
+    // Check for existing conversation
     const existing = await Conversation.findOne({
       participants: { $all: participants },
-      participantModels: { $all: participantModels }
+      participantModels: { $all: participantModels },
+      // Add student to existing conversation check for parent chats
+      ...(participantModels.includes('parent') && student && { student: student })
     });
 
-    if (existing) throw new console.log('Conversation already exists');
+    if (existing) {
+      return res.status(200).json(existing);
+    }
 
-    if (participantModels.includes('Parent') && !student) {
-      // throw new console.log('Student reference required for parent conversations');
-      throw new console.log("Student reference required for parent conversations");
-      
+    // Validate student for parent conversations
+    if (participantModels.includes('parent') && !student) { // Changed 'child' to 'student'
+      return res.status(400).json({ 
+        message: 'student reference required for parent conversations' // Changed 'child' to 'student'
+      });
     }
 
     const conversation = await Conversation.create({
       participants,
-      participantModels,
-      student,
+      participantModels: participantModels.map(m => m.toLowerCase()), // Ensure lowercase
+      student, // Changed 'child' to 'student'
       messages: []
     });
 
     res.status(201).json(conversation);
-  },
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+},
 
   async getUserConversations(req, res) {
     const { userId } = req.params;
     const convs = await Conversation.find({ participants: userId })
       .populate('participants')
-      .populate('student')
+      .populate('student') // Changed from 'child' to 'student'
       .sort({ updatedAt: -1 });
 
     res.json(convs);
@@ -44,7 +61,7 @@ const ChatController = {
     const { id } = req.params;
     const conv = await Conversation.findById(id)
       .populate('participants')
-      .populate('student');
+      .populate('student'); // Changed from 'child' to 'student'
 
     if (!conv) throw new NotFoundError('Conversation not found');
     res.json(conv);
@@ -56,7 +73,7 @@ async  addMessage(req, res, next) {
     const { sender, senderModel, content } = req.body;
 
     // Validate senderModel against allowed values
-    const allowedModels = ['parent', 'educator', 'therapist'];
+    const allowedModels = ['parent', 'educator', 'theraphist'];
     const normalizedSenderModel = senderModel.toLowerCase();
     
     if (!allowedModels.includes(normalizedSenderModel)) {

@@ -108,6 +108,7 @@ router.delete("/theraphist/deleteplan/:id", protectedRoute.protectedRoute, learn
 
 /* ===================== REQUEST ===================== */
 router.post("/request/sendrequest", protectedRoute.protectedRoute, requestController.sendRequest);
+router.get("/request/fetchall",  requestController.fetchAll);
 
 /* ===================== CHAT ===================== */
 router.post("/conversations", protectedRoute.protectedRoute, chatController.createConversation);

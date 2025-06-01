@@ -26,7 +26,58 @@ const uploadProfilePic=multer(
     const uploadCertification=multer(
         {storage:storage}
     ).single("certification")
+const getLinkedEducators = async (req, res) => {
+    try {
+        const therapistId = req.params.id; // The therapist's own ID
 
+        // 1. Find all parents accepted by this therapist
+        const therapistApprovedRequests = await requestModel.find({
+            recipientId: therapistId,
+            recipientRole: "theraphist",
+            status: "accepted"
+        });
+        const therapistApprovedParentIds = therapistApprovedRequests.map(req => req.parentId);
+
+        // If no parents are approved by this therapist, there will be no linked educators
+        if (therapistApprovedParentIds.length === 0) {
+            return res.json({
+                message: "No common parents found, no linked educators.",
+                educators: []
+            });
+        }
+
+        // 2. Find all educators who have accepted requests from these same parents
+        // We only care about the recipientId (educator ID) here
+        const educatorApprovedRequests = await requestModel.find({
+            parentId: { $in: therapistApprovedParentIds },
+            recipientRole: "educator",
+            status: "accepted"
+        });
+
+        // Extract unique educator IDs from these requests
+        const uniqueEducatorIds = [...new Set(educatorApprovedRequests.map(req => req.recipientId))];
+
+        // If no educators are linked through common parents, return empty
+        if (uniqueEducatorIds.length === 0) {
+            return res.json({
+                message: "No educators linked through common parents found.",
+                educators: []
+            });
+        }
+
+        // 3. Fetch the actual educator details for these unique IDs
+        const linkedEducators = await educatorModel.find({ _id: { $in: uniqueEducatorIds } });
+
+        res.json({
+            message: "Fetched linked educators successfully",
+            educators: linkedEducators
+        });
+
+    } catch (error) {
+        console.error('Error fetching linked educators:', error.message);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
 const theraphistRegister= async (req,res)=>{
     try {
         const { name, email, password,confirmpassword, address, phone ,agreed} = req.body;
@@ -347,5 +398,5 @@ const viewAllChildsOfApprovedParents = async (req, res) => {
     res.json({ message: error.message });
   }
 };
-module.exports={uploadProfilePic,uploadCertification, theraphistRegister,getTherapistRequests,acceptParentRequest,rejectParentRequest,viewRequestById,viewAllApprovedParentsByTherapist,viewAllChildsOfApprovedParents,theraphistLogin,theraphistForgotPassword,theraphistResetPassword,getTheraphistById,editTheraphistById,getAllTheraphists,addTheraphistPersonal,theraphistRequestAccept,adminDeleteTheraphist};
+module.exports={uploadProfilePic,uploadCertification, getLinkedEducators,theraphistRegister,getTherapistRequests,acceptParentRequest,rejectParentRequest,viewRequestById,viewAllApprovedParentsByTherapist,viewAllChildsOfApprovedParents,theraphistLogin,theraphistForgotPassword,theraphistResetPassword,getTheraphistById,editTheraphistById,getAllTheraphists,addTheraphistPersonal,theraphistRequestAccept,adminDeleteTheraphist};
 

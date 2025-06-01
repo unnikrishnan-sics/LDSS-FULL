@@ -6,7 +6,7 @@ const messageSchema = new Schema({
   senderModel: { 
     type: String, 
     required: true, 
-    enum: ['parent', 'educator', 'therapist'],
+    enum: ['parent', 'educator', 'theraphist'],
     lowercase: true // Ensures values are always saved as lowercase
   },
   content: { type: String, required: true },
@@ -19,14 +19,14 @@ const conversationSchema = new Schema({
   participantModels: [{ 
     type: String, 
     required: true, 
-    enum: ['parent', 'educator', 'therapist'],
+    enum: ['parent', 'educator', 'theraphist'],
     lowercase: true // Ensures values are always saved as lowercase
   }],
   messages: [messageSchema],
   lastMessage: messageSchema,
   student: {
     type: Schema.Types.ObjectId,
-    ref: 'student',
+    ref: 'child',
     required: function () {
       return this.participantModels.includes('parent');
     }
