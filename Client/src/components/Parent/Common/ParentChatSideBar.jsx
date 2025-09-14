@@ -11,79 +11,109 @@ const ParentChatSideBar = ({ parentDetails }) => {
   const [searchTermEducators, setSearchTermEducators] = useState('');
   const [searchTermTherapists, setSearchTermTherapists] = useState('');
   const [conversations, setConversations] = useState([]);
+  const [acceptedEducators, setAcceptedEducators] = useState([]);
+  const [acceptedTherapists, setAcceptedTherapists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchConversations = async () => {
+    console.log('ParentChatSideBar useEffect triggered');
+    
+    if (!parentDetails?._id && !localStorage.getItem('token')) {
+      console.log('No parent details or token available');
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
-          setError("Authentication token not found. Please log in.");
-          setLoading(false);
-          return;
-        }
-
-        // Prefer parentDetails._id if available, otherwise fall back to token decode
         const currentParentId = parentDetails?._id || jwtDecode(token).id;
 
-        if (!currentParentId) {
-          setError("Parent ID not found. Please log in.");
-          setLoading(false);
-          return;
-        }
+        console.log('Fetching data for parent:', currentParentId);
+
+        const [educatorsResponse] = await Promise.all([
+          axios.get(`http://localhost:4000/ldss/parent/getacceptededucator/${currentParentId}`, 
+            { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        const therapistsResponse = await axios.get(
+  `http://localhost:4000/ldss/parent/getacceptedtherapist/${currentParentId}`, 
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+
+console.log('Therapists API response:', therapistsResponse.data); // Debug log
+
+        const acceptedEds = educatorsResponse.data.acceptedEducators || [];
+const acceptedTherapists = therapistsResponse.data.acceptedTherapists 
+  ? therapistsResponse.data.acceptedTherapists.map(conn => conn.recipientId)
+  : [];      
+        console.log('Accepted educators:', acceptedEds);
+        console.log('Accepted therapists:', acceptedTherapists);
+
+        setAcceptedEducators(acceptedEds);
+        setAcceptedTherapists(acceptedTherapists);
 
         const response = await axios.get(
           `http://localhost:4000/ldss/conversations/user/${currentParentId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const validConversations = response.data.filter(conv => {
-            const hasParentModel = conv.participantModels.includes('parent');
-            // Ensure consistency with backend model names (e.g., 'theraphist' with 'ph')
-            const hasOtherParticipantModel = conv.participantModels.includes('educator') || conv.participantModels.includes('theraphist');
-            const hasStudent = !!conv.student; // Student should always be linked for parent conversations (with educator/therapist)
+        console.log('All conversations:', response.data);
 
-            // Ensure exactly two participants and proper models/student link
-            return conv.participants.length === 2 && hasParentModel && hasOtherParticipantModel && hasStudent;
-        });
-        
+const validConversations = response.data.filter(conv => {
+  const otherParticipant = conv.participants.find(p => String(p._id) !== String(currentParentId));
+  
+  if (!otherParticipant) return false;
+  
+  // Check if participant is an accepted educator
+  const isEducator = acceptedEds.some(e => String(e.recipientId._id) === String(otherParticipant._id));
+  
+  // Check if participant is an accepted therapist
+  const isTherapist = acceptedTherapists.some(t => String(t._id) === String(otherParticipant._id));
+  
+  return isEducator || isTherapist;
+});
+
+        console.log('Valid conversations:', validConversations);
         setConversations(validConversations);
 
       } catch (err) {
-        console.error('Error fetching conversations:', err);
-        setError('Failed to load conversations.');
+        console.error('Error:', err);
+        setError('Failed to load chat data');
       } finally {
         setLoading(false);
       }
     };
 
-    // Only fetch if parentDetails are available (or if no prop, we'll try to decode from token)
-    if (parentDetails?._id || localStorage.getItem('token')) {
-      fetchConversations();
-    }
-  }, [parentDetails]); // Re-run when parentDetails become available or change
+    fetchData();
+  }, [parentDetails]);
 
   // Group educator conversations by educator, listing all their students
   const groupedEducatorConversations = useMemo(() => {
-    const educatorMap = new Map(); // Key: educator._id, Value: { educator: {}, students: Set<Student>, firstConversation: Conversation }
+    const educatorMap = new Map();
 
     conversations.forEach(conv => {
-      const otherParticipant = conv.participants.find(p => String(p._id) !== String(parentDetails._id));
+      const otherParticipant = conv.participants.find(p => String(p._id) !== String(parentDetails?._id));
 
-      if (otherParticipant && (otherParticipant.role === 'educator' || conv.participantModels.includes('educator'))) {
-        const educatorId = otherParticipant._id;
-        const student = conv.student; // Guaranteed to exist for these chats
+      // Skip if not an educator conversation
+      if (!otherParticipant || !(otherParticipant.role === 'educator' || conv.participantModels.includes('educator'))) {
+        return;
+      }
 
-        if (!educatorMap.has(educatorId)) {
-          educatorMap.set(educatorId, {
-            educator: otherParticipant,
-            students: new Set(),
-            firstConversation: conv // Store the first conversation for linking purposes
-          });
-        }
+      const educatorId = otherParticipant._id;
+      const student = conv.student;
+
+      if (!educatorMap.has(educatorId)) {
+        educatorMap.set(educatorId, {
+          educator: otherParticipant,
+          students: new Set(),
+          firstConversation: conv
+        });
+      }
+      
+      if (student) {
         educatorMap.get(educatorId).students.add(student);
       }
     });
@@ -97,51 +127,74 @@ const ParentChatSideBar = ({ parentDetails }) => {
   }, [conversations, parentDetails]);
 
   // Group therapist conversations by therapist, listing all their students
-  const groupedTherapistConversations = useMemo(() => {
-    const therapistMap = new Map(); // Key: therapist._id, Value: { therapist: {}, students: Set<Student>, firstConversation: Conversation }
+const groupedTherapistConversations = useMemo(() => {
+  console.log('Grouping therapist conversations...'); // Debug log
+  
+  const therapistMap = new Map();
 
-    conversations.forEach(conv => {
-      const otherParticipant = conv.participants.find(p => String(p._id) !== String(parentDetails._id));
+  conversations.forEach(conv => {
+    // Debug log for each conversation
+    console.log('Processing conversation:', conv._id, 'with participants:', conv.participants);
+    
+    // Find the therapist participant (not the parent)
+const therapistParticipant = conv.participants.find(p => 
+  String(p._id) !== String(parentDetails?._id) && 
+  acceptedTherapists.some(t => String(t._id) === String(p._id))
+);
 
-      // Use 'theraphist' here to match backend model and ParentChat's expectations
-      if (otherParticipant && (otherParticipant.role === 'theraphist' || conv.participantModels.includes('theraphist'))) {
-        const therapistId = otherParticipant._id;
-        const student = conv.student; // Guaranteed to exist for these chats
+    if (!therapistParticipant) {
+      console.log('No therapist participant found in conversation', conv._id);
+      return;
+    }
 
-        if (!therapistMap.has(therapistId)) {
-          therapistMap.set(therapistId, {
-            therapist: otherParticipant,
-            students: new Set(),
-            firstConversation: conv // Store the first conversation for linking purposes
-          });
-        }
-        therapistMap.get(therapistId).students.add(student);
-      }
-    });
+    console.log('Found therapist:', therapistParticipant);
 
-    return Array.from(therapistMap.values()).map(entry => ({
-      ...entry.therapist,
-      allStudents: Array.from(entry.students),
-      firstStudentId: entry.firstConversation.student?._id,
-      firstStudentName: entry.firstConversation.student?.name,
-    }));
-  }, [conversations, parentDetails]);
+    const therapistId = therapistParticipant._id;
+    const student = conv.student;
+    
+    if (!therapistMap.has(therapistId)) {
+      therapistMap.set(therapistId, {
+        therapist: therapistParticipant,
+        students: new Set(),
+        firstConversation: conv
+      });
+    }
+    
+    if (student) {
+      therapistMap.get(therapistId).students.add(student);
+    }
+  });
+
+  const result = Array.from(therapistMap.values()).map(entry => ({
+    ...entry.therapist,
+    allStudents: Array.from(entry.students),
+    firstStudentId: entry.firstConversation.student?._id,
+    firstStudentName: entry.firstConversation.student?.name,
+  }));
+
+  console.log('Final grouped therapists:', result); // Debug log
+  return result;
+}, [conversations, parentDetails]);
 
   // Filter grouped educator conversations based on search term
-  const filteredEducators = groupedEducatorConversations.filter(groupedEducator => {
-    const educatorName = groupedEducator.name?.toLowerCase() || '';
-    const studentNames = groupedEducator.allStudents.map(s => s.name?.toLowerCase() || '').join(' ');
-    const searchTerm = searchTermEducators.toLowerCase();
-    return educatorName.includes(searchTerm) || studentNames.includes(searchTerm);
-  });
+  const filteredEducators = useMemo(() => {
+    return groupedEducatorConversations.filter(groupedEducator => {
+      const educatorName = groupedEducator.name?.toLowerCase() || '';
+      const studentNames = groupedEducator.allStudents.map(s => s.name?.toLowerCase() || '').join(' ');
+      const searchTerm = searchTermEducators.toLowerCase();
+      return educatorName.includes(searchTerm) || studentNames.includes(searchTerm);
+    });
+  }, [groupedEducatorConversations, searchTermEducators]);
 
   // Filter grouped therapist conversations based on search term
-  const filteredTherapists = groupedTherapistConversations.filter(groupedTherapist => {
-    const therapistName = groupedTherapist.name?.toLowerCase() || '';
-    const studentNames = groupedTherapist.allStudents.map(s => s.name?.toLowerCase() || '').join(' ');
-    const searchTerm = searchTermTherapists.toLowerCase();
-    return therapistName.includes(searchTerm) || studentNames.includes(searchTerm);
-  });
+  const filteredTherapists = useMemo(() => {
+    return groupedTherapistConversations.filter(groupedTherapist => {
+      const therapistName = groupedTherapist.name?.toLowerCase() || '';
+      const studentNames = groupedTherapist.allStudents.map(s => s.name?.toLowerCase() || '').join(' ');
+      const searchTerm = searchTermTherapists.toLowerCase();
+      return therapistName.includes(searchTerm) || studentNames.includes(searchTerm);
+    });
+  }, [groupedTherapistConversations, searchTermTherapists]);
 
   if (loading) {
     return (
@@ -236,22 +289,21 @@ const ParentChatSideBar = ({ parentDetails }) => {
         }}>
           {filteredEducators.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-              No educator chats found.
+              {searchTermEducators ? 'No matching educators found' : 'No educator chats found'}
             </Typography>
           ) : (
             filteredEducators.map((groupedEducator) => {
-              // Check if any of the students linked to this grouped educator is currently selected
               const isSelected = selectedParticipantId === groupedEducator._id &&
-                                 groupedEducator.allStudents.some(s => s._id === location.state?.studentId);
+                               groupedEducator.allStudents.some(s => s._id === location.state?.studentId);
               
               return (
                 <Link
-                  key={groupedEducator._id} // Use educator ID as key
-                  to={`/parent/chat/${groupedEducator._id}`} // ID of the educator
+                  key={groupedEducator._id}
+                  to={`/parent/chat/${groupedEducator._id}`}
                   state={{
                     userType: 'educator',
-                    studentName: groupedEducator.firstStudentName, // Pass info of the first student
-                    studentId: groupedEducator.firstStudentId // Pass ID of the first student for context
+                    studentName: groupedEducator.firstStudentName,
+                    studentId: groupedEducator.firstStudentId
                   }}
                   style={{ textDecoration: 'none', color: 'inherit' }}
                 >
@@ -266,7 +318,7 @@ const ParentChatSideBar = ({ parentDetails }) => {
                       backgroundColor: isSelected ? 'primary.main' : 'transparent',
                       color: isSelected ? 'white' : 'inherit',
                       '&:hover': {
-                        backgroundColor: isSelected ? 'primary.main' : 'action.hover',
+                        backgroundColor: isSelected ? 'primary.dark' : 'action.hover',
                         color: isSelected ? 'white' : 'inherit'
                       }
                     }}
@@ -292,7 +344,7 @@ const ParentChatSideBar = ({ parentDetails }) => {
                         <Typography variant="body2" sx={{
                           color: isSelected ? 'white' : 'text.secondary'
                         }}>
-                          {groupedEducator.allStudents.map(s => s.name).join(', ')} {/* Display all student names */}
+                          {groupedEducator.allStudents.map(s => s.name).join(', ')}
                         </Typography>
                       )}
                     </Box>
@@ -352,22 +404,21 @@ const ParentChatSideBar = ({ parentDetails }) => {
         }}>
           {filteredTherapists.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-              No therapist chats found.
+              {searchTermTherapists ? 'No matching therapists found' : 'No therapist chats found'}
             </Typography>
           ) : (
             filteredTherapists.map((groupedTherapist) => {
-              // Check if any of the students linked to this grouped therapist is currently selected
               const isSelected = selectedParticipantId === groupedTherapist._id &&
-                                 groupedTherapist.allStudents.some(s => s._id === location.state?.studentId);
+                               groupedTherapist.allStudents.some(s => s._id === location.state?.studentId);
 
               return (
                 <Link
-                  key={groupedTherapist._id} // Use therapist ID as key
-                  to={`/parent/chat/${groupedTherapist._id}`} // ID of the therapist
+                  key={groupedTherapist._id}
+                  to={`/parent/chat/${groupedTherapist._id}`}
                   state={{
-                    userType: 'theraphist', // CORRECTED: Changed from 'therapist' to 'theraphist' to match ParentChat's check and backend model
-                    studentName: groupedTherapist.firstStudentName, // Pass info of the first student
-                    studentId: groupedTherapist.firstStudentId // Pass ID of the first student for context
+                    userType: 'theraphist',
+                    studentName: groupedTherapist.firstStudentName,
+                    studentId: groupedTherapist.firstStudentId
                   }}
                   style={{ textDecoration: 'none', color: 'inherit' }}
                 >
@@ -382,7 +433,7 @@ const ParentChatSideBar = ({ parentDetails }) => {
                       backgroundColor: isSelected ? 'primary.main' : 'transparent',
                       color: isSelected ? 'white' : 'inherit',
                       '&:hover': {
-                        backgroundColor: isSelected ? 'primary.main' : 'action.hover',
+                        backgroundColor: isSelected ? 'primary.dark' : 'action.hover',
                         color: isSelected ? 'white' : 'inherit'
                       }
                     }}
@@ -408,7 +459,7 @@ const ParentChatSideBar = ({ parentDetails }) => {
                         <Typography variant="body2" sx={{
                           color: isSelected ? 'white' : 'text.secondary'
                         }}>
-                          {groupedTherapist.allStudents.map(s => s.name).join(', ')} {/* Display all student names */}
+                          {groupedTherapist.allStudents.map(s => s.name).join(', ')}
                         </Typography>
                       )}
                     </Box>

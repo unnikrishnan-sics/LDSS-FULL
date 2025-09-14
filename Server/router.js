@@ -18,9 +18,15 @@ const learningPlanController = require("./Controller/learningController");
 const meetingController = require("./Controller/meetingController");
 const chatController = require("./Controller/chatController");
 const activityController = require('./Controller/activityController');
-const meetController = require('./Controller/meetingController')
-// File Upload Config
-const upload = multer({ dest: "uploads/" });
+const meetController = require('./Controller/meetingController');
+const ratingController = require('./Controller/ratingController');
+const blogController = require("./Controller/blogController");
+// NEW: Quiz Controller
+const quizController = require('./Controller/quizController');
+
+
+// File Upload Config (Note: Multer setup is also in activityController.js now)
+// const upload = multer({ dest: "uploads/" }); // This line might be redundant if using activityController.upload
 
 /* ===================== ADMIN ===================== */
 router.post("/admin/login", adminController.adminLogin);
@@ -32,7 +38,7 @@ router.delete("/admin/theraphist/reject/:id", protectedRoute.protectedRoute, the
 
 router.put(
   '/admin/activities/:id',
-  activityController.upload.single('activityPhoto'),
+  activityController.upload.single('activityPhoto'), // Use activityController's multer instance
   activityController.editActivity
 );
 router.get('/admin/activity/:id',  activityController.getActivityById);
@@ -59,6 +65,10 @@ router.get("/parent/getallmeeting/:id", protectedRoute.protectedRoute, meetingCo
 router.get("/parent/getstudentplan/:educatorId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleStudent);
 router.get("/parent/getstudentplantherapist/:therapistId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleTherapist);
 
+// NEW: Parent Quiz Routes
+router.get("/parent/quizzes/child/:childId", protectedRoute.protectedRoute, quizController.getParentQuizzesForChild); // Get quizzes for a child
+router.get("/parent/quiz/attempt/:attemptId", protectedRoute.protectedRoute, quizController.getParentQuizAttemptDetails); // View specific attempt report
+router.post("/parent/quiz/submit/:quizId", protectedRoute.protectedRoute, quizController.submitQuizAttempt); // Submit quiz attempt
 
 
 /* ===================== EDUCATOR ===================== */
@@ -80,10 +90,11 @@ router.post("/educator/addlearning", protectedRoute.protectedRoute, learningPlan
 router.get("/educator/getstudentplan/:educatorId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleStudent);
 router.delete("/educator/deleteplan/:id", protectedRoute.protectedRoute, learningPlanController.deleteLearningPlanByEducator);
 router.put("/educator/updateplan/:educatorId/:childId", protectedRoute.protectedRoute, learningPlanController.editLearningPlanByEducator);
-router.post("/educator/Rating/:childId", protectedRoute.protectedRoute, learningPlanController.updateRating);
+// router.post("/educator/Rating/:childId", protectedRoute.protectedRoute, learningPlanController.updateRating);
 router.post("/educator/addmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.createMeeting);
 router.get("/educator/viewmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.viewChildsMeeting);
 router.get("/educator/viewmeeting/:id", protectedRoute.protectedRoute, meetingController.viewAllmeetingsOfEducator);
+
 
 /* ===================== THERAPHIST ===================== */
 router.post("/theraphist/registration", theraphistController.uploadProfilePic, theraphistController.theraphistRegister);
@@ -105,6 +116,13 @@ router.put("/theraphist/updateplan/:therapistId/:childId", protectedRoute.protec
 router.get("/theraphist/getstudentplan/:therapistId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleTherapist);
 router.delete("/theraphist/deleteplan/:id", protectedRoute.protectedRoute, learningPlanController.deleteLearningTherapist);
 
+// NEW: Therapist Quiz Routes
+router.post("/therapist/quizzes", protectedRoute.protectedRoute, quizController.createQuiz); // Create a new quiz
+router.get("/therapist/quizzes/child/:childId", protectedRoute.protectedRoute, quizController.getTherapistQuizzesForChild); // Get quizzes for a child
+router.get("/therapist/quizzes/attempts/:childId", protectedRoute.protectedRoute, quizController.getTherapistQuizAttemptsForChild); // Get all attempts by a child
+router.get("/therapist/quiz/attempt/:attemptId", protectedRoute.protectedRoute, quizController.getTherapistQuizAttemptDetails); // View specific attempt report
+router.delete("/therapist/quiz/:quizId", protectedRoute.protectedRoute, quizController.deleteQuiz); // Delete a quiz
+
 
 /* ===================== REQUEST ===================== */
 router.post("/request/sendrequest", protectedRoute.protectedRoute, requestController.sendRequest);
@@ -122,12 +140,17 @@ router.get("/parent/conversations/:parentId", protectedRoute.protectedRoute, cha
 router.post(
   '/addactivity',
   protectedRoute.protectedRoute,
-  activityController.upload.single('activityPhoto'), 
+  activityController.upload.single('activityPhoto'),
   activityController.addActivity
 );
 router.get('/activity/getallactivities', protectedRoute.protectedRoute, activityController.getAllActivities);
-router.get('/activity/parent/:parentId', protectedRoute.protectedRoute, activityController.getActivitiesByParent);
+
+router.get('/activity/parent/:parentId', protectedRoute.protectedRoute, activityController.getEnrolledActivitiesByParent);
+
+router.post('/activity/enroll/:activityId/:parentId', protectedRoute.protectedRoute, activityController.enrollActivity);
+
 router.patch('/activity/complete/:activityId', protectedRoute.protectedRoute, activityController.markActivityComplete);
+
 router.delete('/activity/delete/:id', protectedRoute.protectedRoute, activityController.deleteActivity);
 
 // meeting
@@ -143,5 +166,32 @@ router.get("/parent/getallmeeting/:id", protectedRoute.protectedRoute, meetingCo
 router.post("/therapist/addmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.createMeeting);
 router.get("/therapist/viewmeeting/:id/:childId", protectedRoute.protectedRoute, meetingController.viewChildsMeeting);
 router.get("/therapist/viewmeeting/:id", protectedRoute.protectedRoute, meetingController.viewAllmeetingsOfTherapist);
+
+
+//RATING
+router.get('/average/:professionalType/:professionalId', protectedRoute.protectedRoute,ratingController.getAverageRatingForProfessional);
+router.get('/specific', protectedRoute.protectedRoute,ratingController.getSpecificRating);
+router.post('/addrating',protectedRoute.protectedRoute, ratingController.addOrUpdateRating);
+router.get('/ratings/:professionalType', protectedRoute.protectedRoute, ratingController.getRatingsByProfessionalType);
+
+/* ===================== BLOG ===================== */
+router.post(
+    "/blog/add",
+    protectedRoute.protectedRoute,
+    blogController.upload,
+    blogController.addBlog
+);
+router.put(
+    "/blog/edit/:id",
+    protectedRoute.protectedRoute,
+    blogController.upload,
+    blogController.editBlog
+);
+router.get("/quizzes/:quizId", protectedRoute.protectedRoute, quizController.getQuizById); // Get single quiz by ID
+router.get("/blog/all", blogController.fetchAllBlogs);
+router.get("/blog/:id", blogController.fetchBlogById);
+router.post("/blog/like/:id", protectedRoute.protectedRoute, blogController.addLike);
+router.delete("/blog/unlike/:id", protectedRoute.protectedRoute, blogController.removeLike);
+router.delete("/blog/delete/:id", protectedRoute.protectedRoute, blogController.removeBlog);
 
 module.exports = router;

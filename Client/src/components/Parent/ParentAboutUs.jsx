@@ -18,7 +18,7 @@ const ParentAboutUs = () => {
     }
     const [parentdetails,setParentdetails]=useState({});
     useEffect(()=>{
-       const parentdetails=  localStorage.getItem("parentdetails");
+       const parentdetails=  localStorage.getItem("parentDetails");
        setParentdetails(JSON.parse(parentdetails));
     },[]);
     const navigate = useNavigate();

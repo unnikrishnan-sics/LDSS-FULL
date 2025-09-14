@@ -16,6 +16,7 @@ import Fade from '@mui/material/Fade';
 import CloseIcon from '@mui/icons-material/Close';
 import axios from "axios";
 import { toast } from 'react-toastify';
+import QuizIcon from '@mui/icons-material/Quiz';
 
 const addChildStyle = {
   position: 'absolute',
@@ -43,13 +44,27 @@ const editChildStyle = {
 };
 const textFieldStyle = { height: "65px", width: "360px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" }
 
+// Helper function to format date as MM-DD-YYYY
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return dateString; // Return original if invalid date
+  
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  return `${month}-${day}-${year}`;
+};
+
 const ParentChildProfile = () => {
   const aboutBg = {
     background: "#F6F7F9"
   }
   const [parentdetails, setParentdetails] = useState({});
   useEffect(() => {
-    const parentdetails = localStorage.getItem("parentdetails");
+    const parentdetails = localStorage.getItem("parentDetails");
     setParentdetails(JSON.parse(parentdetails));
   }, []);
   
@@ -61,7 +76,10 @@ const ParentChildProfile = () => {
   // add child modal
   const [addChildOpen, setAddChildOpen] = React.useState(false);
   const handleAddChildOpen = () => setAddChildOpen(true);
-  const handleAddChildClose = () => setAddChildOpen(false);
+  const handleAddChildClose = () => {
+    setAddChildOpen(false);
+    setErrors({});
+  };
 
   // add child details
   const [childData, setChildData] = useState({
@@ -71,17 +89,140 @@ const ParentChildProfile = () => {
     description: "",
     dateOfBirth: ""
   });
+
+  // Validation errors
+  const [errors, setErrors] = useState({
+    name: "",
+    schoolName: "",
+    gender: "",
+    dateOfBirth: ""
+  });
   
+  const validateName = (name) => {
+    const regex = /^[a-zA-Z\s]*$/;
+    return regex.test(name);
+  };
+
+  const validateSchoolName = (schoolName) => {
+    const regex = /^[a-zA-Z\s\-']*$/;
+    return regex.test(schoolName);
+  };
+
+  const validateDate = (date) => {
+    const selectedDate = new Date(date);
+    const today = new Date();
+    return selectedDate <= today;
+  };
+        const handleQuizClick = (studentId) => {
+        // --- START DEBUG LOGS ---
+        console.log("TherapistAllStudents - handleQuizClick called with:");
+        console.log("  studentId (child._id):", studentId);
+        // --- END DEBUG LOGS ---
+
+        // Basic validation before navigating
+        if ( !studentId ) {
+            console.error("Missing required chat details:", { parentId, studentId, studentName });
+            alert("Could not start chat: Missing parent or student information. Please try again.");
+            return;
+        }
+
+        navigate(`/parent/child/${studentId}/quizzes`, {
+            state: {
+                studentId: studentId,   // Pass the student's ID
+            }
+        });
+    };
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Validation checks
+    let error = "";
+    
+    if (name === "name") {
+      if (!validateName(value)) {
+        error = "Name should contain only alphabets";
+      } else if (value.trim() === "") {
+        error = "Name is required";
+      }
+    }
+    
+    if (name === "schoolName") {
+      if (!validateSchoolName(value)) {
+        error = "School name should contain only alphabets and spaces";
+      } else if (value.trim() === "") {
+        error = "School name is required";
+      }
+    }
+    
+    if (name === "dateOfBirth") {
+      if (!value) {
+        error = "Date of birth is required";
+      } else if (!validateDate(value)) {
+        error = "Date of birth cannot be in the future";
+      }
+    }
+
+    if (name === "gender") {
+      if (!value) {
+        error = "Gender is required";
+      }
+    }
+    
+    setErrors({
+      ...errors,
+      [name]: error
+    });
+    
     setChildData({
       ...childData,
       [name]: value
-    })
+    });
+  };
+  
+  const validateForm = () => {
+    let valid = true;
+    const newErrors = {...errors};
+    
+    if (!childData.name.trim()) {
+      newErrors.name = "Name is required";
+      valid = false;
+    } else if (!validateName(childData.name)) {
+      newErrors.name = "Name should contain only alphabets";
+      valid = false;
+    }
+    
+    if (!childData.schoolName.trim()) {
+      newErrors.schoolName = "School name is required";
+      valid = false;
+    } else if (!validateSchoolName(childData.schoolName)) {
+      newErrors.schoolName = "School name should contain only alphabets and spaces";
+      valid = false;
+    }
+    
+    if (!childData.dateOfBirth) {
+      newErrors.dateOfBirth = "Date of birth is required";
+      valid = false;
+    } else if (!validateDate(childData.dateOfBirth)) {
+      newErrors.dateOfBirth = "Date of birth cannot be in the future";
+      valid = false;
+    }
+    
+    if (!childData.gender) {
+      newErrors.gender = "Gender is required";
+      valid = false;
+    }
+    
+    setErrors(newErrors);
+    return valid;
   };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     const token = localStorage.getItem("token");
     const child = await axios.post(`http://localhost:4000/ldss/parent/addchild/${parentdetails._id}`, childData, {
       headers: {
@@ -109,7 +250,7 @@ const ParentChildProfile = () => {
   
   const fetchAllChilds = async () => {
     const token = localStorage.getItem("token");
-    const parentdetails = localStorage.getItem("parentdetails");
+    const parentdetails = localStorage.getItem("parentDetails");
     const parent = JSON.parse(parentdetails);
     const child = await axios.get(`http://localhost:4000/ldss/parent/getallchild`, {
       headers: {
@@ -147,7 +288,7 @@ const ParentChildProfile = () => {
     handleEditChildOpen();
     setCurrentChildId(childId);
     const token = localStorage.getItem("token");
-    const parentdetails = localStorage.getItem("parentdetails");
+    const parentdetails = localStorage.getItem("parentDetails");
     const parent = JSON.parse(parentdetails);
     const child = await axios.get(`http://localhost:4000/ldss/parent/getchild/${parent._id}/${childId}`, {
       headers: {
@@ -158,7 +299,7 @@ const ParentChildProfile = () => {
       name: child.data.child.name,
       schoolName: child.data.child.schoolName,
       description: child.data.child.description,
-      dateOfBirth: child.data.child.dateOfBirth,
+      dateOfBirth: child.data.child.dateOfBirth.split('T')[0], // Keep in YYYY-MM-DD format for the input
       gender: child.data.child.gender
     })
   }
@@ -166,7 +307,7 @@ const ParentChildProfile = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
-    const parentdetails = localStorage.getItem("parentdetails");
+    const parentdetails = localStorage.getItem("parentDetails");
     const parent = JSON.parse(parentdetails);
     const child = await axios.post(`http://localhost:4000/ldss/parent/updatechild/${parent._id}/${currentChildId}`, editchild, {
       headers: {
@@ -189,7 +330,7 @@ const ParentChildProfile = () => {
   // delete child 
   const handleDeleteChild = async (childId) => {
     const token = localStorage.getItem("token");
-    const parentdetails = localStorage.getItem("parentdetails");
+    const parentdetails = localStorage.getItem("parentDetails");
     const parent = JSON.parse(parentdetails);
     const child = await axios.delete(`http://localhost:4000/ldss/parent/deletechild/${parent._id}/${childId}`, {
       headers: {
@@ -219,6 +360,15 @@ const ParentChildProfile = () => {
     }
   }
   
+  // Get today's date in YYYY-MM-DD format for date input max attribute
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
   return (
     <>
       <ParentNavbar aboutBg={aboutBg} parentdetails={parentdetails} navigateToProfile={navigateToProfile} />
@@ -234,15 +384,6 @@ const ParentChildProfile = () => {
             <Typography color='primary' sx={{ fontSize: "12px", fontWeight: "500" }}>Child</Typography>
           </Breadcrumbs>
           <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={3}>
-            <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={1} style={{ padding: "8px 15px", borderRadius: "25px", border: "1px solid #CCCCCC", height: "40px" }}>
-              <Box sx={{ height: "100%" }}><SearchOutlinedIcon /></Box>
-              <input 
-                placeholder='search here' 
-                style={{ padding: "8px 15px", border: 0, outline: 0, height: "100%" }}
-                value={searchChild}
-                onChange={handleSearchChild}
-              />
-            </Box>
             <Button 
               endIcon={<AddOutlinedIcon />} 
               variant='contained' 
@@ -291,7 +432,7 @@ const ParentChildProfile = () => {
                         <Box sx={{ color: "#1967D2" }}><DateRangeIcon /></Box>
                         <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
                           <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date of birth</Typography>
-                          <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.dateOfBirth}</Typography>
+                          <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{formatDate(child.dateOfBirth)}</Typography>
                         </Box>
                       </Box>
                       <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
@@ -307,7 +448,28 @@ const ParentChildProfile = () => {
                     <Typography variant='h5' sx={{ fontSize: "18px", fontWeight: "500" }} color='secondary'>Description</Typography>
                     <Typography variant='p' sx={{ fontSize: "14px", fontWeight: "500" }} color='primary'>{child.description}</Typography>
                   </Box>
+                  
+                  <Button
+                                                    startIcon={<QuizIcon />}
+                                                    variant='outlined'
+                                                    color='secondary'
+                                                    sx={{
+                                                        borderRadius: "25px",
+                                                        height: "45px",
+                                                        minWidth: '120px',
+                                                        fontSize: "14px",
+                                                        fontWeight: "500",
+                                                        mr:2
+                                                    }}
+                                                    // MODIFIED: Pass all required data to handleChatClick
+                                                    onClick={() => handleQuizClick( child._id)}
+                                                    // Disable the button if critical data is missing
+                                                    disabled={ !child._id}
+                                                >
+                                                    Quiz
+                                                </Button> 
                 </Box>
+                
               </Grid>
             )
           })
@@ -347,53 +509,78 @@ const ParentChildProfile = () => {
                   <Box sx={{ display: "flex", justifyContent: 'center', alignItems: "start", gap: "30px", height: "154px", flexDirection: "column", marginTop: '30px' }}>
                     <Stack direction="row" sx={{ display: "flex", gap: "15px", alignItems: "center" }}>
                       <div style={textFieldStyle}>
-                        <label>Name</label>
+                        <label>Name*</label>
                         <input 
-                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                          style={{ height: "40px", borderRadius: "8px", border: errors.name ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                           name='name'
                           type='text'
                           value={childData.name}
                           onChange={handleChange}
                         />
+                        {errors.name && <Typography color="error" sx={{ fontSize: "12px", mt: 1 }}>{errors.name}</Typography>}
                       </div>
-                      <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '20px', textFieldStyle }}>
-                        <label style={{}}>Gender:</label>
-                        <label>
-                          <input type="radio" name="gender" value="male" onChange={handleChange} checked={childData.gender === "male"} /> Male
-                        </label>
-                        <label>
-                          <input type="radio" name="gender" value="female" onChange={handleChange} checked={childData.gender === "female"} /> Female
-                        </label>
-                        <label>
-                          <input type="radio" name="gender" value="others" onChange={handleChange} checked={childData.gender === "others"} /> Others
-                        </label>
+                      <div style={{ ...textFieldStyle, width: "360px" }}>
+                        <label>Gender*</label>
+                        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginTop: '8px' }}>
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="gender" 
+                              value="male" 
+                              onChange={handleChange} 
+                              checked={childData.gender === "male"} 
+                            /> Male
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="gender" 
+                              value="female" 
+                              onChange={handleChange} 
+                              checked={childData.gender === "female"} 
+                            /> Female
+                          </label>
+                          <label>
+                            <input 
+                              type="radio" 
+                              name="gender" 
+                              value="others" 
+                              onChange={handleChange} 
+                              checked={childData.gender === "others"} 
+                            /> Others
+                          </label>
+                        </div>
+                        {errors.gender && <Typography color="error" sx={{ fontSize: "12px", mt: 1 }}>{errors.gender}</Typography>}
                       </div>
                     </Stack>
                     <Stack direction={'row'} sx={{ display: "flex", gap: "15px" }}>
                       <div style={textFieldStyle}>
-                        <label>School Name</label>
+                        <label>School Name*</label>
                         <input 
-                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                          style={{ height: "40px", borderRadius: "8px", border: errors.schoolName ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                           name='schoolName'
                           value={childData.schoolName}
                           onChange={handleChange}
                         />
+                        {errors.schoolName && <Typography color="error" sx={{ fontSize: "12px", mt: 1 }}>{errors.schoolName}</Typography>}
                       </div>
                       <div style={textFieldStyle}>
-                        <label>Date Of Birth</label>
+                        <label>Date Of Birth*</label>
                         <input 
-                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                          style={{ height: "40px", borderRadius: "8px", border: errors.dateOfBirth ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                           name='dateOfBirth'
                           type='date'
                           value={childData.dateOfBirth}
                           onChange={handleChange}
+                          max={getTodayDate()}
                         />
+                        {errors.dateOfBirth && <Typography color="error" sx={{ fontSize: "12px", mt: 1 }}>{errors.dateOfBirth}</Typography>}
                       </div>
                     </Stack>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "15px", width: "100%" }}>
                       <label>Description</label>
                       <textarea 
-                        style={{ height: "70px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                        style={{ height: "70px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
                         name='description'
                         value={childData.description}
                         onChange={handleChange}
@@ -445,7 +632,7 @@ const ParentChildProfile = () => {
                       <div style={textFieldStyle}>
                         <label>Name</label>
                         <input 
-                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                          style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
                           name='name'
                           type='text'
                           value={editchild.name}
@@ -469,7 +656,7 @@ const ParentChildProfile = () => {
                       <div style={textFieldStyle}>
                         <label>School Name</label>
                         <input 
-                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                          style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
                           name='schoolName'
                           onChange={handleEditChange}
                           value={editchild.schoolName}
@@ -478,18 +665,19 @@ const ParentChildProfile = () => {
                       <div style={textFieldStyle}>
                         <label>Date Of Birth</label>
                         <input 
-                          style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                          style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
                           name='dateOfBirth'
                           type='date'
                           onChange={handleEditChange}
                           value={editchild.dateOfBirth}
+                          max={getTodayDate()}
                         />
                       </div>
                     </Stack>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: "15px", width: "100%" }}>
                       <label>Description</label>
                       <textarea 
-                        style={{ height: "70px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                        style={{ height: "70px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
                         name='description'
                         onChange={handleEditChange}
                         value={editchild.description}

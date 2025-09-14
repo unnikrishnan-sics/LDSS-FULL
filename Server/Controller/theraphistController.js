@@ -316,18 +316,48 @@ const addTheraphistPersonal=async(req,res)=>{
   }
 };
 
+// In educatorController.js - educatorAcceptsParentRequest
 const acceptParentRequest = async (req, res) => {
   try {
     const requestId = req.params.id;
     const updatedRequest = await requestModel.findByIdAndUpdate(
-      requestId,
-      { status: "accepted" },
+      requestId, 
+      { status: "accepted" }, 
       { new: true }
-    );
+    ).populate('parentId');
+    
     if (!updatedRequest) {
-      return res.json({ message: "Request not found" });
+      return res.json({ message: "request not found" });
     }
-    res.json({ message: "Request accepted", updatedRequest });
+
+    // Create conversation between parent and educator
+    const token = req.headers.authorization?.split(' ')[1];
+    const therapistId = updatedRequest.recipientId;
+    const parentId = updatedRequest.parentId._id;
+
+    // Check if conversation already exists
+    const existingConvs = await axios.get(
+      `http://localhost:4000/ldss/conversations/user/${parentId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const existingConv = existingConvs.data.find(conv => 
+      conv.participants.includes(therapistId) && 
+      conv.participants.includes(parentId)
+    );
+
+    if (!existingConv) {
+      await axios.post(
+        'http://localhost:4000/ldss/conversations',
+        {
+          participants: [parentId, therapistId],
+          participantModels: ['parent', 'theraphist']
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+
+    return res.json({ message: "request accepted", updatedRequest });
   } catch (error) {
     console.log(error.message);
     res.json({ message: error.message });

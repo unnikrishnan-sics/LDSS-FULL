@@ -3,6 +3,7 @@ import ParentNavbarSiginIn from '../Parent/ParentNavbarSiginIn'
 import { Box, Button, Container, InputAdornment, Stack, TextField, Typography, styled } from '@mui/material';
 import background from "../../assets/Frame 12.png"
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import Footer from '../Footer/Footer';
 import axios from "axios";
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,10 +14,12 @@ const AdminLogin = () => {
     const siginupStyle = { background: "white", boxShadow: "none" };
 
     const [data, setData] = useState({
-        userId: "Admin123",
-        password: "admin@123"
+        userId: "",
+        password: ""
     });
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+    
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setData((prevData) => ({ ...prevData, [name]: value }));
@@ -25,30 +28,40 @@ const AdminLogin = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         
-        
-        const response = await axios.post("http://localhost:4000/ldss/admin/login", data);
+        try {
+            const response = await axios.post("http://localhost:4000/ldss/admin/login", data);
 
-        const jwtToken = response.data.token;
-        const message = response.data.message;
+            const jwtToken = response.data.token;
+            const message = response.data.message;
 
-
-        if (jwtToken && message === "Admin logged in successfully") {
-            localStorage.setItem("token", jwtToken);
-            toast.success("logged in successfully!")
-            navigate("/admin/dashboard");
+            if (jwtToken && message === "Admin logged in successfully") {
+                localStorage.setItem("token", jwtToken);
+                toast.success("Logged in successfully!")
+                navigate("/admin/dashboard");
+            }
+        } catch (error) {
+            if(error.response) {
+                const message = error.response.data.message;
+                if(message === "Invalid password.") {
+                    toast.error("Invalid password.");
+                } else if(message === "Admin not found.") {
+                    toast.error("Admin not found with this ID.");
+                } else {
+                    toast.error("Login failed. Please try again.");
+                }
+            } else {
+                toast.error("Network error. Please try again.");
+            }
         }
-        if(message==="Invalid password."){
-            toast.error("Invalid password.");
-        }
-        if(message==="Admin not found."){
-            toast.error("Admin not found with this ID.");
-        }
-        // console.log(jwtToken);
-        // console.log(message);
     }
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    }
+
     return (
         <>
-             <ParentNavbarSiginIn siginupStyle={siginupStyle} />
+            <ParentNavbarSiginIn siginupStyle={siginupStyle} />
             <Container>
                 <Box component="img" src={background} sx={{ position: "absolute", top: -50, left: 0, objectFit: 'cover', zIndex: -1 }}></Box>
                 <Box display={'flex'} flexDirection={'column'} alignItems={'center'} sx={{ marginTop: "80px" }}>
@@ -60,24 +73,27 @@ const AdminLogin = () => {
                         <Stack>
                             <div style={textFieldStyle}>
                                 <label>UserId</label>
-                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                <input 
+                                    style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
                                     onChange={handleInputChange}
                                     name='userId'
                                     value={data.userId}
                                     type='text'
-
+                                    placeholder='Enter your admin ID'
                                 />
-
                             </div>
                             <div style={textFieldStyle}>
                                 <label>Password</label>
-                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                <input 
+                                    style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px', paddingRight: '40px' }}
                                     onChange={handleInputChange}
                                     name='password'
                                     value={data.password}
-                                    type='password'
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder='Enter your password'
                                 />
-                                {data.password.length > 0 ? "" : <VisibilityOffIcon
+                                <div
+                                    onClick={togglePasswordVisibility}
                                     style={{
                                         position: 'absolute',
                                         right: '10px',
@@ -85,24 +101,24 @@ const AdminLogin = () => {
                                         transform: 'translateY(-50%)',
                                         cursor: 'pointer',
                                     }}
-                                />}
-
+                                >
+                                    {showPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                                </div>
                             </div>
                         </Stack>
-                        
-
                     </Box>
 
-
                     <Stack sx={{mb:"80px"}} display={'flex'} flexDirection={'column'} alignItems={'center'} gap={2} mt={2}>
-                        <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
+                        <Button 
+                            variant='contained' 
+                            color='secondary' 
+                            sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
                             onClick={handleLogin}
-                        >Login</Button>
-
-                        
+                        >
+                            Login
+                        </Button>
                     </Stack>
                 </Box>
-
             </Container>
             <Footer />
         </>

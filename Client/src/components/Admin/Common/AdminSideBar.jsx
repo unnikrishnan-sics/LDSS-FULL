@@ -6,7 +6,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import SpaIcon from '@mui/icons-material/Spa';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import { Link, useLocation } from 'react-router-dom';
-
+import NewspaperIcon from '@mui/icons-material/Newspaper';
 
 const AdminSideBar = () => {
     const location=useLocation();
@@ -51,7 +51,12 @@ const AdminSideBar = () => {
                             <Typography color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>Activity Library</Typography>
                         </Box>
                         </Link>
-                        
+                        <Link to={`/admin/blogs`} style={{textDecoration:"none"}}>
+                        <Box sx={{ height: "40px", marginBottom: "10px",background: location.pathname=== "/admin/blogs"? "#F0F6FE":"none" }} display={'flex'} justifyContent={'start'} alignItems={'center'} gap={2}>
+                            <NewspaperIcon color='primary' sx={{ width: "24px" }} />
+                            <Typography color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>Blogs</Typography>
+                        </Box>
+                        </Link>
 
                     </Box>
                 </Box>

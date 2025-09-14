@@ -20,61 +20,27 @@ const AdminViewSingleParent = ({parentdetail,handleParentClose}) => {
                     <Typography color='primary' variant='h5' sx={{ fontSize: "24px", fontWeight: "500" }}>{parentdetail.name} </Typography>
 
                 </Box>
-                <Box display={"flex"} alignItems={"center"} justifyContent={"center"} sx={{ mt: "60px", gap: "30px" }}>
-                    <Box display={"flex"} alignItems={"center"} justifyContent={"start"} sx={{ width: "400px", height: "155px", border: "1px solid black", borderRadius: "20px", gap: "10px" }}>
-                        <Box display={"flex"} alignItems={"start"} gap={5}  width={"100%"} flexDirection={"column"} >
-                            <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
+                <Box display={"flex"} alignItems={"center"} justifyContent={"center"} sx={{ mt: "60px", gap: "5px" }}>
+                    <Box display={"flex"} alignItems={"center"} justifyContent={"center"} sx={{ width: "400px", height: "155px", border: "1px solid black", borderRadius: "20px", gap: "5px" }}>
+                        <Box display={"flex"} alignItems={"start"}   width={"100%"} flexDirection={"column"} sx={{ml:"175px"}} >
+                            <Box sx={{ m: "5px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
                                 <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Name </Typography>
                                 <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.name} </Typography>
                             </Box>
-                            <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
+                            <Box sx={{ m: "5px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>E-mail </Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.email} </Typography>
+                            </Box>
+                            <Box sx={{ m: "5px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
                                 <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Phone number </Typography>
                                 <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.phone} </Typography>
                             </Box>
                             
 
                         </Box>
-                        <Box display={"flex"} alignItems={"start"} gap={5}  width={"100%"} flexDirection={"column"}>
-                            
-                        <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>E-mail </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.email} </Typography>
-                            </Box>
-                            <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Language </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.languages} </Typography>
-                            </Box>
-
-                        </Box>
 
                     </Box>
-                    <Box display={"flex"} alignItems={"center"} justifyContent={"start"} sx={{ width: "400px", height: "155px", border: "1px solid black", borderRadius: "20px", gap: "10px" }}>
-                        <Box display={"flex"} alignItems={"start"} gap={5}  width={"100%"} flexDirection={"column"} >
-                            <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Educational Qualifications </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.educationalQualification} </Typography>
-                            </Box>
-                            <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Availability </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.availability} </Typography>
-                            </Box>
-                            
 
-                        </Box>
-                        <Box display={"flex"} alignItems={"start"} gap={5}  width={"100%"} flexDirection={"column"}>
-                            
-                        <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Years Of Experiance </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.yearsOfExperience} </Typography>
-                            </Box>
-                            <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Certifications </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{parentdetail.certification?.originalname} </Typography>
-                            </Box>
-
-                        </Box>
-
-                    </Box>
                 </Box>
     </>
   )

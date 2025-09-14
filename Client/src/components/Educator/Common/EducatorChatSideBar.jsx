@@ -1,134 +1,151 @@
 import { Avatar, Box, CircularProgress, Typography } from '@mui/material';
-import React, { useState, useEffect, useMemo } from 'react'; // Added useMemo for performance
+import React, { useState, useEffect } from 'react';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
-import { Link, useParams, useLocation } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import axios from 'axios';
+// jwtDecode is not used in this component, so it can be removed if not needed elsewhere.
+// import { jwtDecode } from 'jwt-decode'; 
 
-const EducatorChatSideBar = ({ educatorDetails }) => {
-  const { id: selectedParticipantId } = useParams();
-  const location = useLocation();
+const EducatorChatSideBar = ({ educatorDetails }) => { 
+  const { id } = useParams(); // 'id' here refers to the ID of the currently selected chat recipient
   const [searchTermParents, setSearchTermParents] = useState('');
   const [searchTermTherapists, setSearchTermTherapists] = useState('');
-  const [conversations, setConversations] = useState([]); // Store all conversations
+  const [parents, setParents] = useState([]);
+  const [therapists, setTherapists] = useState([]); // State to store educator details
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchConversations = async () => {
-      setLoading(true);
-      setError(null);
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          setError("Authentication token not found. Please log in.");
+          console.error("Authentication token not found.");
           setLoading(false);
+          // Consider redirecting to login or showing a specific error to the user
           return;
         }
 
+        // Ensure therapistDetails are available before making API calls
         if (!educatorDetails || !educatorDetails._id) {
+          console.log("Educator details not available yet.");
           setLoading(false);
-          return;
+          // Wait for parent component to pass therapistDetails
+          return; 
         }
 
-        const response = await axios.get(
-          `http://localhost:4000/ldss/conversations/user/${educatorDetails._id}`,
+        // --- PARENTS FETCHING (Existing Logic) ---
+        // Fetch approved parents connected to this therapist
+        const parentsRes = await axios.get(
+          `http://localhost:4000/ldss/educator/getapprovedparents/${educatorDetails._id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        // `parentsRes.data.parents` contains request objects, each with a `parentId` field (which is the parent object itself)
+        const approvedParents = parentsRes.data.parents.map(req => req.parentId); 
+
+        // Fetch children associated with all approved parents of this therapist
+        const childrenRes = await axios.get(
+          `http://localhost:4000/ldss/educator/getchildrenofallapprovedparents/${educatorDetails._id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const validConversations = response.data.filter(conv => {
-            const hasEducatorModel = conv.participantModels.includes('educator');
-            const hasOtherParticipantModel = conv.participantModels.includes('parent') || conv.participantModels.includes('theraphist');
-            
-            const otherParticipant = conv.participants.find(p => String(p._id) !== String(educatorDetails._id));
-            
-            if (!otherParticipant || conv.participants.length !== 2 || !hasEducatorModel || !hasOtherParticipantModel) {
-                return false;
-            }
-
-            // If the other participant is a parent, a student *must* be associated
-            if (otherParticipant.role === 'parent' && !conv.student) {
-                return false; 
-            }
-            // For therapist conversations, a student is optional.
-
-            return true;
+        // Process parents data to include their child's name (for display in sidebar)
+        const processedParents = approvedParents.map(parent => {
+          // Find children specifically linked to this parent
+          const parentChildren = childrenRes.data.children.filter(
+            child => child.parentId?._id === parent._id
+          );
+          return {
+            ...parent,
+            // If a parent has multiple children, this will take the first one.
+            studentName: parentChildren[0]?.name,
+            studentId: parentChildren[0]?._id
+          };
         });
-        
-        setConversations(validConversations);
+        setParents(processedParents); // Update parents state
 
-      } catch (err) {
-        console.error('Error fetching conversations:', err);
-        setError('Failed to load conversations.');
+        // --- EDUCATORS FETCHING (NEW LOGIC) ---
+        // Fetch all requests to identify educators for chat
+        const requestListRes = await axios.get(
+          `http://localhost:4000/ldss/request/fetchall`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const requests = requestListRes.data.requests;
+        // console.log("All requests received:", requests); // For debugging purposes
+
+        const uniqueTherapistIds = new Set();
+        requests.forEach(request => {
+          // Check if the request's recipient is an 'educator' and the request status is 'accepted'
+          // This assumes the therapist wants to chat with any educator involved in an accepted request.
+          // If the therapist should only chat with educators they have a direct request with,
+          // the condition `request.parentId === therapistDetails._id || request.recipientId === therapistDetails._id`
+          // would need to be added/adjusted.
+          if (request.recipientRole === 'theraphist' && request.status === 'accepted') {
+            uniqueTherapistIds.add(request.recipientId);
+          }
+        });
+
+        const therapistIdsArray = Array.from(uniqueTherapistIds);
+        // console.log("Unique educator IDs extracted for fetching details:", educatorIdsArray); // For debugging
+
+        if (therapistIdsArray.length > 0) {
+          // Create an array of promises, each fetching details for one educator
+          const therapistPromises = therapistIdsArray.map(async (therapistId) => {
+            try {
+              // Assume an endpoint exists to fetch individual educator details by their ID
+              const therapistRes = await axios.get(
+                `http://localhost:4000/ldss/theraphist/gettheraphist/${therapistId}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              // Assuming the API returns the educator object directly or wrapped in an 'educator' field
+              return therapistRes.data.theraphist || therapistRes.data; 
+            } catch (theraphistError) {
+              console.error(`Error fetching therapist ${therapistId}:`, theraphistError);
+              return null; // Return null for failed fetches so they can be filtered out
+            }
+          });
+
+          // Wait for all educator fetches to complete and filter out any null results (failed fetches)
+          const fetchedTherapists = (await Promise.all(therapistPromises)).filter(Boolean);
+          setTherapists(fetchedTherapists); // Update educators state
+        } else {
+          setTherapists([]); // No educators found or to fetch
+        }
+
+      } catch (error) {
+        console.error('Error fetching chat participants:', error);
+        // Implement more specific error handling if needed (e.g., toast notifications)
       } finally {
-        setLoading(false);
+        setLoading(false); // Ensure loading is set to false regardless of success or failure
       }
     };
 
-    if (educatorDetails?._id) {
-      fetchConversations();
-    }
-  }, [educatorDetails]);
+    fetchData();
+  }, [educatorDetails]); // Dependency: Re-run this effect if `therapistDetails` object changes
 
-  // Group parent conversations by parent, listing all their students
-  const groupedParentConversations = useMemo(() => {
-    const parentMap = new Map(); // Key: parent._id, Value: { parent: {}, students: Set<Student>, firstConversation: Conversation }
-
-    conversations.forEach(conv => {
-      const otherParticipant = conv.participants.find(p => String(p._id) !== String(educatorDetails._id));
-
-      if (otherParticipant && (otherParticipant.role === 'parent' || conv.participantModels.includes('parent'))) {
-        const parentId = otherParticipant._id;
-        const student = conv.student; // Guaranteed to exist for parent chats by filter
-
-        if (!parentMap.has(parentId)) {
-          parentMap.set(parentId, {
-            parent: otherParticipant,
-            students: new Set(), // Store unique student objects
-            firstConversation: conv // Store the first conversation found for this parent
-          });
-        }
-        parentMap.get(parentId).students.add(student);
-      }
-    });
-
-    // Convert map values to an array, and format for display
-    return Array.from(parentMap.values()).map(entry => ({
-      ...entry.parent, // Spread parent details
-      allStudents: Array.from(entry.students), // Convert Set of students to an array
-      firstStudentId: entry.firstConversation.student?._id, // ID of the first student for the link
-      firstStudentName: entry.firstConversation.student?.name,
-      // Keep track of all conversation IDs related to this parent for potential future use
-      // For now, `firstConversation` is enough for linking
-    }));
-  }, [conversations, educatorDetails]); // Re-calculate when conversations or educatorDetails change
-
-  // Filter grouped parent conversations based on search term
-  const filteredParents = groupedParentConversations.filter(groupedParent => {
-    const parentName = groupedParent.name?.toLowerCase() || '';
-    const studentNames = groupedParent.allStudents.map(s => s.name?.toLowerCase() || '').join(' ');
+  // Filter parents list based on the search term
+  const filteredParents = parents.filter(parent => {
+    const parentName = parent?.name?.toLowerCase() || '';
+    const studentName = parent?.studentName?.toLowerCase() || ''; // Can be undefined
     const searchTerm = searchTermParents.toLowerCase();
-    return parentName.includes(searchTerm) || studentNames.includes(searchTerm);
+    
+    return parentName.includes(searchTerm) || studentName.includes(searchTerm);
   });
 
-  // Filter therapist conversations based on search term (original logic)
-  const filteredTherapistConversations = conversations.filter(conv => {
-    const otherParticipant = conv.participants.find(p => String(p._id) !== String(educatorDetails._id));
-    if (!otherParticipant || !(otherParticipant.role === 'theraphist' || conv.participantModels.includes('theraphist'))) return false;
-
-    const participantName = otherParticipant?.name?.toLowerCase() || '';
-    const studentName = conv.student?.name?.toLowerCase() || ''; // Therapist chats may or may not have a student
+  // Filter educators list based on the search term
+  const filteredTherapists = therapists.filter(therapist => {
+    const therapistName = therapist?.name?.toLowerCase() || '';
     const searchTerm = searchTermTherapists.toLowerCase();
-
-    return participantName.includes(searchTerm) || studentName.includes(searchTerm);
+    
+    return therapistName.includes(searchTerm);
   });
 
   if (loading) {
     return (
-      <Box sx={{
-        width: "100%",
-        height: "100%",
-        display: 'flex',
-        justifyContent: 'center',
+      <Box sx={{ 
+        width: "100%", 
+        height: "100%", 
+        display: 'flex', 
+        justifyContent: 'center', 
         alignItems: 'center',
         backgroundColor: 'white',
         borderRadius: "12px",
@@ -139,62 +156,42 @@ const EducatorChatSideBar = ({ educatorDetails }) => {
     );
   }
 
-  if (error) {
-    return (
-      <Box sx={{
-        width: "100%",
-        height: "100%",
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'white',
-        borderRadius: "12px",
-        margin: "15px",
-        p: 2,
-        textAlign: 'center',
-        color: 'error.main'
-      }}>
-        <Typography variant="body2">{error}</Typography>
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{
-      width: "100%",
-      height: "100%",
-      display: "flex",
+    <Box sx={{ 
+      width: "100%", 
+      height: "100%", 
+      display: "flex", 
       flexDirection: "column",
-      py: "15px"
+      py: "15px" // Added vertical padding for overall layout
     }}>
       {/* Parents Section */}
       <Box sx={{
         background: "white",
-        mx: "15px",
-        mb: "15px",
-        flex: 1,
+        mx: "15px", // Horizontal margin
+        mb: "15px", // Bottom margin between sections
+        flex: 1, // Allows this section to take available space
         borderRadius: "12px",
         display: "flex",
         flexDirection: "column",
-        minHeight: '45%' // Ensure equal vertical space for both sections
+        minHeight: '45%' // Ensures it takes at least 45% of available height, prevents collapse
       }}>
         <Box sx={{ p: "10px" }}>
           <Typography sx={{ fontSize: "18px", fontWeight: "500" }} color='primary'>Parents</Typography>
           <Box display="flex" alignItems="center" gap={1} mt={2}
-            sx={{
-              padding: "8px 15px",
-              borderRadius: "25px",
-              border: "1px solid #CCCCCC",
-              height: "40px"
+            sx={{ 
+              padding: "8px 15px", 
+              borderRadius: "25px", 
+              border: "1px solid #CCCCCC", 
+              height: "40px" 
             }}
           >
             <SearchOutlinedIcon sx={{ color: 'action.active' }} />
-            <input
-              placeholder="Search parents"
-              style={{
-                border: 0,
-                outline: 0,
-                height: "100%",
+            <input 
+              placeholder="Search parents" 
+              style={{ 
+                border: 0, 
+                outline: 0, 
+                height: "100%", 
                 width: "100%",
                 backgroundColor: "transparent",
                 fontSize: '1rem'
@@ -206,111 +203,107 @@ const EducatorChatSideBar = ({ educatorDetails }) => {
         </Box>
 
         <Box sx={{
-          overflowY: "auto",
-          scrollbarWidth: "none",
-          '&::-webkit-scrollbar': { display: 'none' },
-          flex: 1,
+          overflowY: "auto", // Enables scrolling for parent list
+          scrollbarWidth: "none", // Hide scrollbar for Firefox
+          '&::-webkit-scrollbar': { display: 'none' }, // Hide scrollbar for Webkit browsers (Chrome, Safari, Edge)
+          flex: 1, // Allows content to take remaining space and enable scrolling
           px: "10px",
-          pb: "10px"
+          pb: "10px" // Padding at bottom of scrollable area
         }}>
           {filteredParents.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-              No parent chats found.
+              No parents found.
             </Typography>
           ) : (
-            filteredParents.map((groupedParent) => {
-              // Check if any of the students linked to this grouped parent is currently selected
-              const isSelected = selectedParticipantId === groupedParent._id &&
-                                 groupedParent.allStudents.some(s => s._id === location.state?.studentId);
-
-              return (
-                <Link
-                  key={groupedParent._id} // Use parent ID as key
-                  to={`/educator/chat/${groupedParent._id}`} // ID of the parent
-                  state={{
-                    userType: 'parent',
-                    studentName: groupedParent.firstStudentName, // Pass info of the first student
-                    studentId: groupedParent.firstStudentId // Pass ID of the first student for context
+            filteredParents.map((parent) => (
+              <Link 
+                key={parent._id} 
+                to={`/educator/chat/${parent._id}`} 
+                state={{ 
+                  userType: 'parent', 
+                  studentName: parent.studentName, // Pass student info to chat component
+                  studentId: parent.studentId 
+                }}
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <Box 
+                  display="flex" 
+                  alignItems="center" 
+                  gap={1} 
+                  p={1}
+                  sx={{ 
+                    cursor: "pointer",
+                    borderRadius: "8px",
+                    // Highlight selected parent based on URL param 'id'
+                    backgroundColor: id === parent._id ? 'primary.main' : 'transparent',
+                    color: id === parent._id ? 'white' : 'inherit',
+                    '&:hover': {
+                      backgroundColor: id === parent._id ? 'primary.main' : 'action.hover',
+                      color: id === parent._id ? 'white' : 'inherit'
+                    }
                   }}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
                 >
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    gap={1}
-                    p={1}
-                    sx={{
-                      cursor: "pointer",
-                      borderRadius: "8px",
-                      backgroundColor: isSelected ? 'primary.main' : 'transparent',
-                      color: isSelected ? 'white' : 'inherit',
-                      '&:hover': {
-                        backgroundColor: isSelected ? 'primary.main' : 'action.hover',
-                        color: isSelected ? 'white' : 'inherit'
-                      }
-                    }}
-                  >
-                    {groupedParent.profilePic ? (
-                      <Avatar
-                        src={`http://localhost:4000/uploads/${groupedParent.profilePic}`}
-                        alt={groupedParent.name || ''}
-                      />
-                    ) : (
-                      <Avatar
-                        sx={{
-                          bgcolor: isSelected ? 'white' : 'primary.main',
-                          color: isSelected ? 'primary.main' : 'white'
-                        }}
-                      >
-                        {(groupedParent.name || '').charAt(0)}
-                      </Avatar>
-                    )}
-                    <Box>
-                      <Typography fontWeight="bold">{groupedParent.name}</Typography>
-                      {groupedParent.allStudents.length > 0 && (
-                        <Typography variant="body2" sx={{
-                          color: isSelected ? 'white' : 'text.secondary'
+                  {parent.profilePic ? (
+                    <Avatar 
+                      src={`http://localhost:4000/uploads/${parent.profilePic}`} 
+                      alt={parent.name || ''}
+                    />
+                  ) : (
+                    <Avatar 
+                      sx={{ 
+                        bgcolor: id === parent._id ? 'white' : 'primary.main', // Avatar background color changes on selection
+                        color: id === parent._id ? 'primary.main' : 'white' // Avatar text color changes on selection
+                      }}
+                    >
+                      {(parent.name || '').charAt(0)}
+                    </Avatar>
+                  )}
+                  <Box>
+                    <Typography fontWeight="bold">{parent.name}</Typography>
+                    {/* Display student name if available */}
+                    {parent.studentName && (
+                        <Typography variant="body2" sx={{ 
+                            color: id === parent._id ? 'white' : 'text.secondary' 
                         }}>
-                          {groupedParent.allStudents.map(s => s.name).join(', ')} {/* Display all student names */}
+                            {parent.studentName}
                         </Typography>
-                      )}
-                    </Box>
+                    )}
                   </Box>
-                </Link>
-              );
-            })
+                </Box>
+              </Link>
+            ))
           )}
         </Box>
       </Box>
 
-      {/* Therapists Section (Unchanged) */}
+      {/* Educators Section */}
       <Box sx={{
         background: "white",
-        mx: "15px",
-        mt: 0,
-        flex: 1,
+        mx: "15px", // Horizontal margin
+        mt: 0, // No top margin as previous box has bottom margin
+        flex: 1, // Allows this section to take available space
         borderRadius: "12px",
         display: "flex",
         flexDirection: "column",
-        minHeight: '45%' // Ensure equal vertical space for both sections
+        minHeight: '45%' // Ensures it takes at least 45% of available height
       }}>
         <Box sx={{ p: "10px" }}>
           <Typography sx={{ fontSize: "18px", fontWeight: "500" }} color='primary'>Therapists</Typography>
           <Box display="flex" alignItems="center" gap={1} mt={2}
-            sx={{
-              padding: "8px 15px",
-              borderRadius: "25px",
-              border: "1px solid #CCCCCC",
-              height: "40px"
+            sx={{ 
+              padding: "8px 15px", 
+              borderRadius: "25px", 
+              border: "1px solid #CCCCCC", 
+              height: "40px" 
             }}
           >
             <SearchOutlinedIcon sx={{ color: 'action.active' }} />
-            <input
-              placeholder="Search Therapists"
-              style={{
-                border: 0,
-                outline: 0,
-                height: "100%",
+            <input 
+              placeholder="Search Therapists" 
+              style={{ 
+                border: 0, 
+                outline: 0, 
+                height: "100%", 
                 width: "100%",
                 backgroundColor: "transparent",
                 fontSize: '1rem'
@@ -322,80 +315,63 @@ const EducatorChatSideBar = ({ educatorDetails }) => {
         </Box>
 
         <Box sx={{
-          overflowY: "auto",
+          overflowY: "auto", // Enables scrolling for educator list
           scrollbarWidth: "none",
           '&::-webkit-scrollbar': { display: 'none' },
           flex: 1,
           px: "10px",
           pb: "10px"
         }}>
-          {filteredTherapistConversations.length === 0 ? (
+          {filteredTherapists.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-              No therapist chats found.
+              No therapists found.
             </Typography>
           ) : (
-            filteredTherapistConversations.map((conv) => {
-              const therapist = conv.participants.find(p => String(p._id) !== String(educatorDetails._id));
-              const student = conv.student;
-
-              const uniqueKey = conv._id || `${therapist._id}-${student?._id || 'no-student'}`;
-
-              return (
-                <Link
-                  key={uniqueKey}
-                  to={`/educator/chat/${therapist._id}`}
-                  state={{
-                    userType: 'theraphist',
-                    studentName: student?.name,
-                    studentId: student?._id
+            filteredTherapists.map((therapist) => (
+              <Link 
+                key={therapist._id} 
+                to={`/educator/chat/${therapist._id}`} 
+                state={{ userType: 'theraphist' }} // Pass user type to chat component
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <Box 
+                  display="flex" 
+                  alignItems="center" 
+                  gap={1} 
+                  p={1}
+                  sx={{ 
+                    cursor: "pointer",
+                    borderRadius: "8px",
+                    // Highlight selected educator based on URL param 'id'
+                    backgroundColor: id === therapist._id ? 'primary.main' : 'transparent',
+                    color: id === therapist._id ? 'white' : 'inherit',
+                    '&:hover': {
+                      backgroundColor: id === therapist._id ? 'primary.main' : 'action.hover',
+                      color: id === therapist._id ? 'white' : 'inherit'
+                    }
                   }}
-                  style={{ textDecoration: 'none', color: 'inherit' }}
                 >
-                  <Box
-                    display="flex"
-                    alignItems="center"
-                    gap={1}
-                    p={1}
-                    sx={{
-                      cursor: "pointer",
-                      borderRadius: "8px",
-                      backgroundColor: (selectedParticipantId === therapist._id && (!student || location.state?.studentId === student?._id)) ? 'primary.main' : 'transparent',
-                      color: (selectedParticipantId === therapist._id && (!student || location.state?.studentId === student?._id)) ? 'white' : 'inherit',
-                      '&:hover': {
-                        backgroundColor: (selectedParticipantId === therapist._id && (!student || location.state?.studentId === student?._id)) ? 'primary.main' : 'action.hover',
-                        color: (selectedParticipantId === therapist._id && (!student || location.state?.studentId === student?._id)) ? 'white' : 'inherit'
-                      }
-                    }}
-                  >
-                    {therapist.profilePic ? (
-                      <Avatar
-                        src={`http://localhost:4000/uploads/${therapist.profilePic}`}
-                        alt={therapist.name || ''}
-                      />
-                    ) : (
-                      <Avatar
-                        sx={{
-                          bgcolor: (selectedParticipantId === therapist._id && (!student || location.state?.studentId === student?._id)) ? 'white' : 'primary.main',
-                          color: (selectedParticipantId === therapist._id && (!student || location.state?.studentId === student?._id)) ? 'primary.main' : 'white'
-                        }}
-                      >
-                        {(therapist.name || '').charAt(0)}
-                      </Avatar>
-                    )}
-                    <Box>
-                      <Typography fontWeight="bold">{therapist.name}</Typography>
-                      {student?.name && (
-                        <Typography variant="body2" sx={{
-                          color: (selectedParticipantId === therapist._id && (!student || location.state?.studentId === student?._id)) ? 'white' : 'text.secondary'
-                        }}>
-                          {student.name}
-                        </Typography>
-                      )}
-                    </Box>
+                  {therapist.profilePic ? (
+                    <Avatar 
+                      src={`http://localhost:4000/uploads/${therapist.profilePic}`} 
+                      alt={therapist.name || ''}
+                    />
+                  ) : (
+                    <Avatar 
+                      sx={{ 
+                        bgcolor: id === therapist._id ? 'white' : 'primary.main', 
+                        color: id === therapist._id ? 'primary.main' : 'white' 
+                      }}
+                    >
+                      {(therapist.name || '').charAt(0)}
+                    </Avatar>
+                  )}
+                  <Box>
+                    <Typography fontWeight="bold">{therapist.name}</Typography>
                   </Box>
-                </Link>
-              );
-            })
+                </Box>
+              </Link>
+            ))
           )}
         </Box>
       </Box>

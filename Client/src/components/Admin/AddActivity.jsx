@@ -42,6 +42,14 @@ const AddActivity = () => {
     'Social-Emotional Learning',
   ];
 
+  const truncateFileName = (name) => {
+    if (name === 'No file chosen') return name;
+    if (name.length > 10) {
+      return `${name.substring(0, 10)}...${name.split('.').pop()}`;
+    }
+    return name;
+  };
+
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (selected) {
@@ -50,19 +58,33 @@ const AddActivity = () => {
         setStatus({ submitting: false, success: false, message: 'Only JPG/PNG files are allowed.' });
         return;
       }
+      if (selected.size > 2 * 1024 * 1024) { // 2MB limit
+        setStatus({ submitting: false, success: false, message: 'File size should be less than 2MB.' });
+        return;
+      }
       setFileName(selected.name);
       setFile(selected);
     }
   };
 
+  const handleActivityNameChange = (e) => {
+    const value = e.target.value;
+    // Only allow letters and spaces
+    if (/^[a-zA-Z\s]*$/.test(value) || value === '') {
+      setActivityName(value);
+    }
+  };
+
   const handleSubmit = async () => {
-    const parentId = JSON.parse(localStorage.getItem('parentdetails'))?._id;
     const token = localStorage.getItem('token');
 
     const newErrors = {};
-    if (!activityName) newErrors.activityName = 'Activity name is required';
-    if (!description) newErrors.description = 'Description is required';
+    if (!activityName.trim()) newErrors.activityName = 'Activity name is required';
+    if (activityName.length > 50) newErrors.activityName = 'Activity name should be less than 50 characters';
+    if (!description.trim()) newErrors.description = 'Description is required';
+    if (description.length > 500) newErrors.description = 'Description should be less than 500 characters';
     if (!category) newErrors.category = 'Category is required';
+    if (!file) newErrors.file = 'Please upload an image';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -71,25 +93,21 @@ const AddActivity = () => {
     }
 
     setErrors({});
-const formData = new FormData();
-formData.append('activityName', activityName);
-formData.append('description', description);
-formData.append('category', category);
-if (file) {
-  formData.append('activityPhoto', file);
-}
+    const formData = new FormData();
+    formData.append('activityName', activityName.trim());
+    formData.append('description', description.trim());
+    formData.append('category', category);
+    formData.append('activityPhoto', file);
 
     try {
       setStatus({ submitting: true, success: null, message: '' });
 
-const res = await axios.post('http://localhost:4000/ldss/addactivity', formData, {
-  headers: {
-    'Content-Type': 'multipart/form-data',
-    Authorization: `Bearer ${token}`,
-  },
-});
-
-
+      const res = await axios.post('http://localhost:4000/ldss/addactivity', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       setStatus({ submitting: false, success: true, message: 'Activity added successfully!' });
       setActivityName('');
@@ -149,7 +167,7 @@ const res = await axios.post('http://localhost:4000/ldss/addactivity', formData,
           sx={{ mt: '20px', background: 'white', borderRadius: '8px', width: '100%', p: '30px', gap: '15px' }}
         >
           <Typography variant='h3' sx={{ fontSize: '18px', fontWeight: '600' }} color='primary'>
-            Add Job
+            Add Activity
           </Typography>
 
           <Box mt={4} display={'flex'} flexDirection={'column'} alignItems={'center'} justifyContent={'center'} gap={3}>
@@ -165,53 +183,51 @@ const res = await axios.post('http://localhost:4000/ldss/addactivity', formData,
                   }}
                   name='activityName'
                   value={activityName}
-                  onChange={(e) => setActivityName(e.target.value)}
+                  onChange={handleActivityNameChange}
                   type='text'
+                  maxLength={50}
                 />
                 {errors.activityName && <span style={{ color: 'red', fontSize: '12px' }}>{errors.activityName}</span>}
               </div>
 
-<div style={textFieldStyle}>
-  <label>Photo</label>
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      border: '1px solid #CCCCCC',
-      borderRadius: '8px',
-      height: '40px',
-      padding: '0 8px',
-      cursor: 'pointer',
-    }}
-    component="label"
-    htmlFor="file-upload"
-  >
-    <Typography
-      variant="body1"
-      sx={{ flexGrow: 1, color: fileName === 'No file chosen' ? '#999' : 'inherit' }}
-    >
-      {fileName}
-    </Typography>
-
-    <DriveFolderUploadIcon color="primary" />
-
-    {/* hidden input INSIDE the label */}
-    <input
-      type="file"
-      id="file-upload"
-      style={{ display: 'none' }}
-      accept="image/jpeg,image/png"
-      onChange={handleFileChange}
-    />
-  </Box>
-</div>
-
+              <div style={textFieldStyle}>
+                <label>Photo</label>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    border: errors.file ? '1px solid red' : '1px solid #CCCCCC',
+                    borderRadius: '8px',
+                    height: '40px',
+                    padding: '0 8px',
+                    cursor: 'pointer',
+                  }}
+                  component="label"
+                  htmlFor="file-upload"
+                >
+                  <Typography
+                    variant="body1"
+                    sx={{ flexGrow: 1, color: fileName === 'No file chosen' ? '#999' : 'inherit' }}
+                  >
+                    {truncateFileName(fileName)}
+                  </Typography>
+                  <DriveFolderUploadIcon color="primary" />
+                  <input
+                    type="file"
+                    id="file-upload"
+                    style={{ display: 'none' }}
+                    accept="image/jpeg,image/png"
+                    onChange={handleFileChange}
+                  />
+                </Box>
+                {errors.file && <span style={{ color: 'red', fontSize: '12px' }}>{errors.file}</span>}
+              </div>
             </Box>
 
             <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={3}>
               <div style={textFieldStyle}>
                 <label>Description</label>
-                <input
+                 <input
                   style={{
                     height: '40px',
                     borderRadius: '8px',
@@ -224,6 +240,9 @@ const res = await axios.post('http://localhost:4000/ldss/addactivity', formData,
                   type='text'
                 />
                 {errors.description && <span style={{ color: 'red', fontSize: '12px' }}>{errors.description}</span>}
+                <span style={{ fontSize: '12px', color: '#666', alignSelf: 'flex-end' }}>
+                  {description.length}/500
+                </span>
               </div>
 
               <div style={textFieldStyle}>

@@ -13,7 +13,7 @@ import ApartmentOutlinedIcon from '@mui/icons-material/ApartmentOutlined';
 import FemaleIcon from '@mui/icons-material/Female';
 import DateRangeIcon from '@mui/icons-material/DateRange';
 
-const TherapistViewParentDetails = ({ handleParentClose, requestDetail, acceptParentRequest, rejectParentRequest }) => {
+const TherapistViewParentDetails = ({ handleParentClose, requestDetail, onAccept, onReject }) => {
     const useDummyData = false;    
     // Dummy data for parent
     const dummyParent = {
@@ -246,12 +246,15 @@ const TherapistViewParentDetails = ({ handleParentClose, requestDetail, acceptPa
             )}
 
             {/* Action Buttons */}
-            {requestDetail.status === "accepted" ? (
+           {requestDetail.status === "accepted" ? (
                 <Box></Box>
             ) : (
                 <Box display={"flex"} justifyContent={"center"} mt={2} mb={2} gap={3}>
                     <Button 
-                        onClick={() => rejectParentRequest(requestDetail._id)} 
+                        onClick={() => {
+                            onReject();
+                            handleParentClose();
+                        }} 
                         variant='outlined' 
                         color='secondary' 
                         sx={{ borderRadius: "25px", height: "40px", width: '200px', padding: '10px 35px' }}
@@ -259,7 +262,10 @@ const TherapistViewParentDetails = ({ handleParentClose, requestDetail, acceptPa
                         Reject
                     </Button>
                     <Button 
-                        onClick={() => acceptParentRequest(requestDetail._id)} 
+                        onClick={() => {
+                            onAccept();
+                            handleParentClose();
+                        }} 
                         variant='contained' 
                         color='secondary' 
                         sx={{ borderRadius: "25px", height: "40px", width: '200px', padding: '10px 35px' }}
@@ -271,5 +277,4 @@ const TherapistViewParentDetails = ({ handleParentClose, requestDetail, acceptPa
         </>
     );
 };
-
 export default TherapistViewParentDetails;

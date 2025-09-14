@@ -10,16 +10,48 @@ import vector1 from "../../assets/Vector.png";
 import vector2 from "../../assets/Vector1.png";
 import Footer from '../Footer/Footer';
 import aboutbg1 from "../../assets/aboutbg.png";
-
+import { useNavigate } from 'react-router-dom';
+import ChatIcon from '@mui/icons-material/Chat';
 
 const AboutUs = () => {
     const aboutBg = {
         background: "#F6F7F9",
-        // zIndex:"10"
     }
+    const navigate = useNavigate();
+
+    const handleChatClick = () => {
+        navigate('/chatbot');
+    };
+
     return (
         <>
             <Navbar aboutBg={aboutBg}/>
+            {/* Floating Chat Button */}
+            <Box 
+                sx={{
+                    position: 'fixed',
+                    bottom: '30px',
+                    right: '30px',
+                    zIndex: 1000,
+                    backgroundColor: '#1976d2',
+                    color: 'white',
+                    borderRadius: '50%',
+                    width: '60px',
+                    height: '60px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+                    '&:hover': {
+                        backgroundColor: '#1565c0',
+                        transform: 'scale(1.05)'
+                    }
+                }}
+                onClick={handleChatClick}
+            >
+                <ChatIcon sx={{ fontSize: '30px' }} />
+            </Box>
             <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{
                 position: "relative",zIndex:-10, ...aboutBg
             }}>

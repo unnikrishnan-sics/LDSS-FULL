@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -14,6 +14,8 @@ import { Link, useLocation } from "react-router-dom";
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
 import SmsOutlinedIcon from '@mui/icons-material/SmsOutlined';
 import { Divider, List, ListItem, ListItemText, Paper } from '@mui/material';
+import EventIcon from '@mui/icons-material/Event';
+import axiosInstance from '../../Api_service/baseUrl';
 
 const pages = [
     { label: 'Home', path: '/educator/home' },
@@ -22,38 +24,113 @@ const pages = [
     { label: 'All students', path: '/educator/allstudents' },
     { label: 'Parents', path: '/educator/acceptedparents' },
     { label: 'Meetings', path: '/educator/meeting' },
-    // { label: 'Activities', path: '/educator/viewactivitylibrary' }
+    // { label: 'Activities', path: '/educator/viewactivitylibrary' },
+    { label: 'Blogs', path: '/educator/blogs' },
+
 ];
 
 const EducatorNavbar = ({ homebg = {}, aboutBg = {}, contactbg = {}, navigateToProfile = () => { }, profilebg = {}, educatorDetails = {} }) => {
     const [anchorElNav, setAnchorElNav] = useState(null);
-    const [notificationsOpen, setNotificationsOpen] = useState(false);
-    const [notifications, setNotifications] = useState([]);
+    const [notificationAnchor, setNotificationAnchor] = useState(null);
+    const [meetings, setMeetings] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const handleOpenNavMenu = (event) => {
         setAnchorElNav(event.currentTarget);
+    };
+
+    const handleOpenNotificationMenu = (event) => {
+        setNotificationAnchor(event.currentTarget);
+        setUnreadCount(0);
     };
 
     const handleCloseNavMenu = () => {
         setAnchorElNav(null);
     };
 
-    const toggleNotifications = () => {
-        const wasOpen = notificationsOpen;
-        setNotificationsOpen(!wasOpen);
-        
-        if (!wasOpen) {
-            setNotifications([
-                { id: 1, text: 'New message from Jane Doe', time: '10 min ago', description: 'Regarding tomorrow\'s assignment submission' },
-                { id: 2, text: 'Meeting scheduled for tomorrow', time: '1 hour ago', description: 'Parent-teacher meeting at 2:00 PM' },
-                { id: 3, text: 'New student assignment submitted', time: '3 hours ago', description: 'Math homework from John Smith' },
-                { id: 4, text: 'Parent request accepted', time: '1 day ago', description: 'Sarah Johnson approved your meeting request' },
-                { id: 5, text: 'System update available', time: '2 days ago', description: 'New features added to your dashboard' },
-            ]);
-        }
+    const handleCloseNotificationMenu = () => {
+        setNotificationAnchor(null);
     };
 
     const location = useLocation();
+
+    // Function to check if a meeting is upcoming
+    const isMeetingUpcoming = (meeting) => {
+        if (!meeting?.date || !meeting?.endTime) return false;
+        
+        const now = new Date();
+        const meetingDate = new Date(meeting.date);
+        
+        // Compare dates first
+        if (meetingDate.toDateString() !== now.toDateString()) {
+            return meetingDate > now;
+        }
+        
+        // If same date, compare end time
+        const [endHours, endMinutes] = meeting.endTime.split(':').map(Number);
+        const meetingEndTime = new Date(meetingDate);
+        meetingEndTime.setHours(endHours, endMinutes, 0, 0);
+        
+        return meetingEndTime > now;
+    };
+
+    useEffect(() => {
+        const fetchMeetings = async () => {
+            try {
+                setLoading(true);
+                const token = localStorage.getItem("token");
+                const educatorId = JSON.parse(localStorage.getItem("educatorDetails"))?._id;
+                
+                if (!educatorId) return;
+                
+                const response = await axiosInstance.get(`/educator/viewmeeting/${educatorId}`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                
+                const fetchedMeetings = response.data.meetings || [];
+                setMeetings(fetchedMeetings);
+                
+                // Calculate upcoming meetings
+                const upcoming = fetchedMeetings.filter(meeting => isMeetingUpcoming(meeting));
+                setUnreadCount(upcoming.length);
+            } catch (error) {
+                console.error("Error fetching meetings:", error);
+                setMeetings([]);
+                setUnreadCount(0);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchMeetings();
+    }, []);
+
+    // Filter upcoming meetings
+    const upcomingMeetings = meetings.filter(meeting => isMeetingUpcoming(meeting));
+
+    // Format time to 12-hour format
+    const formatTime = (time) => {
+        if (!time) return '';
+        const [hours, minutes] = time.split(':');
+        const hour = parseInt(hours, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const hour12 = hour % 12 || 12;
+        return `${hour12}:${minutes} ${ampm}`;
+    };
+
+    // Format date to readable format
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+    };
 
     return (
         <AppBar position="static" sx={{ zIndex: 100, boxShadow: "none", backgroundColor: 'transparent', backgroundImage: `url(${contactbg})`, ...homebg, ...aboutBg, ...profilebg, mt: "10px", ...contactbg }}>
@@ -138,125 +215,113 @@ const EducatorNavbar = ({ homebg = {}, aboutBg = {}, contactbg = {}, navigateToP
                     </Box>
 
                     {/* Right side - Icons and profile */}
-                    <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ flexGrow: 0, gap: "30px", position: 'relative' }}>
-                        <Box sx={{ position: 'relative' }}>
-                            <IconButton onClick={toggleNotifications}>
-                                <NotificationsOutlinedIcon color='primary' sx={{ height: '24px' }} />
-                            </IconButton>
-                            
-                            {/* Notifications dropdown with card styling */}
-                            {notificationsOpen && (
-                                <Box sx={{ 
-                                    position: 'absolute',
-                                    top: '100%',
-                                    left: '-200px',
-                                    width: 370,
-                                    zIndex: 9999,
-                                    mt: '10px'
-                                }}>
-                                    {/* Arrow pointing to the icon */}
-                                    <Box sx={{
-                                        position: 'absolute',
-                                        top: '-10px',
-                                        right: '140px',
-                                        width: 0,
-                                        height: 0,
-                                        borderLeft: '10px solid transparent',
-                                        borderRight: '10px solid transparent',
-                                        borderBottom: '10px solid white',
-                                        filter: 'drop-shadow(0px -2px 2px rgba(0,0,0,0.1))'
-                                    }} />
-                                    
-                                    <Paper sx={{ 
-                                        width: '100%',
-                                        maxHeight: 500,
-                                        overflow: 'auto',
-                                        borderRadius: '12px',
-                                        bgcolor: 'background.paper',
-                                        p: 1.5,
-                                        boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.1)'
-                                    }}>
-                                        
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                            {notifications.length > 0 ? (
-                                                notifications.map((notification) => (
-                                                    <Paper 
-                                                        key={notification.id}
-                                                        elevation={0}
-                                                        sx={{
-                                                            display: 'flex',
-                                                            alignItems: 'flex-start',
-                                                            p: 2,
-                                                            borderRadius: '12px',
-                                                            border: '1px solid #e0e0e0',
-                                                            '&:hover': {
-                                                                backgroundColor: '#f5f5f5'
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Avatar 
-                                                            sx={{ 
-                                                                width: 40, 
-                                                                height: 40, 
-                                                                mr: 2,
-                                                                bgcolor: '#1976d2',
-                                                                color: 'white',
-                                                                fontSize: '16px'
-                                                            }}
-                                                        >
-                                                            {notification.text.charAt(0)}
-                                                        </Avatar>
-                                                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                            <Typography 
-                                                                variant="subtitle2" 
-                                                                noWrap
-                                                                sx={{ 
-                                                                    fontWeight: 600,
-                                                                    lineHeight: 1.3,
-                                                                    mb: 0.5
-                                                                }}
-                                                            >
-                                                                {notification.text}
-                                                            </Typography>
-                                                            <Typography 
-                                                                variant="body2" 
-                                                                color="text.secondary"
-                                                                noWrap
-                                                                sx={{
-                                                                    lineHeight: 1.3,
-                                                                    textOverflow: 'ellipsis',
-                                                                    overflow: 'hidden'
-                                                                }}
-                                                            >
-                                                                {notification.description}
-                                                            </Typography>
-                                                            <Typography 
-                                                                variant="caption" 
-                                                                color="text.secondary"
-                                                                sx={{
-                                                                    display: 'block',
-                                                                    mt: 0.5
-                                                                }}
-                                                            >
-                                                                <li style={{color:"text.secondary"}}>{notification.time}</li>
-                                                            </Typography>
-                                                        </Box>
-                                                    </Paper>
-                                                ))
-                                            ) : (
-                                                <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
-                                                    No new notifications
-                                                </Typography>
-                                            )}
-                                        </Box>
-                                    </Paper>
-                                </Box>
-                            )}
-                        </Box>
-                        
-                        <Link to={`/educator/chat`}>
-                            <SmsOutlinedIcon color='primary' sx={{ height: '24px', color: location.pathname === `/educator/chat` ? '#1967D2' : 'black' }} />
+                    <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ flexGrow: 0, gap: "30px" }}>
+                        {/* Chat Icon */}
+                        <Link to={'/educator/chat'}>
+                            <SmsOutlinedIcon color="primary" sx={{ height: '24px' }} />
                         </Link>
+
+                        {/* Notifications */}
+                        <IconButton onClick={handleOpenNotificationMenu} color="inherit">
+                            <Box sx={{ position: 'relative' }}>
+                                <NotificationsOutlinedIcon color="primary" sx={{ height: '24px' }} />
+                                {/* {unreadCount > 0 && (
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            top: -5,
+                                            right: -5,
+                                            backgroundColor: 'red',
+                                            color: 'white',
+                                            borderRadius: '50%',
+                                            width: '18px',
+                                            height: '18px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold'
+                                        }}
+                                    >
+                                        {unreadCount}
+                                    </Box>
+                                )} */}
+                            </Box>
+                        </IconButton>
+
+                        {/* Notifications Dropdown */}
+                        <Menu
+                            anchorEl={notificationAnchor}
+                            open={Boolean(notificationAnchor)}
+                            onClose={handleCloseNotificationMenu}
+                            PaperProps={{
+                                style: {
+                                    width: '350px',
+                                    maxHeight: '400px',
+                                    padding: '10px'
+                                },
+                            }}
+                        >
+                            <Typography variant="h6" sx={{ p: 2, fontWeight: 'bold', color: '#1967D2' }}>
+                                Upcoming Meetings
+                            </Typography>
+                            <Divider />
+                            {loading ? (
+                                <Typography sx={{ p: 2 }}>Loading notifications...</Typography>
+                            ) : upcomingMeetings.length === 0 ? (
+                                <Typography sx={{ p: 2 }}>No upcoming meetings</Typography>
+                            ) : (
+                                <List>
+                                    {upcomingMeetings.map((meeting, index) => (
+                                        <React.Fragment key={index}>
+                                            <ListItem alignItems="flex-start">
+                                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                    <EventIcon color="primary" sx={{ mr: 1 }} />
+                                                </Box>
+                                                <ListItemText
+                                                    primary={
+                                                        <Typography variant="subtitle1" color="text.primary">
+                                                            {meeting?.meetingTitle}
+                                                        </Typography>
+                                                    }
+                                                    secondary={
+                                                        <>
+                                                            <Typography
+                                                                component="span"
+                                                                variant="body2"
+                                                                color="text.primary"
+                                                                display="block"
+                                                            >
+                                                                {formatDate(meeting?.date)} | {formatTime(meeting?.startTime)} - {formatTime(meeting?.endTime)}
+                                                            </Typography>
+                                                            {/* <Typography
+                                                                component="span"
+                                                                variant="body2"
+                                                                color="text.secondary"
+                                                                display="block"
+                                                            >
+                                                                With: {meeting.parentId?.name || 'Parent'}
+                                                            </Typography>
+                                                            {meeting.childId?.name && (
+                                                                <Typography
+                                                                    component="span"
+                                                                    variant="body2"
+                                                                    color="text.secondary"
+                                                                    display="block"
+                                                                >
+                                                                    Child: {meeting.childId.name}
+                                                                </Typography>
+                                                            )} */}
+                                                        </>
+                                                    }
+                                                />
+                                            </ListItem>
+                                            {index < upcomingMeetings.length - 1 && <Divider variant="inset" component="li" />}
+                                        </React.Fragment>
+                                    ))}
+                                </List>
+                            )}
+                        </Menu>
 
                         <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "30px" }}>
                             <Typography color='secondary'>Hi, {educatorDetails.name}</Typography>

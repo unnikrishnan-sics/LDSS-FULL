@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Stack, ButtonGroup, Container, Grid, InputAdornment, Menu, MenuItem, TextField, Typography, alpha, styled, Avatar, Tooltip } from '@mui/material'
+import { Box, Button, Container, Grid, InputAdornment, TextField, Typography, Avatar, Tooltip } from '@mui/material';
 import Modal from '@mui/material/Modal';
 import Fade from '@mui/material/Fade';
 import Backdrop from '@mui/material/Backdrop';
@@ -18,61 +18,66 @@ import AdminViewSingleEducator from './Common/AdminViewSingleEducator';
 import AdminSideBar from './Common/AdminSideBar';
 import AdminLogout from './Common/AdminLogout';
 
-
 const AdminViewEducator = () => {
     const [openLogout, setOpenLogout] = useState(false);
     const handleOpenLogout = () => setOpenLogout(true);
     const handleCloseLogout = () => setOpenLogout(false);
     const [activeTab, setActiveTab] = useState('request');
+    const [searchTerm, setSearchTerm] = useState('');
 
-
-    const StyledTextField = styled(TextField)({
-        '& .MuiOutlinedInput-root': {
-            borderRadius: '30px', // Custom border radius
-            border: "1px solid black"
-        },
-
-    });
-
-    // dropdown
-    const [anchorEl, setAnchorEl] = React.useState(null);
-    const open = Boolean(anchorEl);
-    const handleClick = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
-
-
-
-    // fetching all educators
-    const [educator, setEducator] = useState([])
+    // Fetching all educators
+    const [educator, setEducator] = useState([]);
     const [educatorDetails, setEducatorDetails] = useState([]);
+    const [filteredEducators, setFilteredEducators] = useState([]);
+
     const fetchAllEducators = async () => {
         const token = localStorage.getItem("token");
-        const alleducators = await axios.get("http://localhost:4000/ldss/educator/getalleducators", {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        console.log(alleducators.data.educators);
-        const educators = alleducators.data.educators;
-        setEducator(educators)
-        const unapproved = educators.filter(e => e.isAdminApproved === false);
-        setEducatorDetails(unapproved);
-
+        try {
+            const alleducators = await axios.get("http://localhost:4000/ldss/educator/getalleducators", {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            const educators = alleducators.data.educators;
+            setEducator(educators);
+            const unapproved = educators.filter(e => e.isAdminApproved === false);
+            setEducatorDetails(unapproved);
+            setFilteredEducators(unapproved);
+        } catch (error) {
+            console.error("Error fetching educators:", error);
+        }
     };
+
     useEffect(() => {
         fetchAllEducators();
     }, []);
 
-    // const [approvedEducatorDetails,setApprovedEducatordetails]=useState([]);
+    // Search functionality
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (searchTerm === '') {
+                setFilteredEducators(educatorDetails);
+            } else {
+                const filtered = educatorDetails.filter(educator => 
+                    (educator.name && educator.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (educator.email && educator.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                    (educator.address && educator.address.toLowerCase().includes(searchTerm.toLowerCase()))
+                );
+                setFilteredEducators(filtered);
+            }
+        }, 300);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchTerm, educatorDetails]);
+
     const approvedEducators = () => {
         const approved = educator.filter(e => e.isAdminApproved === true);
-        setEducatorDetails(approved)
-
+        setEducatorDetails(approved);
+        setFilteredEducators(approved);
     };
+
     const [educatordetail, setEducatordetail] = useState({});
     const [openeducator, setOpenEducator] = useState(false);
     const handleEducatorOpen = () => setOpenEducator(true);
@@ -80,52 +85,61 @@ const AdminViewEducator = () => {
 
     const fetchEducatorDetail = async (educatorId) => {
         const token = localStorage.getItem("token");
-        const educatordetail = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${educatorId}`, {
-            headers: {
-                Authorization: `bearer ${token}`
-            }
-        });
-        const educator = educatordetail.data.educator;
-        setEducatordetail(educator);
-        handleEducatorOpen();
-        console.log(educatordetail.data.educator);
-
+        try {
+            const response = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${educatorId}`, {
+                headers: {
+                    Authorization: `bearer ${token}`
+                }
+            });
+            setEducatordetail(response.data.educator);
+            handleEducatorOpen();
+        } catch (error) {
+            console.error("Error fetching educator details:", error);
+        }
     };
+
     const approve = async (educatorId) => {
         const token = localStorage.getItem("token");
-        const approve = await axios.post(`http://localhost:4000/ldss/admin/educator/accept/${educatorId}`, {}, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        console.log(approve);
-
-        fetchAllEducators();
-        setOpenEducator(false);
-
-    }
-    
+        try {
+            await axios.post(`http://localhost:4000/ldss/admin/educator/accept/${educatorId}`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            fetchAllEducators();
+            setOpenEducator(false);
+        } catch (error) {
+            console.error("Error approving educator:", error);
+        }
+    };
 
     const rejectEducator = async (educatorId) => {
         const token = localStorage.getItem("token");
-        const deleteEducator = await axios.delete(`http://localhost:4000/ldss/admin/educator/reject/${educatorId}`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        fetchAllEducators();
-        setOpenEducator(false);
+        try {
+            await axios.delete(`http://localhost:4000/ldss/admin/educator/reject/${educatorId}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            fetchAllEducators();
+            setOpenEducator(false);
+        } catch (error) {
+            console.error("Error rejecting educator:", error);
+        }
     };
-    
 
+    const handleSearchChange = (e) => {
+        setSearchTerm(e.target.value);
+    };
 
     return (
         <>
             <Container maxWidth="x-lg" sx={{ background: "#F6F7F9" }}>
                 <Grid container spacing={2} sx={{ height: "100vh", width: "100%" }}>
                     <Grid size={{ xs: 6, md: 2 }} sx={{ height: "100%", background: "white", margin: "15px 0px", borderRadius: "8px" }} display={'flex'} justifyContent={'start'} alignItems={'center'} flexDirection={'column'}>
-                <AdminSideBar/>
+                        <AdminSideBar/>
                     </Grid>
+                    
                     {/* Content (right part) */}
                     <Grid item xs={6} md={10} sx={{ height: "100%", display: "flex", justifyContent: "start", alignItems: "center", gap: "30px", flexDirection: "column", padding: "15px 0px", borderRadius: "8px", flexGrow: 1 }}>
                         <Box sx={{ height: "70px", background: "white", borderRadius: "8px", width: "100%" }} display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
@@ -133,85 +147,92 @@ const AdminViewEducator = () => {
                             <Button onClick={handleOpenLogout} variant="text" color='primary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }} startIcon={<LogoutIcon />}>logout</Button>
                         </Box>
 
-                        {/* switch */}
-<Box display="flex" justifyContent="center" sx={{ mt: 3 }}>
-  <Box
-    sx={{
-      backgroundColor: '#F6F7F9', // Background container
-      borderRadius: '30px',
-      padding: '5px',
-      display: 'inline-flex',
-      transition: 'all 0.3s ease-in-out',
-      boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.05)' // optional subtle inner shadow
-    }}
-  >
-    <Button
-      onClick={() => {
-        fetchAllEducators();
-        setActiveTab('request');
-      }}
-      sx={{
-        padding: '8px 20px',
-        backgroundColor: activeTab === 'request' ? '#1967D2' : 'transparent',
-        color: activeTab === 'request' ? '#fff' : '#000',
-        borderRadius: '25px',
-        textTransform: 'none',
-        fontWeight: 500,
-        fontSize: '14px',
-        minWidth: '120px',
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          backgroundColor: activeTab === 'request' ? '#1152b4' : 'rgba(0,0,0,0.04)'
-        }
-      }}
-    >
-      Request
-    </Button>
+                        {/* Switch */}
+                        <Box display="flex" justifyContent="center" sx={{ mt: 3 }}>
+                            <Box
+                                sx={{
+                                    backgroundColor: '#F6F7F9',
+                                    borderRadius: '30px',
+                                    padding: '5px',
+                                    display: 'inline-flex',
+                                    transition: 'all 0.3s ease-in-out',
+                                    boxShadow: 'inset 0 0 5px rgba(0, 0, 0, 0.05)'
+                                }}
+                            >
+                                <Button
+                                    onClick={() => {
+                                        fetchAllEducators();
+                                        setActiveTab('request');
+                                        setSearchTerm('');
+                                    }}
+                                    sx={{
+                                        padding: '8px 20px',
+                                        backgroundColor: activeTab === 'request' ? '#1967D2' : 'transparent',
+                                        color: activeTab === 'request' ? '#fff' : '#000',
+                                        borderRadius: '25px',
+                                        textTransform: 'none',
+                                        fontWeight: 500,
+                                        fontSize: '14px',
+                                        minWidth: '120px',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                            backgroundColor: activeTab === 'request' ? '#1152b4' : 'rgba(0,0,0,0.04)'
+                                        }
+                                    }}
+                                >
+                                    Request
+                                </Button>
 
-    <Button
-      onClick={() => {
-        approvedEducators();
-        setActiveTab('educator');
-      }}
-      sx={{
-        padding: '8px 20px',
-        backgroundColor: activeTab === 'educator' ? '#1967D2' : 'transparent',
-        color: activeTab === 'educator' ? '#fff' : '#000',
-        borderRadius: '25px',
-        textTransform: 'none',
-        fontWeight: 500,
-        fontSize: '14px',
-        minWidth: '120px',
-        transition: 'all 0.3s ease',
-        '&:hover': {
-          backgroundColor: activeTab === 'educator' ? '#1152b4' : 'rgba(0,0,0,0.04)'
-        }
-      }}
-    >
-      Educator
-    </Button>
-  </Box>
-</Box>
+                                <Button
+                                    onClick={() => {
+                                        approvedEducators();
+                                        setActiveTab('educator');
+                                        setSearchTerm('');
+                                    }}
+                                    sx={{
+                                        padding: '8px 20px',
+                                        backgroundColor: activeTab === 'educator' ? '#1967D2' : 'transparent',
+                                        color: activeTab === 'educator' ? '#fff' : '#000',
+                                        borderRadius: '25px',
+                                        textTransform: 'none',
+                                        fontWeight: 500,
+                                        fontSize: '14px',
+                                        minWidth: '120px',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                            backgroundColor: activeTab === 'educator' ? '#1152b4' : 'rgba(0,0,0,0.04)'
+                                        }
+                                    }}
+                                >
+                                    Educator
+                                </Button>
+                            </Box>
+                        </Box>
 
-
-                        {/* switch ends */}
-
-                        {/* table */}
+                        {/* Table */}
                         <Box sx={{ height: "562px", width: "100%", padding: "20px 10px" }}>
                             <Box display={'flex'} justifyContent={'space-between'} alignItems={'center'}>
-                                <Typography variant='h4' color='primary' sx={{ fontSize: '18px', fontWeight: "600" }}> Requests</Typography>
-                                <StyledTextField placeholder='search here...' id="outlined-basic" variant="outlined" InputProps={{
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <SearchIcon color="primary" />
-
-                                        </InputAdornment>
-                                    ),
-                                }} />
-
+                                <Typography variant='h4' color='primary' sx={{ fontSize: '18px', fontWeight: "600" }}>
+                                    {activeTab === 'request' ? 'Requests' : 'Educators'}
+                                </Typography>
+                                <TextField 
+                                    placeholder='search here...' 
+                                    variant="outlined" 
+                                    value={searchTerm}
+                                    onChange={handleSearchChange}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchIcon color="primary" />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                    sx={{
+                                        width: '300px'
+                                    }}
+                                />
                             </Box>
                             <Box sx={{ height: "320px" }}>
-                                {/* table datas */}
                                 <TableContainer component={Paper} sx={{ marginTop: "30px" }}>
                                     <Table sx={{ minWidth: 650, border: "none" }} aria-label="simple table">
                                         <TableHead>
@@ -226,50 +247,58 @@ const AdminViewEducator = () => {
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
-                                            {educatorDetails.map((educator, index) => (
-                                                <TableRow
-                                                    key={index}
-                                                    sx={{
-                                                        '&:last-child td, &:last-child th': {
-                                                            border: 0, 
-                                                        },
-                                                        '& td, & th': {
-                                                            border: 'none', // Remove all borders for cells
-                                                        }
-                                                    }}
-                                                >
-                                                    <TableCell component="th" scope="row">
-                                                        {index + 1}
+                                            {filteredEducators.length > 0 ? (
+                                                filteredEducators.map((educator, index) => (
+                                                    <TableRow
+                                                        key={index}
+                                                        sx={{
+                                                            '&:last-child td, &:last-child th': { border: 0 },
+                                                            '& td, & th': { border: 'none' }
+                                                        }}
+                                                    >
+                                                        <TableCell component="th" scope="row">
+                                                            {index + 1}
+                                                        </TableCell>
+                                                        <TableCell align="left">
+                                                            {educator.profilePic?.filename ? (
+                                                                <Avatar src={`http://localhost:4000/uploads/${educator.profilePic.filename}`}></Avatar>
+                                                            ) : (
+                                                                <Avatar>{educator.name?.charAt(0)}</Avatar>
+                                                            )}
+                                                        </TableCell>
+                                                        <TableCell align="left">{educator.name}</TableCell>
+                                                        <TableCell align="left">{educator.phone}</TableCell>
+                                                        <TableCell align="left">{educator.email}</TableCell>
+                                                        <TableCell align="left">{educator.address}</TableCell>
+                                                        <TableCell align="left">
+                                                            <Tooltip title="View Details">
+                                                                <VisibilityIcon 
+                                                                    color='secondary' 
+                                                                    onClick={() => fetchEducatorDetail(educator._id)} 
+                                                                    sx={{ cursor: 'pointer' }}
+                                                                />
+                                                            </Tooltip>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={7} align="center">
+                                                        No educators found
                                                     </TableCell>
-                                                    <TableCell align="left">{
-                                                        educator.profilePic.filename ? (<Avatar src={`http://localhost:4000/uploads/${educator.profilePic.filename}`}></Avatar>)
-                                                            :
-                                                            (<Avatar src={educator.name.charAt(0)}></Avatar>)
-                                                    }</TableCell>
-                                                    <TableCell align="left">{educator.name}</TableCell>
-
-                                                    <TableCell align="left">{educator.phone}</TableCell>
-                                                    <TableCell align="left">{educator.email}</TableCell>
-                                                    <TableCell align="left">{educator.address}</TableCell>
-                                                    <TableCell align="left">{<VisibilityIcon color='secondary' onClick={() => fetchEducatorDetail(educator._id)} />}</TableCell>
                                                 </TableRow>
-                                            ))}
+                                            )}
                                         </TableBody>
                                     </Table>
                                 </TableContainer>
-
                             </Box>
-
                         </Box>
-                        
-                       
                     </Grid>
-
                 </Grid>
 
                 <Modal
                     open={openeducator}
-                    onClose={handleClose}
+                    onClose={handleEducatorClose}
                     closeAfterTransition
                     slots={{ backdrop: Backdrop }}
                     slotProps={{
@@ -289,18 +318,24 @@ const AdminViewEducator = () => {
                             border: '2px solid #000',
                             boxShadow: 24,
                             p: 4,
-                            height: "600px"
+                            height: "600px",
+                            borderRadius: '8px'
                         }}>
-                            <AdminViewSingleEducator educatordetail={educatordetail} handleEducatorClose={handleEducatorClose} approve={approve} rejectEducator={rejectEducator} />
+                            <AdminViewSingleEducator 
+                                educatordetail={educatordetail} 
+                                handleEducatorClose={handleEducatorClose} 
+                                approve={approve} 
+                                rejectEducator={rejectEducator} 
+                            />
                         </Box>
                     </Fade>
                 </Modal>
-                {/* logout modal */}
-               <AdminLogout handleCloseLogout={handleCloseLogout} openLogout={openLogout}/>
-
+                
+                {/* Logout modal */}
+                <AdminLogout handleCloseLogout={handleCloseLogout} openLogout={openLogout}/>
             </Container>
         </>
-    )
-}
+    );
+};
 
-export default AdminViewEducator
+export default AdminViewEducator;

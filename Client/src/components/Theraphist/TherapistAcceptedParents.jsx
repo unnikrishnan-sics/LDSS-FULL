@@ -136,7 +136,7 @@ const TherapistAcceptedParents = () => {
 
     return (
         <>
-            <TheraphistNavbar therapistdetails={therapistDetails} navigateToProfile={navigateToProfile} />
+            <TheraphistNavbar theraphistdetails={therapistDetails} navigateToProfile={navigateToProfile} />
             
             <Box sx={{ background: "white", width: "100vw" }}>
                 <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "46px", background: "#DBE8FA" }}>

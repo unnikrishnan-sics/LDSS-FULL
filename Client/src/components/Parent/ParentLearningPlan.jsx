@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import ParentNavbar from '../Navbar/ParentNavbar'
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // Added useLocation
+import { Link, useNavigate } from 'react-router-dom';
 import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
 import { Avatar, Box, Breadcrumbs, Button, Card, Fade, Grid, Modal, Rating, Typography } from '@mui/material';
 import Divider from '@mui/material/Divider';
@@ -9,42 +9,19 @@ import WcIcon from '@mui/icons-material/Wc';
 import DateRangeIcon from '@mui/icons-material/DateRange';
 import ChatIcon from '@mui/icons-material/Chat';
 import AddIcon from '@mui/icons-material/Add';
-import Ratings from './Common/Ratings';
+import Ratings from './Common/Ratings'; // Ensure this component can take 'initialRating'
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode'; // Import jwtDecode to get parentId
 
 const ParentLearningPlan = () => {
     const [parentdetails, setParentdetails] = useState({});
     const navigate = useNavigate();
-    // The useLocation hook is not strictly needed for the functionality requested here,
-    // but it's good to keep in mind for reading state if needed later.
-    // const location = useLocation(); 
 
     useEffect(() => {
-        const fetchParentDetails = async () => {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                navigate('/login'); // Redirect to login if token is missing
-                return;
-            }
-            try {
-                const decoded = jwtDecode(token);
-                const parentId = decoded.id;
-                const response = await axios.get(`http://localhost:4000/ldss/parent/getparent/${parentId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                if (response.data?.parent) {
-                    setParentdetails(response.data.parent);
-                    localStorage.setItem("parentdetails", JSON.stringify(response.data.parent));
-                }
-            } catch (error) {
-                console.error("Error fetching parent details:", error);
-                // Handle error (e.g., show message, redirect)
-            }
-        };
-
-        fetchParentDetails();
-    }, [navigate]);
+        const storedParentDetails = localStorage.getItem("parentDetails");
+        if (storedParentDetails) {
+            setParentdetails(JSON.parse(storedParentDetails));
+        }
+    }, []);
 
     const navigateToProfile = () => {
         navigate('/parent/profile');
@@ -54,115 +31,198 @@ const ParentLearningPlan = () => {
     const [ratingState, setRatingState] = useState({
         open: false,
         childId: null,
+        professionalId: null, // Stores ID of professional being rated (string)
         professionalType: null, // 'educator' or 'therapist'
-        currentRating: 0
+        currentRating: 0 // This will be the initial value for the modal
     });
 
-    const handleRatingOpen = (childId, professionalType) => {
+    // State to store fetched ratings for professionals
+    // Key: "childId_professionalId_professionalType", Value: rating (number)
+    const [professionalRatings, setProfessionalRatings] = useState({});
+
+    const handleRatingOpen = (childId, professionalType, professionalId, existingRating = 0) => {
+        // professionalId here should already be the string ID
+        if (!professionalId) {
+            console.warn("Cannot open rating modal: professionalId is missing.");
+            return;
+        }
         setRatingState({
             open: true,
             childId,
+            professionalId,
             professionalType,
-            currentRating: 0
+            currentRating: existingRating
         });
     };
 
     const handleRatingClose = () => {
-        setRatingState(prev => ({ ...prev, open: false }));
+        setRatingState(prev => ({ ...prev, open: false, childId: null, professionalId: null, professionalType: null, currentRating: 0 }));
     };
 
-    const handleRatingSubmit = (rating) => {
-        console.log(`Rating submitted for ${ratingState.professionalType} of child ${ratingState.childId}:`, rating);
-        handleRatingClose();
+    const handleRatingSubmit = async (newRating) => {
+        const { childId, professionalId, professionalType } = ratingState;
+        const parentId = parentdetails?._id;
+        const token = localStorage.getItem("token");
+
+        if (!professionalId || !professionalType || !childId || !parentId) {
+            console.error("Missing required data for rating submission:", { childId, professionalId, professionalType, parentId });
+            handleRatingClose();
+            return;
+        }
+        // console.log("Submitting rating with:", { professionalId, professionalType, childId, parentId, newRating }); // Add for debugging
+
+        try {
+            const response = await axios.post(`http://localhost:4000/ldss/addrating`, {
+                professionalId,
+                professionalType,
+                childId,
+                parentId,
+                rating: newRating
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.data.success) {
+                // Update local state to reflect the new/updated rating
+                setProfessionalRatings(prev => ({
+                    ...prev,
+                    [`${childId}_${professionalId}_${professionalType}`]: newRating
+                }));
+                console.log(`Rating ${newRating} submitted for ${professionalType} ${professionalId} of child ${childId}`);
+            } else {
+                console.error("Failed to submit rating:", response.data.message);
+            }
+        } catch (error) {
+            console.error(`Error submitting rating for ${professionalType} ${professionalId}:`, error.response ? error.response.data : error.message);
+        } finally {
+            handleRatingClose();
+        }
     };
 
-    // fetch all child of parent
     const [allchild, setAllChild] = useState([]);
-    const [educators, setEducators] = useState({}); // {childId: educatorDetails}
-    const [therapists, setTherapists] = useState({}); // {childId: therapistDetails}
+    const [educators, setEducators] = useState({}); // {childId: educatorDetails (object or ID string)}
+    const [therapists, setTherapists] = useState({}); // {childId: therapistDetails (object or ID string)}
 
     const fetchAllChildOfParent = async () => {
         const token = localStorage.getItem("token");
-        const parentId = parentdetails._id; // Use state variable for parentId
+        const currentParentDetails = JSON.parse(localStorage.getItem("parentDetails"));
+        const parentId = currentParentDetails?._id;
 
-        if (!parentId) return; // Don't fetch if parentId is not yet available
+        if (!parentId) {
+            console.error("Parent ID not found. Cannot fetch data.");
+            return;
+        }
 
         try {
-            // Fetch all children
             const allChildRes = await axios.get(`http://localhost:4000/ldss/parent/getallchildofparent/${parentId}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
+                headers: { Authorization: `Bearer ${token}` }
             });
 
-            setAllChild(allChildRes.data.child);
+            const children = allChildRes.data.child || [];
+            setAllChild(children);
+
+            const tempEducators = {};
+            const tempTherapists = {};
+            const newProfessionalRatings = {};
 
             // Fetch educators for parent
             try {
                 const educatorRes = await axios.get(`http://localhost:4000/ldss/parent/getacceptededucator/${parentId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
-
-                const educatorsData = {};
                 if (educatorRes.data && educatorRes.data.acceptedEducators && educatorRes.data.acceptedEducators.length > 0) {
-                    // Assuming a child might be linked to a single educator for chat purposes.
-                    // If multiple educators can be linked per child, this logic needs refinement.
-                    allChildRes.data.child.forEach(child => {
-                        // Find the specific educator if available, or just take the first one
-                        const linkedEducator = educatorRes.data.acceptedEducators.find(
-                            req => req.recipientRole === 'educator' && req.parentId?._id === parentId
-                        )?.recipientId || educatorRes.data.acceptedEducators[0]?.recipientId; // Fallback to first if no specific link
-                        if (linkedEducator) {
-                            educatorsData[child._id] = linkedEducator;
-                        }
+                    // Assuming recipientId might be populated or just the ID string
+                    const firstEducator = educatorRes.data.acceptedEducators[0].recipientId;
+                    children.forEach(child => {
+                        tempEducators[child._id] = firstEducator;
                     });
                 }
-                setEducators(educatorsData);
             } catch (error) {
-                console.error(`Error fetching educator:`, error);
+                console.error(`Error fetching educators:`, error);
             }
 
             // Fetch therapists for parent
             try {
                 const therapistRes = await axios.get(`http://localhost:4000/ldss/parent/getacceptedtherapist/${parentId}`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
-
-                const therapistsData = {};
                 if (therapistRes.data && therapistRes.data.acceptedTherapists && therapistRes.data.acceptedTherapists.length > 0) {
-                    // Similar logic for therapists
-                    allChildRes.data.child.forEach(child => {
-                        const linkedTherapist = therapistRes.data.acceptedTherapists.find(
-                            req => req.recipientRole === 'theraphist' && req.parentId?._id === parentId
-                        )?.recipientId || therapistRes.data.acceptedTherapists[0]?.recipientId;
-                        if (linkedTherapist) {
-                            therapistsData[child._id] = linkedTherapist;
-                        }
+                    // Assuming recipientId might be populated or just the ID string
+                    const firstTherapist = therapistRes.data.acceptedTherapists[0].recipientId;
+                    children.forEach(child => {
+                        tempTherapists[child._id] = firstTherapist;
                     });
                 }
-                setTherapists(therapistsData);
             } catch (error) {
-                console.error(`Error fetching therapist:`, error);
+                console.error(`Error fetching therapists:`, error);
             }
 
+            setEducators(tempEducators);
+            setTherapists(tempTherapists);
+
+            // Fetch ratings for each professional associated with each child
+            for (const child of children) {
+                const educator = tempEducators[child._id]; // This could be an object or an ID string
+                const therapist = tempTherapists[child._id]; // This could be an object or an ID string
+
+                const educatorId = educator ? (educator._id || educator) : null; // Get actual ID string
+                const therapistId = therapist ? (therapist._id || therapist) : null; // Get actual ID string
+
+                if (educatorId) {
+                    try {
+                        const ratingRes = await axios.get(`http://localhost:4000/ldss/specific`, {
+                            params: {
+                                professionalId: educatorId,
+                                professionalType: 'educator',
+                                childId: child._id,
+                                parentId: parentId
+                            },
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (ratingRes.data.success && ratingRes.data.rating) {
+                            newProfessionalRatings[`${child._id}_${educatorId}_educator`] = ratingRes.data.rating.rating;
+                        }
+                    } catch (err) {
+                        if (!(err.response && err.response.status === 404)) { // 404 means no rating yet, which is fine
+                            console.error(`Error fetching rating for educator ${educatorId} (child ${child._id}):`, err.response ? err.response.data : err.message);
+                        }
+                    }
+                }
+
+                if (therapistId) {
+                    try {
+                        const ratingRes = await axios.get(`http://localhost:4000/ldss/specific`, {
+                            params: {
+                                professionalId: therapistId,
+                                professionalType: 'theraphist',
+                                childId: child._id,
+                                parentId: parentId
+                            },
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        if (ratingRes.data.success && ratingRes.data.rating) {
+                            newProfessionalRatings[`${child._id}_${therapistId}_theraphist`] = ratingRes.data.rating.rating;
+                        }
+                    } catch (err) {
+                        if (!(err.response && err.response.status === 404)) {
+                            console.error(`Error fetching rating for therapist ${therapistId} (child ${child._id}):`, err.response ? err.response.data : err.message);
+                        }
+                    }
+                }
+            }
+            setProfessionalRatings(newProfessionalRatings);
+
         } catch (error) {
-            console.error("Error fetching children:", error);
+            console.error("Error fetching children or related data:", error);
         }
     };
 
-    // Trigger fetchAllChildOfParent when parentdetails._id is available
     useEffect(() => {
-        if (parentdetails._id) {
+        if (parentdetails?._id) { // Ensure parentdetails is loaded before fetching
             fetchAllChildOfParent();
         }
-    }, [parentdetails._id]);
+    }, [parentdetails]); // Rerun if parentdetails changes (e.g., on login)
 
-
-    // Function to format date as dd-mm-yyyy
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -186,135 +246,251 @@ const ParentLearningPlan = () => {
                         </Link>
                         <Typography color='primary' sx={{ fontSize: "12px", fontWeight: "500" }}>Learning</Typography>
                     </Breadcrumbs>
-                    <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={3}>
+                    {/* <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={3}>
                         <Box display={"flex"} justifyContent={"center"} alignItems={"center"} gap={1} style={{ padding: "8px 15px", borderRadius: "25px", border: "1px solid #CCCCCC", height: "40px" }}>
                             <Box sx={{ height: "100%" }}><SearchOutlinedIcon /></Box>
                             <input placeholder='search here' style={{ padding: "8px 15px", border: 0, outline: 0, height: "100%" }}></input>
                         </Box>
-                    </Box>
+                    </Box> */}
                 </Box>
 
-                <Grid sx={{ pt: "10px", pl: "50px", pr: "50px", width: "100%" }} container spacing={2}>
-                    {allchild.map((child, index) => {
-                        const educator = educators[child._id]; // Get specific educator for this child
-                        const therapist = therapists[child._id]; // Get specific therapist for this child
+                <Grid sx={{ pt: "10px", pl: "50px", pr: "50px", width: "%", pb: "50px" ,display:"flex",justifyContent:"center" }} container spacing={3}> {/* Added pb and spacing */}
+                    {allchild.map((child) => {
+                        const educator = educators[child._id]; // This is the value stored (object or ID string)
+                        const therapist = therapists[child._id]; // This is the value stored (object or ID string)
+
+                        // Determine the actual ID string for professionals
+                        const educatorId = educator ? (educator._id || educator) : null;
+                        const therapistId = therapist ? (therapist._id || therapist) : null;
+
+                        // Keys for professionalRatings state, using the derived ID strings
+                        const educatorRatingKey = educatorId ? `${child._id}_${educatorId}_educator` : null;
+                        const currentEducatorRating = educatorRatingKey ? professionalRatings[educatorRatingKey] : 0;
+
+                        const therapistRatingKey = therapistId ? `${child._id}_${therapistId}_theraphist` : null;
+                        const currentTherapistRating = therapistRatingKey ? professionalRatings[therapistRatingKey] : 0;
+
+                        const educatorName = educator ? (educator.name || educator) : 'Educator N/A';
+                        const therapistName = therapist ? (therapist.name || therapist) : 'Therapist N/A';
 
                         return (
-                            <Grid key={index} item xs={12} md={6} width={"49%"} sx={{ height: "470px" }}>
-                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} sx={{ p: "20px 30px", height: "90%", background: "#F6F7F9", borderRadius: "25px", gap: "20px", width: "100%" }}>
-                                    <Box width={"100%"} display={"flex"} gap={5} justifyContent={"space-between"} alignItems={"center"}>
+                            <Grid key={child._id} item xs={12} md={6} sx={{ minHeight: "470px" }}> {/* Changed width, used minHeight */}
+                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} sx={{ p: "20px 30px", height: "100%", background: "#F6F7F9", borderRadius: "25px", gap: "20px" }}>
+                                    <Box width={"100%"} display={"flex"} gap={2} justifyContent={"space-between"} alignItems={"center"} flexWrap="wrap"> {/* Added flexWrap */}
                                         <Typography sx={{ fontSize: "32px", fontWeight: "600" }} color='primary'>{child.name}</Typography>
-                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "20px" }}>
-                                            {/* Educator Chat Button */}
-                                            <Button
-                                                startIcon={<ChatIcon />}
-                                                variant='outlined'
-                                                color='secondary'
-                                                sx={{ borderRadius: "25px", marginTop: "20px", height: "45px", width: '150px', padding: '10px 35px', fontSize: "14px", fontWeight: "500" }}
-                                                onClick={() => educator && navigate(`/parent/chat/${educator._id}`, {
-                                                    state: {
-                                                        userType: 'educator',
-                                                        studentName: child.name, // Pass the child's name
-                                                        studentId: child._id // Pass the child's ID
-                                                    }
-                                                })}
-                                                disabled={!educator} // Disable if no educator is linked
-                                            >
-                                                Educator
-                                            </Button>
-                                            {/* Therapist Chat Button */}
-                                            <Button
-                                                startIcon={<ChatIcon />}
-                                                variant='outlined'
-                                                color='secondary'
-                                                sx={{ borderRadius: "25px", marginTop: "20px", height: "45px", width: '150px', padding: '10px 15px', fontSize: "14px", fontWeight: "500", letterSpacing: "0%" }}
-                                                onClick={() => therapist && navigate(`/parent/chat/${therapist._id}`, {
-                                                    state: {
-                                                        userType: 'theraphist',
-                                                        studentName: child.name, // Pass the child's name
-                                                        studentId: child._id // Pass the child's ID
-                                                    }
-                                                })}
-                                                disabled={!therapist} // Disable if no therapist is linked
-                                            >
-                                                Therapist
-                                            </Button>
+                                        <Box display={"flex"} alignItems={"center"} sx={{ gap: "10px", flexWrap: "wrap" }}> {/* Added flexWrap */}
+                                            {/* Chat buttons also need to use the actual ID */}
+{educatorId && <Button
+  startIcon={<ChatIcon />}
+  variant='outlined'
+  color='secondary'
+  sx={{ borderRadius: "25px", mt: "10px", height: "40px", width: 'auto', padding: '8px 20px', fontSize: "13px" }}
+  onClick={async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const parentId = parentdetails._id;
+      
+      // First check if conversation exists
+      const convsResponse = await axios.get(
+        `http://localhost:4000/ldss/conversations/user/${parentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const existingConv = convsResponse.data.find(conv => 
+        conv.participants.includes(educatorId) && 
+        conv.participants.includes(parentId) &&
+        (conv.student?._id === child._id || conv.student === child._id)
+      );
+      
+      if (!existingConv) {
+        // Create new conversation if doesn't exist
+        await axios.post(
+          'http://localhost:4000/ldss/conversations',
+          {
+            participants: [parentId, educatorId],
+            participantModels: ['parent', 'educator'],
+            student: child._id
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+      
+      // Navigate to chat
+      navigate(`/parent/chat/${educatorId}`, { 
+        state: { 
+          userType: 'educator', 
+          studentId: child._id, 
+          studentName: child.name 
+        } 
+      });
+    } catch (error) {
+      console.error('Error initiating chat:', error);
+    }
+  }}
+>
+  Chat Educator
+</Button>}
+
+{therapistId && <Button
+  startIcon={<ChatIcon />}
+  variant='outlined'
+  color='secondary'
+  sx={{ borderRadius: "25px", mt: "10px", height: "40px", width: 'auto', padding: '8px 20px', fontSize: "13px" }}
+  onClick={async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const parentId = parentdetails._id;
+      
+      // First check if conversation exists
+      const convsResponse = await axios.get(
+        `http://localhost:4000/ldss/conversations/user/${parentId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const existingConv = convsResponse.data.find(conv => 
+        conv.participants.includes(therapistId) && 
+        conv.participants.includes(parentId) &&
+        (conv.student?._id === child._id || conv.student === child._id)
+      );
+      
+      if (!existingConv) {
+        // Create new conversation if doesn't exist
+        await axios.post(
+          'http://localhost:4000/ldss/conversations',
+          {
+            participants: [parentId, therapistId],
+            participantModels: ['parent', 'theraphist'],
+            student: child._id
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+      
+      // Navigate to chat
+      navigate(`/parent/chat/${therapistId}`, { 
+        state: { 
+          userType: 'theraphist', 
+          studentId: child._id, 
+          studentName: child.name 
+        } 
+      });
+    } catch (error) {
+      console.error('Error initiating chat:', error);
+    }
+  }}
+>
+  Chat Therapist
+</Button>}
+
                                         </Box>
                                     </Box>
 
-                                    <Box width={"100%"} display={"flex"} justifyContent={"space-between"}>
+                                    <Box width={"100%"} display={"flex"} justifyContent={"space-between"} flexWrap="wrap"> {/* Added flexWrap */}
                                         <Box sx={{ gap: "20px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
                                             <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
                                                 <Box sx={{ color: "#1967D2" }}><DateRangeIcon /></Box>
                                                 <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date of Birth</Typography>
-                                                    <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{formatDate(child.dateOfBirth)}</Typography>
+                                                    <Typography variant='body2' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Date of Birth</Typography>
+                                                    <Typography variant='subtitle1' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{formatDate(child.dateOfBirth)}</Typography>
                                                 </Box>
                                             </Box>
                                             <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px" }}>
                                                 <Box sx={{ color: "#1967D2" }}><ApartmentOutlinedIcon /></Box>
                                                 <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>School Name</Typography>
-                                                    <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.schoolName}</Typography>
+                                                    <Typography variant='body2' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>School Name</Typography>
+                                                    <Typography variant='subtitle1' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.schoolName}</Typography>
                                                 </Box>
                                             </Box>
                                         </Box>
-                                        <Box sx={{ gap: "20px", pr: "250px" }} display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                            <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: "50px" }}>
+                                        <Box sx={{ gap: "20px", pr: { md: "100px", xs: 0 } }} display={"flex"} flexDirection={"column"} alignItems={"start"}> {/* Adjusted padding */}
+                                            <Box display={"flex"} alignItems={"center"} sx={{ gap: "15px", pl: { md: "50px", xs: 0 } }}>
                                                 <Box sx={{ color: "#1967D2" }}><WcIcon /></Box>
                                                 <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography variant='p' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Gender</Typography>
-                                                    <Typography variant='h5' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.gender}</Typography>
+                                                    <Typography variant='body2' color='secondary' sx={{ fontSize: "12px", fontWeight: "500" }}>Gender</Typography>
+                                                    <Typography variant='subtitle1' color='primary' sx={{ fontSize: "14px", fontWeight: "500" }}>{child.gender}</Typography>
                                                 </Box>
                                             </Box>
                                         </Box>
                                     </Box>
 
-                                    <Box sx={{ border: "1px solid #CCCCCC", borderRadius: "12px" }} height={"176px"} width={"100%"} display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
+                                    <Box sx={{ border: "1px solid #CCCCCC", borderRadius: "12px" }} minHeight={"176px"} width={"100%"} display={"flex"} flexDirection={{ xs: "column", md: "row" }} alignItems={"stretch"} justifyContent={"space-between"}> {/* stretch items */}
                                         {/* Educator Section */}
-                                        <Box display={'flex'} flexDirection={'column'} width={"100%"} p={3}>
-                                            <Box width={"100%"} display={'flex'} alignItems={'center'} justifyContent={'space-around'}>
-                                                <Typography variant='p' color='secondary' sx={{ fontSize: "18px", fontWeight: "600", mt: "10px" }}>
-                                                    {educator ? `${educator.name}` : 'Educator'}
-                                                </Typography>
-                                                {/* <Button
-                                                    onClick={() => handleRatingOpen(child._id, 'educator')}
-                                                    startIcon={<AddIcon />}
-                                                    variant='outlined'
-                                                    color='secondary'
-                                                    sx={{ borderRadius: "25px", marginTop: "20px", height: "25px", width: '118px', padding: '15px 25px', fontSize: "14px", fontWeight: "500" }}
-                                                >
-                                                    Rating
-                                                </Button> */}
-                                            </Box>
-                                            <Typography variant='p' color='primary' sx={{ fontSize: "14px" }}>Complete Learning plan</Typography>
-                                            <Link to={educator ? `/parent/educatorlearningplan/${educator._id}/${child._id}` : '#'}>
-                                                <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "45px", width: '227px', padding: '10px 35px', fontSize: "14px", fontWeight: "500" }}>Learning plan</Button>
-                                            </Link>
+                                        <Box display={'flex'} flexDirection={'column'} alignItems="center" width={"100%"} p={2} gap={1}>
+                                            <Typography variant='h6' color='secondary' sx={{ fontSize: "18px", fontWeight: "600" }}>
+                                                {/* Display educator name if object, otherwise the ID string as fallback */}
+                                                {educator ? (educator.name || educator) : 'Educator N/A'}
+                                            </Typography>
+                                            {educatorId && ( // Use educatorId for conditional rendering
+                                                <>
+                                                    {currentEducatorRating > 0 ? (
+                                                        <Box textAlign="center" my={1}>
+                                                            <Typography variant="caption">Your Rating:</Typography>
+                                                            <Rating value={currentEducatorRating} readOnly precision={0.5} />
+                                                            <Button
+                                                                onClick={() => handleRatingOpen(child._id, 'educator', educatorId, currentEducatorRating)}
+                                                                size="small" variant="text" sx={{ mt: 0.5, fontSize: "12px" }}
+                                                            >
+                                                                Update
+                                                            </Button>
+                                                        </Box>
+                                                    ) : (
+                                                        <Button
+                                                            onClick={() => handleRatingOpen(child._id, 'educator', educatorId, 0)}
+                                                            startIcon={<AddIcon />}
+                                                            variant='outlined'
+                                                            color='secondary'
+                                                            sx={{ borderRadius: "25px", my: 1, height: "30px", fontSize: "12px", padding: "5px 15px" }}
+                                                        >
+                                                            Rate
+                                                        </Button>
+                                                    )}
+                                                    <Typography variant='body2' color='primary' sx={{ fontSize: "14px", textAlign: "center" }}>View learning plan</Typography>
+                                                    <Link to={`/parent/educatorlearningplan/${educatorId}/${child._id}`} style={{ width: "100%", textDecoration: "none" }}>
+                                                        <Button fullWidth variant='contained' color='secondary' sx={{ borderRadius: "25px", height: "40px", fontSize: "13px" }}>Learning plan</Button>
+                                                    </Link>
+                                                </>
+                                            )}
                                         </Box>
 
-                                        <Divider orientation="vertical" variant="middle" flexItem />
+                                        <Divider orientation="vertical" variant="middle" flexItem sx={{ display: { xs: "none", md: "block" } }} />
+                                        <Divider orientation="horizontal" flexItem sx={{ display: { xs: "block", md: "none", width: "80%", margin: "10px auto" } }} />
 
                                         {/* Therapist Section */}
-                                        <Box display={'flex'} flexDirection={'column'} width={"100%"} p={3}>
-                                            <Box width={"100%"} display={'flex'} alignItems={'center'} justifyContent={'space-around'}>
-                                                <Typography variant='p' color='secondary' sx={{ fontSize: "18px", fontWeight: "600", mt: "10px" }}>
-                                                    {therapist ? `${therapist.name}` : 'Therapist'}
-                                                </Typography>
-                                                {/* <Button
-                                                    onClick={() => handleRatingOpen(child._id, 'therapist')}
-                                                    startIcon={<AddIcon />}
-                                                    variant='outlined'
-                                                    color='secondary'
-                                                    sx={{ borderRadius: "25px", marginTop: "20px", height: "25px", width: '118px', padding: '15px 25px', fontSize: "14px", fontWeight: "500" }}
-                                                >
-                                                    Rating
-                                                </Button> */}
-                                            </Box>
-                                            <Typography variant='p' color='primary' sx={{ fontSize: "14px" }}>Complete Learning plan</Typography>
-                                            <Link to={therapist ? `/parent/therapistlearningplan/${therapist._id}/${child._id}` : '#'}>
-                                                <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "45px", width: '227px', padding: '10px 35px', fontSize: "14px", fontWeight: "500" }}>Learning plan</Button>
-                                            </Link>
+                                        <Box display={'flex'} flexDirection={'column'} alignItems="center" width={"100%"} p={2} gap={1}>
+                                            <Typography variant='h6' color='secondary' sx={{ fontSize: "18px", fontWeight: "600" }}>
+                                                {/* Display therapist name if object, otherwise the ID string as fallback */}
+                                                {therapist ? (therapist.name || therapist) : 'Therapist N/A'}
+                                            </Typography>
+                                            {therapistId && ( // Use therapistId for conditional rendering
+                                                <>
+                                                    {currentTherapistRating > 0 ? (
+                                                        <Box textAlign="center" my={1}>
+                                                            <Typography variant="caption">Your Rating:</Typography>
+                                                            <Rating value={currentTherapistRating} readOnly precision={0.5} />
+                                                            <Button
+                                                                onClick={() => handleRatingOpen(child._id, 'theraphist', therapistId, currentTherapistRating)}
+                                                                size="small" variant="text" sx={{ mt: 0.5, fontSize: "12px" }}
+                                                            >
+                                                                Update
+                                                            </Button>
+                                                        </Box>
+                                                    ) : (
+                                                        <Button
+                                                            onClick={() => handleRatingOpen(child._id, 'theraphist', therapistId, 0)}
+                                                            startIcon={<AddIcon />}
+                                                            variant='outlined'
+                                                            color='secondary'
+                                                            sx={{ borderRadius: "25px", my: 1, height: "30px", fontSize: "12px", padding: "5px 15px" }}
+                                                        >
+                                                            Rate
+                                                        </Button>
+                                                    )}
+                                                    <Typography variant='body2' color='primary' sx={{ fontSize: "14px", textAlign: "center" }}>View learning plan</Typography>
+                                                    <Link to={`/parent/therapistlearningplan/${therapistId}/${child._id}`} style={{ width: "100%", textDecoration: "none" }}>
+                                                        <Button fullWidth variant='contained' color='secondary' sx={{ borderRadius: "25px", height: "40px", fontSize: "13px" }}>Learning plan</Button>
+                                                    </Link>
+                                                </>
+                                            )}
                                         </Box>
                                     </Box>
                                 </Box>
@@ -328,6 +504,7 @@ const ParentLearningPlan = () => {
                     handleRatingClose={handleRatingClose}
                     handleRatingSubmit={handleRatingSubmit}
                     professionalType={ratingState.professionalType}
+                    initialRating={ratingState.currentRating} // Pass initial rating to modal
                 />
             </Box>
         </>

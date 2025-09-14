@@ -133,7 +133,7 @@ const EducatorContact = () => {
                         }}
                     >
                         {/* Form */}
-                        <Box 
+                        {/* <Box 
                             display="flex" 
                             flexDirection="column" 
                             justifyContent="center" 
@@ -173,7 +173,7 @@ const EducatorContact = () => {
                             >
                                 Submit
                             </Button>
-                        </Box>
+                        </Box> */}
 
                         {/* Contact Info */}
                         <Box 

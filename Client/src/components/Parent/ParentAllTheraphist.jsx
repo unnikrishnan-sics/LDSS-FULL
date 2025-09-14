@@ -19,17 +19,29 @@ import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
 import { toast } from 'react-toastify';
 
 const ParentAllTheraphist = () => {
+    const colors = {
+        primary: '#2E3B4E',
+        secondary: '#4A90E2',
+        accent: '#FFAE00',
+        lightBg: '#F8FAFC',
+        cardBg: '#FFFFFF',
+        textLight: '#7F7F7F'
+    }
+    
     const [parentdetails, setParentdetails] = useState({});
     useEffect(() => {
-        const parentdetails = localStorage.getItem("parentdetails");
+        const parentdetails = localStorage.getItem("parentDetails");
         setParentdetails(JSON.parse(parentdetails));
     }, []);
+    
     const navigate = useNavigate();
     const navigateToProfile = () => {
         navigate('/parent/profile');
     }
 
     const [allTheraphist, setAllTheraphist] = useState([]);
+    const [therapistRatings, setTherapistRatings] = useState({});
+    
     const fetchAllTheraphist = async () => {
         const token = localStorage.getItem("token");
         const alltheraphist = await axios.get("http://localhost:4000/ldss/theraphist/getalltheraphist", {
@@ -37,18 +49,42 @@ const ParentAllTheraphist = () => {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(alltheraphist.data.theraphist);
         setAllTheraphist(alltheraphist.data.theraphist);
     }
+    
+    const fetchTherapistRatings = async () => {
+        const token = localStorage.getItem("token");
+        try {
+            const therapistRes = await axios.get(
+                "http://localhost:4000/ldss/ratings/theraphist",
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            const therapistRatingMap = {};
+            therapistRes.data.data.forEach(rating => {
+                if (!therapistRatingMap[rating.professionalId._id]) {
+                    therapistRatingMap[rating.professionalId._id] = {
+                        total: 0,
+                        count: 0,
+                        average: 0
+                    };
+                }
+                therapistRatingMap[rating.professionalId._id].total += rating.rating;
+                therapistRatingMap[rating.professionalId._id].count += 1;
+                therapistRatingMap[rating.professionalId._id].average = 
+                    therapistRatingMap[rating.professionalId._id].total / 
+                    therapistRatingMap[rating.professionalId._id].count;
+            });
+            setTherapistRatings(therapistRatingMap);
+        } catch (error) {
+            console.error("Error fetching therapist ratings:", error);
+        }
+    };
+
     useEffect(() => {
         fetchAllTheraphist();
+        fetchTherapistRatings();
     }, []);
-
-    // Helper function to generate random rating between 3 and 5 with 0.5 increments
-    const generateRandomRating = () => {
-        const ratings = [3, 3.5, 4, 4.5, 5];
-        return ratings[Math.floor(Math.random() * ratings.length)];
-    };
 
     // theraphist view model
     const theraphistViewstyle = {
@@ -56,13 +92,15 @@ const ParentAllTheraphist = () => {
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        border: '1px solid #000',
+        border: 'none',
         borderRadius: "20px",
         boxShadow: 24,
         p: 4,
         height: "667px",
         width: "1080px",
-        background: "white"
+        background: colors.cardBg,
+        overflowY: 'auto',
+        maxHeight: '90vh'
     };
     
     const [theraphistViewOpen, setTheraphistViewOpen] = useState(false);
@@ -74,7 +112,6 @@ const ParentAllTheraphist = () => {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(theraphist.data);
         setSingleTheraphist(theraphist.data.theraphist);
         setTheraphistViewOpen(true);
     }
@@ -83,7 +120,7 @@ const ParentAllTheraphist = () => {
     // parent send request to theraphist
     const handleTheraphistrequest = async () => {
         const token = localStorage.getItem("token");
-        const parentId = JSON.parse(localStorage.getItem("parentdetails"))._id;
+        const parentId = JSON.parse(localStorage.getItem("parentDetails"))._id;
         const recipientId = singleTheraphist._id;
         const recipientRole = "theraphist";
         const message = "I am interested in your therapist services.";
@@ -98,9 +135,14 @@ const ParentAllTheraphist = () => {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(request.data);
+        console.log(request);
+        
         if (request.data.message === "Request sent successfully.") {
             toast.success("Request sent successfully.");
+            handleTheraphistViewClose();
+        }
+        else if (request.data.message === "Request already sent") {
+            toast.error("You have already sent a request to another Therapist.");
             handleTheraphistViewClose();
         }
     }
@@ -130,8 +172,9 @@ const ParentAllTheraphist = () => {
                 {/* all therapists - updated grid layout */}
                 <Grid container spacing={3} sx={{ p: "20px 50px", justifyContent: "center" }}>
                     {allTheraphist.map((therapist, index) => {
-                        const rating = generateRandomRating();
-                        const reviewCount = Math.floor(Math.random() * 50) + 1;
+                        const ratingData = therapistRatings[therapist._id] || { average: 0, count: 0 };
+                        const averageRating = ratingData.average;
+                        const reviewCount = ratingData.count;
                         
                         return (
                             <Grid 
@@ -185,11 +228,11 @@ const ParentAllTheraphist = () => {
                                                                 key={star}
                                                                 fontSize="small"
                                                                 sx={{
-                                                                    color: star <= Math.floor(rating) 
-                                                                        ? '#FFD700' 
-                                                                        : star - 0.5 <= rating 
-                                                                            ? 'rgba(255, 215, 0, 0.5)' 
-                                                                            : '#CCCCCC'
+                                                                    color: star <= Math.floor(averageRating) 
+                                                                        ? colors.accent 
+                                                                        : star - 0.5 <= averageRating 
+                                                                            ? `${colors.accent}80` 
+                                                                            : '#DDD'
                                                                 }}
                                                             />
                                                         ))}
@@ -227,119 +270,247 @@ const ParentAllTheraphist = () => {
             </Box>
 
             {/* therapist view model */}
-            <div>
-                <Modal
-                    aria-labelledby="transition-modal-title"
-                    aria-describedby="transition-modal-description"
-                    open={theraphistViewOpen}
-                    onClose={handleTheraphistViewClose}
-                    closeAfterTransition
-                    slots={{ backdrop: Backdrop }}
-                    slotProps={{
-                        backdrop: {
-                            timeout: 500,
-                        },
-                    }}
-                >
-                    <Fade in={theraphistViewOpen}>
-                        <Box sx={theraphistViewstyle} display={"flex"} flexDirection={"column"} gap={5}>
-                            <Box display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Therapist Detail</Typography>
-                                <CloseIcon onClick={handleTheraphistViewClose} />
-                            </Box>
-                            <Box display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Box display={"flex"} alignItems={"center"} justifyContent={"center"} gap={10} width={"100%"}>
-                                    {
-                                        singleTheraphist.profilePic?.filename ? (
-                                            <Avatar src={`http://localhost:4000/uploads/${singleTheraphist?.profilePic?.filename}`} sx={{ width: "180px", height: "180px" }} />
-                                        ) : (
-                                            <Avatar sx={{ width: "180px", height: "180px" }}>{singleTheraphist.name?.charAt(0)}</Avatar>
-                                        )
+            <Modal
+                aria-labelledby="transition-modal-title"
+                aria-describedby="transition-modal-description"
+                open={theraphistViewOpen}
+                onClose={handleTheraphistViewClose}
+                closeAfterTransition
+                slots={{ backdrop: Backdrop }}
+                slotProps={{
+                    backdrop: {
+                        timeout: 500,
+                    },
+                }}
+            >
+                <Fade in={theraphistViewOpen}>
+                    <Box sx={theraphistViewstyle}>
+                        <Box sx={{ 
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: 4,
+                            pb: 2,
+                            borderBottom: `1px solid ${colors.lightBg}`
+                        }}>
+                            <Typography variant="h5" sx={{ fontWeight: 700, color: colors.primary }}>
+                                Therapist Profile
+                            </Typography>
+                            <CloseIcon 
+                                onClick={handleTheraphistViewClose} 
+                                sx={{ 
+                                    cursor: 'pointer',
+                                    color: colors.textLight,
+                                    '&:hover': {
+                                        color: colors.primary
                                     }
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={5} >
-                                        <Typography color='primary' variant='h5' sx={{ fontSize: "32px", fontWeight: "600" }}>
-                                            {singleTheraphist.name} 
-                                            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', ml: 1 }}>
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <StarIcon
-                                                        key={star}
-                                                        fontSize="small"
-                                                        sx={{
-                                                            color: star <= Math.floor(generateRandomRating()) 
-                                                                ? '#FFD700' 
-                                                                : star - 0.5 <= generateRandomRating() 
-                                                                    ? 'rgba(255, 215, 0, 0.5)' 
-                                                                    : '#CCCCCC'
-                                                        }}
-                                                    />
-                                                ))}
-                                                <Typography component="span" sx={{ fontSize: "18px", ml: 1 }}>
-                                                    ({Math.floor(Math.random() * 50) + 1})
+                                }} 
+                            />
+                        </Box>
+                        
+                        <Box sx={{ mb: 5 }}>
+                            <Box sx={{ 
+                                display: 'flex',
+                                alignItems: 'center',
+                                mb: 4,
+                                flexDirection: { xs: 'column', md: 'row' }
+                            }}>
+                                <Box sx={{ 
+                                    width: { xs: '100%', md: 'auto' },
+                                    mb: { xs: 3, md: 0 },
+                                    mr: { xs: 0, md: 5 },
+                                    display: 'flex',
+                                    justifyContent: 'center'
+                                }}>
+                                    {singleTheraphist.profilePic?.filename ? (
+                                        <Avatar 
+                                            src={`http://localhost:4000/uploads/${singleTheraphist?.profilePic?.filename}`} 
+                                            sx={{ 
+                                                width: 150, 
+                                                height: 150,
+                                                border: `3px solid ${colors.secondary}`
+                                            }} 
+                                        />
+                                    ) : (
+                                        <Avatar 
+                                            sx={{ 
+                                                width: 150, 
+                                                height: 150,
+                                                fontSize: 60,
+                                                bgcolor: colors.secondary
+                                            }}
+                                        >
+                                            {singleTheraphist.name?.charAt(0)}
+                                        </Avatar>
+                                    )}
+                                </Box>
+                                
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="h4" sx={{ 
+                                        fontWeight: 700,
+                                        mb: 1,
+                                        color: colors.primary,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        {singleTheraphist.name}
+                                        {singleTheraphist._id && (
+                                            <Box sx={{ 
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                ml: 2
+                                            }}>
+                                                {(() => {
+                                                    const ratingData = therapistRatings[singleTheraphist._id] || { average: 0, count: 0 };
+                                                    const averageRating = ratingData.average;
+                                                    const reviewCount = ratingData.count;
+                                                    
+                                                    return (
+                                                        <>
+                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                                <StarIcon
+                                                                    key={star}
+                                                                    fontSize="small"
+                                                                    sx={{
+                                                                        color: star <= Math.floor(averageRating) 
+                                                                            ? colors.accent 
+                                                                            : star - 0.5 <= averageRating 
+                                                                                ? `${colors.accent}80` 
+                                                                                : '#DDD'
+                                                                    }}
+                                                                />
+                                                            ))}
+                                                            <Typography variant="body2" sx={{ ml: 1, color: colors.textLight }}>
+                                                                ({reviewCount})
+                                                            </Typography>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </Box>
+                                        )}
+                                    </Typography>
+                                    
+                                    <Grid container spacing={3} sx={{ mt: 2 }}>
+                                        <Grid item xs={12} sm={6}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                <MailOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleTheraphist.email || "Not Updated"}
                                                 </Typography>
                                             </Box>
-                                        </Typography>
-                                        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "100px" }}>
-                                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px" }}>
-                                                <Typography> <PersonOutlinedIcon /> {singleTheraphist.name}</Typography>
-                                                <Typography> <MailOutlinedIcon /> {singleTheraphist.email}</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <PhoneEnabledOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleTheraphist.phone || "Not Updated"}
+                                                </Typography>
                                             </Box>
-                                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px", borderLeft: "1px solid #CCCCCC", ml: "50px", pl: "40px" }} >
-                                                <Typography> <LocationOnOutlinedIcon /> {singleTheraphist.address}</Typography>
-                                                <Typography> <PhoneEnabledOutlinedIcon /> {singleTheraphist.phone}</Typography>
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                <LocationOnOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleTheraphist.address || "Not Updated"}
+                                                </Typography>
                                             </Box>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                                <Box display={"flex"} justifyContent={"space-between"} alignItems={"center"} sx={{ height: "323px", borderRadius: "20px", width: "100%", padding: "20px", mt: "50px", flexDirection: "column" }}>
-                                    <Box display={"flex"} justifyContent={"center"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "30px" }} >
-                                        <Box>
-                                            <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
-                                                Personal Info
-                                                <BorderColorOutlinedIcon />
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ gap: "200px" }} width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"start"}>
-                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3}>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Educational Qualifications</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.educationalQualification}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Language</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.languages}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Certification</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Adobe Certified Professional in Photoshop & Illustrator</Typography>
-                                                </Box>
-                                            </Box>
-                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3} sx={{ borderLeft: "1px solid black" }}>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Years of experience</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.yearsOfExperience}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Availability</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.availability}</Typography>
-                                                </Box>
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                    <Button 
-                                        onClick={handleTheraphistrequest} 
-                                        endIcon={<ArrowRightAltIcon />} 
-                                        variant='contained' 
-                                        color='secondary' 
-                                        sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
-                                    >
-                                        Book
-                                    </Button>
+                                        </Grid>
+                                    </Grid>
                                 </Box>
                             </Box>
+                            
+                            <Box sx={{ 
+                                backgroundColor: `${colors.secondary}08`,
+                                borderRadius: 3,
+                                p: 4,
+                                mb: 4
+                            }}>
+                                <Typography variant="h6" sx={{ 
+                                    fontWeight: 600,
+                                    mb: 3,
+                                    color: colors.primary
+                                }}>
+                                    Professional Information
+                                </Typography>
+                                
+                                <Grid container spacing={4}>
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Educational Qualifications
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleTheraphist.educationalQualification || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                        
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Languages Spoken
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleTheraphist.languages || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Years of Experience
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleTheraphist.yearsOfExperience || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                        
+                                        <Box>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Availability
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleTheraphist.availability || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+                            
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Button 
+                                    onClick={handleTheraphistrequest}
+                                    variant="contained"
+                                    color="primary"
+                                    endIcon={<ArrowRightAltIcon />}
+                                    sx={{
+                                        px: 6,
+                                        py: 1.5,
+                                        borderRadius: 50,
+                                        fontWeight: 600,
+                                        fontSize: '1rem'
+                                    }}
+                                >
+                                    Send Request
+                                </Button>
+                            </Box>
                         </Box>
-                    </Fade>
-                </Modal>
-            </div>
+                    </Box>
+                </Fade>
+            </Modal>
         </>
     )
 }

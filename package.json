@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@mui/material": "^7.0.2",
-    "@mui/styled-engine-sc": "^7.0.2",
-    "styled-components": "^6.1.17"
-  }
-}

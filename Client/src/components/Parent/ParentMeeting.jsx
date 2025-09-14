@@ -13,7 +13,7 @@ const ParentMeeting = () => {
     const [loading, setLoading] = useState(true);
     
     useEffect(() => {
-        const parentdetails = localStorage.getItem("parentdetails");
+        const parentdetails = localStorage.getItem("parentDetails");
         setParentdetails(JSON.parse(parentdetails));
     }, []);
 
@@ -26,7 +26,7 @@ const ParentMeeting = () => {
         try {
             setLoading(true);
             const token = localStorage.getItem("token");
-            const parentId = (JSON.parse(localStorage.getItem("parentdetails")))._id;
+            const parentId = (JSON.parse(localStorage.getItem("parentDetails")))._id;
             
             const response = await axiosInstance.get(`/parent/getallmeeting/${parentId}`, {
                 headers: {
@@ -34,7 +34,21 @@ const ParentMeeting = () => {
                 }
             });
             
-            setMeetings(response.data.meetings || []);
+            // Filter out past meetings before setting state
+            const currentDateTime = new Date();
+            const upcomingMeetings = (response.data.meetings || []).filter(meeting => {
+                const meetingDate = new Date(meeting.date);
+                const meetingDateTime = new Date(
+                    meetingDate.getFullYear(),
+                    meetingDate.getMonth(),
+                    meetingDate.getDate(),
+                    parseInt(meeting.endTime.split(':')[0]),
+                    parseInt(meeting.endTime.split(':')[1])
+                );
+                return meetingDateTime > currentDateTime;
+            });
+            
+            setMeetings(upcomingMeetings);
         } catch (error) {
             console.error("Error fetching meetings:", error);
             setMeetings([]);
@@ -79,7 +93,7 @@ const ParentMeeting = () => {
                         </Box>
                     ) : meetings.length === 0 ? (
                         <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "200px" }}>
-                            <Typography>No meetings scheduled yet</Typography>
+                            <Typography>No upcoming meetings scheduled</Typography>
                         </Box>
                     ) : (
                         meetings.map((meeting, index) => {

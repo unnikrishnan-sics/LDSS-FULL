@@ -240,9 +240,9 @@ const AdminViewTheraphist = () => {
                                                         {index + 1}
                                                     </TableCell>
                                                     <TableCell align="left">{
-                                                        theraphist.profilePic.filename ? (<Avatar src={`http://localhost:4000/uploads/${theraphist.profilePic.filename}`}></Avatar>)
+                                                        theraphist.profilePic?.filename ? (<Avatar src={`http://localhost:4000/uploads/${theraphist?.profilePic?.filename}`}></Avatar>)
                                                             :
-                                                            (<Avatar src={theraphist.name.chartAt(0)}></Avatar>)
+                                                            (<Avatar src={theraphist?.name?.charAt(0)}></Avatar>)
                                                     }</TableCell>
                                                     <TableCell align="left">{theraphist.name}</TableCell>
 

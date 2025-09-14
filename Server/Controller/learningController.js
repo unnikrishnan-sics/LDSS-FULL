@@ -549,58 +549,58 @@ const markActivityCompleted = async (req, res) => {
     }
 };
 
-const updateRating = async (req, res) => {
-    try {
-        const { childId } = req.params;
-        const { rating } = req.body;
+// const updateRating = async (req, res) => {
+//     try {
+//         const { childId } = req.params;
+//         const { rating } = req.body;
 
-        // Validate parameters
-        if (!childId || rating === undefined) {
-            return res.status(400).json({
-                success: false,
-                message: "Child ID and rating are required."
-            });
-        }
+//         // Validate parameters
+//         if (!childId || rating === undefined) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Child ID and rating are required."
+//             });
+//         }
 
-        // Validate rating value
-        if (isNaN(rating) || rating < 1 || rating > 5) {
-            return res.status(400).json({
-                success: false,
-                message: "Rating must be a number between 1 and 5."
-            });
-        }
+//         // Validate rating value
+//         if (isNaN(rating) || rating < 1 || rating > 5) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Rating must be a number between 1 and 5."
+//             });
+//         }
 
-        const updatedPlan = await learningModel.findOneAndUpdate(
-            { childId },
-            { 
-                rating: parseFloat(rating),
-                updatedAt: Date.now() 
-            },
-            { new: true }
-        );
+//         const updatedPlan = await learningModel.findOneAndUpdate(
+//             { childId },
+//             { 
+//                 rating: parseFloat(rating),
+//                 updatedAt: Date.now() 
+//             },
+//             { new: true }
+//         );
 
-        if (!updatedPlan) {
-            return res.status(404).json({
-                success: false,
-                message: "Learning plan not found."
-            });
-        }
+//         if (!updatedPlan) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "Learning plan not found."
+//             });
+//         }
 
-        return res.status(200).json({
-            success: true,
-            message: "Rating updated successfully.",
-            data: updatedPlan
-        });
+//         return res.status(200).json({
+//             success: true,
+//             message: "Rating updated successfully.",
+//             data: updatedPlan
+//         });
 
-    } catch (error) {
-        console.error("Error in updateRating:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    }
-};
+//     } catch (error) {
+//         console.error("Error in updateRating:", error);
+//         return res.status(500).json({
+//             success: false,
+//             message: "Internal server error",
+//             error: process.env.NODE_ENV === 'development' ? error.message : undefined
+//         });
+//     }
+// };
 
 module.exports = {
     addLearningPlan,
@@ -609,7 +609,7 @@ module.exports = {
     editLearningPlanByEducator,
     updateLearningPlanByParent,
     markActivityCompleted,
-    updateRating,
+    // updateRating,
     getLearningPlanOfSingleTherapist,
     addLearningPlanTherapist,
     editLearningPlanByTherapist,

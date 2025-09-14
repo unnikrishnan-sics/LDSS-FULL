@@ -89,11 +89,25 @@ const TheraphistProfile = () => {
     };
 
     const handleDataChange = (e) => {
+        const { name, value } = e.target;
+        
+        // Validation for name field (only alphabets)
+        if (name === 'name') {
+            const regex = /^[A-Za-z\s]*$/;
+            if (!regex.test(value)) return;
+        }
+        
+        // Validation for phone field (only numbers)
+        if (name === 'phone') {
+            const regex = /^\d*$/;
+            if (!regex.test(value)) return;
+        }
+        
         setError((prevError) => ({
             ...prevError,
             [name]: ""
         }));
-        const { name, value } = e.target;
+        
         setData(prev => {
             return { ...prev, [name]: value }
         })
@@ -144,6 +158,9 @@ const TheraphistProfile = () => {
             isValid = false;
         } else if (isNaN(personalInfo.yearsOfExperience)) {
             errorMessage.yearsOfExperience = "Years of experience must be a number";
+            isValid = false;
+        } else if (personalInfo.yearsOfExperience < 0) {
+            errorMessage.yearsOfExperience = "Years of experience cannot be negative";
             isValid = false;
         }
         
@@ -218,36 +235,40 @@ const TheraphistProfile = () => {
         let isValid = true;
         let errorMessage = {};
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const nameRegex = /^[A-Za-z\s]{3,20}$/;
+        
+        // Name validation
         if (!data.name.trim()) {
-            errorMessage.name = "Name should not be empty"
+            errorMessage.name = "Name should not be empty";
+            isValid = false;
+        } else if (!nameRegex.test(data.name)) {
+            errorMessage.name = "Name should contain only alphabets and be 3 to 20 characters long";
             isValid = false;
         }
-        else if (data.name.length < 3 || data.name.length > 20) {
-            errorMessage.name = "Name should be 3 to 20 char length"
-            isValid = false;
-        }
+        
+        // Email validation
         if (!data.email.trim()) {
             errorMessage.email = "Email should not be empty";
             isValid = false;
-        }
-        else if (!emailRegex.test(data.email)) {
+        } else if (!emailRegex.test(data.email)) {
             errorMessage.email = "Invalid email address";
             isValid = false;
         }
 
-        if (data.address.length < 10) {
-            errorMessage.address = "Address should be 10 char length"
+        // Address validation
+        if (!data.address.trim()) {
+            errorMessage.address = "Address should not be empty";
+            isValid = false;
+        } else if (data.address.length < 10) {
+            errorMessage.address = "Address should be at least 10 characters long";
             isValid = false;
         }
-        else if (!data.address.trim()) {
-            errorMessage.address = "Address should not be empty"
-            isValid = false;
-        }
+        
+        // Phone validation
         if (!data.phone) {
-            errorMessage.phone = "Phone should not be empty"
+            errorMessage.phone = "Phone number should not be empty";
             isValid = false;
-        }
-        else if (!/^\d{10}$/.test(data.phone)) {
+        } else if (!/^\d{10}$/.test(data.phone)) {
             errorMessage.phone = "Phone number must be exactly 10 digits";
             isValid = false;
         }
@@ -257,49 +278,57 @@ const TheraphistProfile = () => {
     };
 
     const handleSubmit = async (e) => {
+        e.preventDefault();
         const isValid = validation();
         if (!isValid) {
             return;
         }
-        e.preventDefault();
+        
         const formData = new FormData();
         formData.append('name', data.name);
         formData.append('email', data.email);
         formData.append('address', data.address);
         formData.append('phone', data.phone);
-        formData.append('profilePic', data.profilePic);
+        if (data.profilePic) {
+            formData.append('profilePic', data.profilePic);
+        }
 
         const token = localStorage.getItem("token");
-        const updated = await axios.post(`http://localhost:4000/ldss/theraphist/updatetheraphist/${theraphistdetails._id}`,formData, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-        
-        setData({
-            name: "",
-            address: "",
-            email: "",
-            phone: ""
-        })
-        
-        if (updated.data.message === "theraphist updated successfully.") {
-            toast.success("Theraphist updated successfully")
+        try {
+            const updated = await axios.post(
+                `http://localhost:4000/ldss/theraphist/updatetheraphist/${theraphistdetails._id}`,
+                formData, 
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    },
+                }
+            );
             
-            const token = localStorage.getItem("token");
-            const theraphistDetails = JSON.parse(localStorage.getItem("theraphistDetails"));
-            const res = await axios.get(`http://localhost:4000/ldss/theraphist/gettheraphist/${theraphistDetails._id}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-            localStorage.setItem("theraphistDetails", JSON.stringify(res.data.theraphist));
-            setTheraphistdetails(res.data.theraphist);
-            setEditOpen(false);
-        } else {
-            toast.error("Error in updating theraphist profile")
+            if (updated.data.message === "theraphist updated successfully.") {
+                toast.success("Therapist updated successfully");
+                
+                const res = await axios.get(
+                    `http://localhost:4000/ldss/theraphist/gettheraphist/${theraphistdetails._id}`, 
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
+                
+                localStorage.setItem("theraphistDetails", JSON.stringify(res.data.theraphist));
+                setTheraphistdetails(res.data.theraphist);
+                setEditOpen(false);
+            } else {
+                toast.error("Error in updating therapist profile");
+            }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error in updating therapist profile");
         }
-    }
+    };
     
     const [open, setOpen] = React.useState(false);
     const handleOpen = () => setOpen(true);
@@ -318,7 +347,7 @@ const TheraphistProfile = () => {
             ? `http://localhost:4000/uploads/${theraphistdetails?.profilePic?.filename}` 
             : null);
         setEditOpen(true);
-    }
+    };
     const handleEditClose = () => setEditOpen(false);
     
     // Personal Info Modal
@@ -340,15 +369,15 @@ const TheraphistProfile = () => {
     const handleLogOut = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('theraphistDetails');
-        navigate('/theraphist/login');
-        toast.success("you logged out");
-    }
+        navigate('/therapist/login');
+        toast.success("You have been logged out");
+    };
     
-  return (
-    <>
-    <TheraphistNavbar theraphistdetails={theraphistdetails}/>
+    return (
+        <>
+            <TheraphistNavbar theraphistdetails={theraphistdetails}/>
 
-    <div>
+            <div>
                 <Modal
                     aria-labelledby="transition-modal-title"
                     aria-describedby="transition-modal-description"
@@ -370,10 +399,10 @@ const TheraphistProfile = () => {
                             </Box>
                             <hr />
                             <Box display={"flex"} alignItems={"center"} justifyContent={"center"} flexDirection={"column"}>
-                                <Typography color='primary' sx={{ fontSize: "12px", fontWeight: '500' }} variant='p'>Are you sure you want to log out ? </Typography>
+                                <Typography color='primary' sx={{ fontSize: "12px", fontWeight: '500' }} variant='p'>Are you sure you want to log out?</Typography>
                                 <Box display={"flex"} alignItems={"center"} justifyContent={"center"} sx={{ gap: "10px" }}>
-                                    <Button variant='outlined' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '100px', padding: '10px 35px' }} onClick={handleLogOut}>yes</Button>
-                                    <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '100px', padding: '10px 35px' }} onClick={handleClose}>no</Button>
+                                    <Button variant='outlined' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '100px', padding: '10px 35px' }} onClick={handleLogOut}>Yes</Button>
+                                    <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '100px', padding: '10px 35px' }} onClick={handleClose}>No</Button>
                                 </Box>
                             </Box>
                         </Box>
@@ -381,9 +410,7 @@ const TheraphistProfile = () => {
                 </Modal>
             </div>
 
-            {/*  logout modal end */}
-
-            {/* edit modal  */}
+            {/* Edit modal */}
             <div>
                 <Modal
                     aria-labelledby="transition-modal-title"
@@ -401,7 +428,7 @@ const TheraphistProfile = () => {
                     <Fade in={editOpen}>
                         <Box sx={styleEditBox}>
                             <Box display={"flex"} justifyContent={"space-between"} alignItems={"space-between"}>
-                                <Typography variant='h4' sx={{ fontSize: "18px", fontWeight: "600" }}>Edit</Typography>
+                                <Typography variant='h4' sx={{ fontSize: "18px", fontWeight: "600" }}>Edit Profile</Typography>
                                 <CloseIcon onClick={handleEditClose} sx={{ fontSize: "18px" }} />
                             </Box>
                             <hr />
@@ -426,20 +453,24 @@ const TheraphistProfile = () => {
                                         <Stack direction="row" sx={{ display: "flex", gap: "15px" }}>
                                             <div style={textFieldStyle}>
                                                 <label>Name</label>
-                                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                <input 
+                                                    style={{ height: "40px", borderRadius: "8px", border: error.name ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                                                     onChange={handleDataChange}
                                                     name='name'
                                                     value={data.name}
                                                     type='text'
+                                                    placeholder="Enter your name"
                                                 />
                                                 {error.name && <span style={{ color: 'red', fontSize: '12px' }}>{error.name}</span>}
                                             </div>
                                             <div style={textFieldStyle}>
                                                 <label>Address</label>
-                                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                <input 
+                                                    style={{ height: "40px", borderRadius: "8px", border: error.address ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                                                     onChange={handleDataChange}
                                                     name='address'
                                                     value={data.address}
+                                                    placeholder="Enter your address"
                                                 />
                                                 {error.address && <span style={{ color: 'red', fontSize: '12px' }}>{error.address}</span>}
                                             </div>
@@ -447,29 +478,40 @@ const TheraphistProfile = () => {
                                         <Stack direction={'row'} sx={{ display: "flex", gap: "15px" }}>
                                             <div style={textFieldStyle}>
                                                 <label>Email</label>
-                                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                <input 
+                                                    style={{ height: "40px", borderRadius: "8px", border: error.email ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                                                     onChange={handleDataChange}
                                                     name='email'
                                                     value={data.email}
+                                                    type="email"
+                                                    placeholder="Enter your email"
                                                 />
                                                 {error.email && <span style={{ color: 'red', fontSize: '12px' }}>{error.email}</span>}
                                             </div>
                                             <div style={textFieldStyle}>
                                                 <label>Phone Number</label>
-                                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                <input 
+                                                    style={{ height: "40px", borderRadius: "8px", border: error.phone ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                                                     onChange={handleDataChange}
                                                     name='phone'
                                                     value={data.phone}
                                                     type='tel'
+                                                    maxLength="10"
+                                                    placeholder="Enter 10-digit phone number"
                                                 />
                                                 {error.phone && <span style={{ color: 'red', fontSize: '12px' }}>{error.phone}</span>}
                                             </div>
                                         </Stack>
                                     </Box>
                                     <Box display={'flex'} alignItems={'center'} justifyContent={'center'} flexDirection={'column'} sx={{ width: '253px', height: "93px", gap: '10px' }}>
-                                        <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
+                                        <Button 
+                                            variant='contained' 
+                                            color='secondary' 
+                                            sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
                                             onClick={handleSubmit}
-                                        >Confirm</Button>
+                                        >
+                                            Confirm
+                                        </Button>
                                     </Box>
                                 </Box>
                             </Container>
@@ -506,21 +548,26 @@ const TheraphistProfile = () => {
                                         <Stack direction="row" sx={{ display: "flex", gap: "15px", width: '100%' }}>
                                             <div style={textFieldStyle}>
                                                 <label>Educational Qualification</label>
-                                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                <input 
+                                                    style={{ height: "40px", borderRadius: "8px", border: personalInfoError.educationalQualification ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                                                     onChange={handlePersonalInfoChange}
                                                     name='educationalQualification'
                                                     value={personalInfo.educationalQualification}
                                                     type='text'
+                                                    placeholder="Enter your qualifications"
                                                 />
                                                 {personalInfoError.educationalQualification && <span style={{ color: 'red', fontSize: '12px' }}>{personalInfoError.educationalQualification}</span>}
                                             </div>
                                             <div style={textFieldStyle}>
                                                 <label>Years of Experience</label>
-                                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                <input 
+                                                    style={{ height: "40px", borderRadius: "8px", border: personalInfoError.yearsOfExperience ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                                                     onChange={handlePersonalInfoChange}
                                                     name='yearsOfExperience'
                                                     value={personalInfo.yearsOfExperience}
                                                     type='number'
+                                                    min="0"
+                                                    placeholder="Enter years of experience"
                                                 />
                                                 {personalInfoError.yearsOfExperience && <span style={{ color: 'red', fontSize: '12px' }}>{personalInfoError.yearsOfExperience}</span>}
                                             </div>
@@ -528,19 +575,23 @@ const TheraphistProfile = () => {
                                         <Stack direction={'row'} sx={{ display: "flex", gap: "15px", width: '100%' }}>
                                             <div style={textFieldStyle}>
                                                 <label>Languages</label>
-                                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                <input 
+                                                    style={{ height: "40px", borderRadius: "8px", border: personalInfoError.languages ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                                                     onChange={handlePersonalInfoChange}
                                                     name='languages'
                                                     value={personalInfo.languages}
+                                                    placeholder="Enter languages you speak"
                                                 />
                                                 {personalInfoError.languages && <span style={{ color: 'red', fontSize: '12px' }}>{personalInfoError.languages}</span>}
                                             </div>
                                             <div style={textFieldStyle}>
                                                 <label>Availability</label>
-                                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                <input 
+                                                    style={{ height: "40px", borderRadius: "8px", border: personalInfoError.availability ? "1px solid red" : "1px solid #CCCCCC", padding: '8px' }}
                                                     onChange={handlePersonalInfoChange}
                                                     name='availability'
                                                     value={personalInfo.availability}
+                                                    placeholder="Enter your availability"
                                                 />
                                                 {personalInfoError.availability && <span style={{ color: 'red', fontSize: '12px' }}>{personalInfoError.availability}</span>}
                                             </div>
@@ -552,7 +603,7 @@ const TheraphistProfile = () => {
                                                     type="file"
                                                     accept=".pdf,.doc,.docx"
                                                     onChange={handlePersonalInfoFileUpload}
-                                                    style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                                                    style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
                                                 />
                                                 {theraphistdetails.certification?.filename && (
                                                     <Typography variant="caption" sx={{ fontSize: "12px", mt: 1 }}>
@@ -563,9 +614,14 @@ const TheraphistProfile = () => {
                                         </Stack>
                                     </Box>
                                     <Box display={'flex'} alignItems={'center'} justifyContent={'center'} flexDirection={'column'} sx={{ width: '253px', height: "93px", gap: '10px', mt: 3 }}>
-                                        <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", height: "40px", width: '200px', padding: '10px 35px' }}
+                                        <Button 
+                                            variant='contained' 
+                                            color='secondary' 
+                                            sx={{ borderRadius: "25px", height: "40px", width: '200px', padding: '10px 35px' }}
                                             onClick={handlePersonalInfoSubmit}
-                                        >Update Personal Info</Button>
+                                        >
+                                            Update Personal Info
+                                        </Button>
                                     </Box>
                                 </Box>
                             </Container>
@@ -578,12 +634,16 @@ const TheraphistProfile = () => {
                 <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ height: "46px", background: "#DBE8FA" }}>
                     <Typography color='primary' textAlign={"center"} sx={{ fontSize: "18px", fontWeight: "600" }}>Profile</Typography>
                 </Box>
-                {!theraphistdetails.languages && <Link to='/theraphist/personalinfo' >
-                    <Button variant="contained" color='secondary' sx={{
-                        borderRadius: "15px", mt
-                            : "10px", p: "10px 20px", width: "100%"
-                    }}>Add personal details</Button>
-                </Link>}
+                {!theraphistdetails.languages && 
+                    <Button 
+                        variant="contained" 
+                        color='secondary' 
+                        sx={{ borderRadius: "15px", mt: "10px", p: "10px 20px", width: "100%" }}
+                        onClick={handlePersonalInfoOpen}
+                    >
+                        Add personal details
+                    </Button>
+                }
                 <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ mt: "20px", ml: "50px", mr: "50px", height: '320px' }}>
                     <Breadcrumbs aria-label="breadcrumb" separator="›">
                         <Link style={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F", textDecoration: "none" }} underline="hover" to="/">
@@ -629,51 +689,48 @@ const TheraphistProfile = () => {
                     </Box>
                 </Box>
 
-                 {/* personal info */}
-                 {theraphistdetails.certification &&
-                        <Box display={"flex"} justifyContent={"space-between"} alignItems={"start"} sx={{ height: "323px", background: '#F6F7F9', borderRadius: "20px", width: "100%", padding: "20px 60px", mt: "50px", flexDirection: "column" }}>
-                            <Box display={"flex"} justifyContent={"center"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "30px" }} >
-                                <Box>
-                                    <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
-                                        Personal Info
-                                        <BorderColorOutlinedIcon onClick={handlePersonalInfoOpen} style={{ cursor: "pointer" }} />
-                                    </Typography>
-                                </Box>
-                                <Box sx={{ gap: "400px" }} width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"start"}>
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3}>
-                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Educational Qualifications</Typography>
-                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.educationalQualification
-                                            }</Typography>
-                                        </Box>
-                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Language</Typography>
-                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.languages}</Typography>
-                                        </Box>
-                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Certification</Typography>
-                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.certification?.filename || "Not uploaded"}</Typography>
-                                        </Box>
+                {/* personal info */}
+                {theraphistdetails.certification &&
+                    <Box display={"flex"} justifyContent={"space-between"} alignItems={"start"} sx={{ height: "323px", background: '#F6F7F9', borderRadius: "20px", width: "100%", padding: "20px 60px", mt: "50px", flexDirection: "column" }}>
+                        <Box display={"flex"} justifyContent={"center"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "30px" }} >
+                            <Box>
+                                <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
+                                    Personal Info
+                                    <BorderColorOutlinedIcon onClick={handlePersonalInfoOpen} style={{ cursor: "pointer" }} />
+                                </Typography>
+                            </Box>
+                            <Box sx={{ gap: "400px" }} width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"start"}>
+                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3}>
+                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                        <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Educational Qualifications</Typography>
+                                        <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.educationalQualification}</Typography>
                                     </Box>
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3} sx={{ borderLeft: "1px solid black" }}>
-                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={5}>
-                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Years of Experience</Typography>
-                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.yearsOfExperience
-                                            }</Typography>
-                                        </Box>
-                                        <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={5}>
-                                            <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Availablity</Typography>
-                                            <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.availability
-                                            }</Typography>
-                                        </Box>
+                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                        <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Language</Typography>
+                                        <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.languages}</Typography>
+                                    </Box>
+                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
+                                        <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Certification</Typography>
+                                        <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.certification?.filename || "Not uploaded"}</Typography>
+                                    </Box>
+                                </Box>
+                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3} sx={{ borderLeft: "1px solid black" }}>
+                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={5}>
+                                        <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Years of Experience</Typography>
+                                        <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.yearsOfExperience}</Typography>
+                                    </Box>
+                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={5}>
+                                        <Typography color='secondary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>Availability</Typography>
+                                        <Typography color='primary' variant='p' sx={{ fontSize: "12px", fontWeight: "600" }}>{theraphistdetails.availability}</Typography>
                                     </Box>
                                 </Box>
                             </Box>
                         </Box>
-                    }
+                    </Box>
+                }
             </Box>
-    </>
-  )
-}
+        </>
+    );
+};
 
-export default TheraphistProfile
+export default TheraphistProfile;

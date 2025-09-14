@@ -14,22 +14,15 @@ import axiosInstance from '../../Api_service/baseUrl';
 import { jwtDecode } from 'jwt-decode';
 
 const EducatorMeeting = () => {
-
     const [educatorDetails, setEducatorDetails] = useState({});
         
-        const fetchEducator = async () => {
-            const token = localStorage.getItem('token');
-            const decoded = jwtDecode(token);
-            const educatorDetails= JSON.parse(localStorage.getItem("educatorDetails"));
-            // const response = await axios.get(`http://localhost:4000/ldss/educator/geteducator/${decoded.id}`, {
-            //     headers: {
-            //         Authorization: `Bearer ${token}`,
-            //     },
-            // });
-            setEducatorDetails(educatorDetails);
-        }
-    
-    
+    const fetchEducator = async () => {
+        const token = localStorage.getItem('token');
+        const decoded = jwtDecode(token);
+        const educatorDetails = JSON.parse(localStorage.getItem("educatorDetails"));
+        setEducatorDetails(educatorDetails);
+    }
+
     useEffect(() => {
         const storedEducator = localStorage.getItem("educatorDetails");
         if (storedEducator) {
@@ -51,8 +44,6 @@ const EducatorMeeting = () => {
     // Fetch meetings
     const [meetings, setMeetings] = useState([]);
     const fetchAllMeetings = async () => {
-        // In a real app, you would use the actual API call:
-        
         const token = localStorage.getItem("token");
         const educatorId = JSON.parse(localStorage.getItem("educatorDetails"))?._id;
         try {
@@ -62,11 +53,10 @@ const EducatorMeeting = () => {
                 }
             });
             setMeetings(response.data.meetings);
-            
         } catch (error) {
             console.error("Error fetching meetings:", error);
         }
-        };
+    };
     
     useEffect(() => {
         fetchAllMeetings();
@@ -81,12 +71,33 @@ const EducatorMeeting = () => {
     };
    
     const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${month}-${day}-${year}`;
-};
+        const date = new Date(dateString);
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const year = date.getFullYear();
+        return `${month}-${day}-${year}`;
+    };
+
+    // Function to check if a meeting is in the past
+    const isMeetingPast = (meeting) => {
+        const now = new Date();
+        const meetingDate = new Date(meeting.date);
+        
+        // Compare dates first
+        if (meetingDate.toDateString() !== now.toDateString()) {
+            return meetingDate < now;
+        }
+        
+        // If same date, compare end time
+        const [endHours, endMinutes] = meeting.endTime.split(':').map(Number);
+        const meetingEndTime = new Date(meetingDate);
+        meetingEndTime.setHours(endHours, endMinutes, 0, 0);
+        
+        return meetingEndTime < now;
+    };
+
+    // Filter out past meetings
+    const upcomingMeetings = meetings.filter(meeting => !isMeetingPast(meeting));
 
     return (
         <>
@@ -107,168 +118,165 @@ const EducatorMeeting = () => {
                         Meetings
                     </Typography>
                 </Breadcrumbs>
-                
-                
             </Box>
             
             <Box sx={{ background: "white" }}>
                 <Box display={'flex'} flexDirection={'column'} gap={2}>
-                    {meetings.map((meeting, index) => {
+                    {upcomingMeetings.map((meeting, index) => {
                         return (
-<Box 
-  key={index} 
-  display="flex" 
-  alignItems="center" 
-  sx={{ 
-    height: "198px", 
-    background: "#F0F6FE", 
-    borderRadius: "20px", 
-    m: "20px 50px" 
-  }}
->
-  {/* First Section (Student Info) */}
-  <Box 
-    sx={{ 
-      m: "20px", 
-      borderRadius: "15px", 
-      border: "1px solid #CCCCCC", 
-      height: "150px", 
-      flexBasis: "40%",
-      display: "flex",
-      justifyContent: "space-between"
-    }}
-  >
-    <Box sx={{ gap: "20px", p: "20px" }} display="flex" flexDirection="column" alignItems="start">
-      <Box display="flex" alignItems="center" sx={{ gap: "15px" }}>
-        <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
-        <Box display="flex" flexDirection="column" alignItems="start">
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
-            Student's name
-          </Typography>
-          <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-            {meeting.childId.name}
-          </Typography>
-        </Box>
-      </Box>
-      <Box display="flex" alignItems="center" sx={{ gap: "15px" }}>
-        <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
-        <Box display="flex" flexDirection="column" alignItems="start">
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
-            Parent name
-          </Typography>
-          <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-            {meeting.parentId.name}
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
-    
-    <Box sx={{ borderLeft: "1px solid #CCCCCC", m: "10px 0" }} />
-    
-    <Box sx={{ gap: "20px", p: "20px" }} display="flex" flexDirection="column" alignItems="start">
-      <Box display="flex" alignItems="center" sx={{ gap: "15px", pl: "50px" }}>
-        <Box sx={{ color: "#1967D2" }}><DateRangeIcon /></Box>
-        <Box display="flex" flexDirection="column" alignItems="start">
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
-            Date of birth
-          </Typography>
-          <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-  {formatDate(meeting.childId.dateOfBirth)}
-</Typography>
-        </Box>
-      </Box>
-      <Box display="flex" alignItems="center" sx={{ gap: "15px", pl: "50px" }}>
-        <Box sx={{ color: "#1967D2" }}><FemaleIcon /></Box>
-        <Box display="flex" flexDirection="column" alignItems="start">
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
-            Gender
-          </Typography>
-          <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-            {meeting.childId.gender}
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
-  </Box>
-  
-  {/* Second Section (Meeting Info) */}
-  <Box 
-    sx={{ 
-      m: "20px", 
-      borderRadius: "15px", 
-      border: "1px solid #CCCCCC", 
-      height: "150px", 
-      flexBasis: "40%",
-      display: "flex",
-      justifyContent: "space-between"
-    }}
-  >
-    <Box sx={{ gap: "20px", p: "20px" }} display="flex" flexDirection="column" alignItems="start">
-      <Box display="flex" alignItems="center" sx={{ gap: "15px" }}>
-        <Box display="flex" flexDirection="column" alignItems="start">
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
-            Meeting
-          </Typography>
-          <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-            {meeting.meetingTitle}
-          </Typography>
-        </Box>
-      </Box>
-      <Box display="flex" alignItems="center" sx={{ gap: "15px" }}>
-        <Box display="flex" flexDirection="column" alignItems="start">
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
-            Date
-          </Typography>
-          <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-            {formatDate(meeting.date)}
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
-    
-    <Box sx={{ borderLeft: "1px solid #CCCCCC", m: "10px 0" }} />
-    
-    <Box sx={{ gap: "20px", p: "20px" }} display="flex" flexDirection="column" alignItems="start">
-      <Box display="flex" alignItems="center" sx={{ gap: "15px", pl: "50px" }}>
-        <Box display="flex" flexDirection="column" alignItems="start">
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
-            Time
-          </Typography>
-          <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-            {meeting.startTime} - {meeting.endTime}
-          </Typography>
-        </Box>
-      </Box>
-      {/* Add more meeting details here if needed */}
-    </Box>
-  </Box>
+                            <Box 
+                                key={index} 
+                                display="flex" 
+                                alignItems="center" 
+                                sx={{ 
+                                    height: "198px", 
+                                    background: "#F0F6FE", 
+                                    borderRadius: "20px", 
+                                    m: "20px 50px" 
+                                }}
+                            >
+                                {/* First Section (Student Info) */}
+                                <Box 
+                                    sx={{ 
+                                        m: "20px", 
+                                        borderRadius: "15px", 
+                                        border: "1px solid #CCCCCC", 
+                                        height: "150px", 
+                                        flexBasis: "40%",
+                                        display: "flex",
+                                        justifyContent: "space-between"
+                                    }}
+                                >
+                                    <Box sx={{ gap: "20px", p: "20px" }} display="flex" flexDirection="column" alignItems="start">
+                                        <Box display="flex" alignItems="center" sx={{ gap: "15px" }}>
+                                            <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
+                                            <Box display="flex" flexDirection="column" alignItems="start">
+                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
+                                                    Student's name
+                                                </Typography>
+                                                <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                                    {meeting?.childId?.name}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box display="flex" alignItems="center" sx={{ gap: "15px" }}>
+                                            <Box sx={{ color: "#1967D2" }}><PersonOutlinedIcon /></Box>
+                                            <Box display="flex" flexDirection="column" alignItems="start">
+                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
+                                                    Parent name
+                                                </Typography>
+                                                <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                                    {meeting?.parentId?.name}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                    
+                                    <Box sx={{ borderLeft: "1px solid #CCCCCC", m: "10px 0" }} />
+                                    
+                                    <Box sx={{ gap: "20px", p: "20px" }} display="flex" flexDirection="column" alignItems="start">
+                                        <Box display="flex" alignItems="center" sx={{ gap: "15px", pl: "50px" }}>
+                                            <Box sx={{ color: "#1967D2" }}><DateRangeIcon /></Box>
+                                            <Box display="flex" flexDirection="column" alignItems="start">
+                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
+                                                    Date of birth
+                                                </Typography>
+                                                <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                                    {formatDate(meeting?.childId?.dateOfBirth)}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box display="flex" alignItems="center" sx={{ gap: "15px", pl: "50px" }}>
+                                            <Box sx={{ color: "#1967D2" }}><FemaleIcon /></Box>
+                                            <Box display="flex" flexDirection="column" alignItems="start">
+                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
+                                                    Gender
+                                                </Typography>
+                                                <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                                    {meeting?.childId?.gender}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </Box>
+                                
+                                {/* Second Section (Meeting Info) */}
+                                <Box 
+                                    sx={{ 
+                                        m: "20px", 
+                                        borderRadius: "15px", 
+                                        border: "1px solid #CCCCCC", 
+                                        height: "150px", 
+                                        flexBasis: "40%",
+                                        display: "flex",
+                                        justifyContent: "space-between"
+                                    }}
+                                >
+                                    <Box sx={{ gap: "20px", p: "20px" }} display="flex" flexDirection="column" alignItems="start">
+                                        <Box display="flex" alignItems="center" sx={{ gap: "15px" }}>
+                                            <Box display="flex" flexDirection="column" alignItems="start">
+                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
+                                                    Meeting
+                                                </Typography>
+                                                <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                                    {meeting?.meetingTitle}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        <Box display="flex" alignItems="center" sx={{ gap: "15px" }}>
+                                            <Box display="flex" flexDirection="column" alignItems="start">
+                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
+                                                    Date
+                                                </Typography>
+                                                <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                                    {formatDate(meeting?.date)}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                    
+                                    <Box sx={{ borderLeft: "1px solid #CCCCCC", m: "10px 0" }} />
+                                    
+                                    <Box sx={{ gap: "20px", p: "20px" }} display="flex" flexDirection="column" alignItems="start">
+                                        <Box display="flex" alignItems="center" sx={{ gap: "15px", pl: "50px" }}>
+                                            <Box display="flex" flexDirection="column" alignItems="start">
+                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
+                                                    Time
+                                                </Typography>
+                                                <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                                    {meeting?.startTime} - {meeting?.endTime}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </Box>
 
-  {/* Join Button */}
-  <Button 
-    variant="contained" 
-    color="secondary" 
-    sx={{ 
-      borderRadius: "25px", 
-      marginTop: "20px", 
-      height: "40px", 
-      width: "150px", 
-      padding: "10px 35px",
-      mr: "20px"
-    }}
-    onClick={() => handleJoinMeeting(meeting.meetLink)}
-  >
-    Join
-  </Button>
-</Box>
+                                {/* Join Button */}
+                                <Button 
+                                    variant="contained" 
+                                    color="secondary" 
+                                    sx={{ 
+                                        borderRadius: "25px", 
+                                        marginTop: "20px", 
+                                        height: "40px", 
+                                        width: "150px", 
+                                        padding: "10px 35px",
+                                        mr: "20px"
+                                    }}
+                                    onClick={() => handleJoinMeeting(meeting?.meetLink)}
+                                >
+                                    Join
+                                </Button>
+                            </Box>
                         )
                     })}
                 </Box>
                 
                 {/* Empty state */}
-                {meetings.length === 0 && (
+                {upcomingMeetings.length === 0 && (
                     <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "200px" }}>
                         <Typography variant="h6" color="textSecondary">
-                            No meetings scheduled yet
+                            No upcoming meetings scheduled
                         </Typography>
                     </Box>
                 )}

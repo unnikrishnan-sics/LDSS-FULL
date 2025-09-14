@@ -10,6 +10,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AdminLogout from './Common/AdminLogout';
 import { Tooltip } from '@mui/material';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 const AdminEditActivity = () => {
@@ -68,31 +70,31 @@ useEffect(() => {
     }
   };
 
-  const handleSubmit = async () => {
-    if (!activityName || !description || !category) {
-      alert("Please fill in all fields.");
-      return;
-    }
+const handleSubmit = async () => {
+  if (!activityName || !description || !category) {
+    toast.warning("Please fill in all fields.");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append('activityName', activityName);
-    formData.append('description', description);
-    formData.append('category', category);
-    if (photo) formData.append('activityPhoto', photo);
+  const formData = new FormData();
+  formData.append('activityName', activityName);
+  formData.append('description', description);
+  formData.append('category', category);
+  if (photo) formData.append('activityPhoto', photo);
 
-    try {
-      await axios.put(`http://localhost:4000/ldss/admin/activities/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      alert('Activity updated successfully!');
-      navigate('/admin/viewactivitylibrary');
-    } catch (error) {
-      console.error('Error updating activity:', error);
-      alert('Failed to update activity');
-    }
-  };
+  try {
+    await axios.put(`http://localhost:4000/ldss/admin/activities/${id}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    toast.success('Activity updated successfully!');
+    setTimeout(() => navigate('/admin/viewactivitylibrary'), 1500);
+  } catch (error) {
+    console.error('Error updating activity:', error);
+    toast.error('Failed to update activity');
+  }
+};
 
   return (
     <Box display={"flex"} sx={{ background: "#F6F7F9", p: "13px", height: "100vh", width: "100%", overflowY: "hidden" }}>
@@ -210,6 +212,7 @@ useEffect(() => {
         </Box>
       </Box>
       <AdminLogout handleCloseLogout={handleCloseLogout} openLogout={openLogout} />
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </Box>
   );
 };

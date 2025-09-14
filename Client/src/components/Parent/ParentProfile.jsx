@@ -83,7 +83,7 @@ const ParentProfile = () => {
     const [parentDetails, setParentDetails] = useState({});
 
     useEffect( () => {
-        const parentDetails = localStorage.getItem("parentdetails");
+        const parentDetails = localStorage.getItem("parentDetails");
         if (parentDetails) {
             setParentDetails(JSON.parse(parentDetails));
 
@@ -93,7 +93,7 @@ const ParentProfile = () => {
 
     // loging out and not returing to profile page
     useEffect(() => {
-        if (localStorage.getItem("parentdetails") == null) {
+        if (localStorage.getItem("parentDetails") == null) {
           navigate("/");
         }
       });
@@ -144,7 +144,7 @@ const ParentProfile = () => {
 
     };
 
-    console.log(data);
+    // console.log(data);
     // const [message, setMessage] = useState({
     //     success: "",
     //     error: ""
@@ -186,13 +186,13 @@ const ParentProfile = () => {
             
 
             const token = localStorage.getItem("token");
-    const parentDetails = JSON.parse(localStorage.getItem("parentdetails"));
+    const parentDetails = JSON.parse(localStorage.getItem("parentDetails"));
     const res = await axios.get(`http://localhost:4000/ldss/parent/getparent/${parentDetails._id}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },
     });
-    localStorage.setItem("parentdetails", JSON.stringify(res.data.parent));
+    localStorage.setItem("parentDetails", JSON.stringify(res.data.parent));
     setParentDetails(res.data.parent);
 
     // Close the modal

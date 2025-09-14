@@ -141,7 +141,6 @@ const markAsCompleted = async (weekIndex, activityIndex) => {
         } catch (error) {
             console.error("Error fetching learning plan:", error);
             setError(error.message || "Failed to load learning plan");
-            toast.error(error.message || "Failed to load learning plan");
         } finally {
             setLoading(false);
         }
@@ -163,7 +162,7 @@ const markAsCompleted = async (weekIndex, activityIndex) => {
         if (activity.completed) {
             return (
                 <Typography variant='h6' sx={{ fontSize: "18px", fontWeight: "500", color: "#149319" }}>
-                    Completed on {activity.completedDate || "a previous date"}
+                    Completed
                 </Typography>
             );
         } else {
@@ -202,15 +201,30 @@ const markAsCompleted = async (weekIndex, activityIndex) => {
 
     if (error) {
         return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-                <Typography color="error">{error}</Typography>
-            </Box>
+            <>            <ParentNavbar parentdetails={parentDetails} navigateToProfile={navigateToProfile} />
+ <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" flexDirection="column">
+                            <Typography color="primary" variant="h5" sx={{ mb: 2 }}>
+                                {error === "No learning plan available" ? 
+                                    "No learning plan available" : 
+                                    "No learning plan available"}
+                            </Typography>
+                            <Button 
+                                variant="outlined" 
+                                color="primary"
+                                onClick={() => navigate(-1)}
+                                sx={{ mt: 2 }}
+                            >
+                                Go Back
+                            </Button>
+                        </Box>
+</>
+           
         );
     }
 
     return (
         <>
-            <ParentNavbar parentDetails={parentDetails} navigateToProfile={navigateToProfile} />
+            <ParentNavbar parentdetails={parentDetails} navigateToProfile={navigateToProfile} />
             <Box sx={{ background: "white" }}>
                 <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "46px", background: "#DBE8FA" }}>
                     <Typography color='primary' textAlign="center" sx={{ fontSize: "18px", fontWeight: "600" }}>Learning Plan</Typography>

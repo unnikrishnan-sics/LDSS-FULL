@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Button, Grid, InputAdornment, TextField, Typography, styled, Modal, Fade, Backdrop, Card, CardContent, CardMedia, CardActions } from '@mui/material';
+import { Box, Button, Grid, InputAdornment, TextField, Typography, styled, Card, CardContent, CardMedia, CardActions } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
@@ -24,6 +24,9 @@ const AdminViewActivityLibrary = () => {
     const navigate = useNavigate();
 
     const [activityCards, setActivityCards] = useState([]);
+    const [filteredActivities, setFilteredActivities] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
     const fetchAllActivities = async () => {
         try {
             const token = localStorage.getItem("token");
@@ -33,6 +36,7 @@ const AdminViewActivityLibrary = () => {
                 }
             });
             setActivityCards(response.data.activities);
+            setFilteredActivities(response.data.activities);
         } catch (error) {
             console.error("Error fetching activities:", error);
         }
@@ -48,10 +52,32 @@ const AdminViewActivityLibrary = () => {
             });
             toast.success("Activity deleted successfully");
             setActivityCards(prev => prev.filter(card => card._id !== id));
+            setFilteredActivities(prev => prev.filter(card => card._id !== id));
         } catch (error) {
             console.error("Error deleting activity:", error);
             toast.error("Failed to delete activity");
         }
+    };
+
+    const handleSearch = (event) => {
+        const term = event.target.value;
+        setSearchTerm(term);
+        
+        if (!term) {
+            setFilteredActivities(activityCards);
+            return;
+        }
+        
+        const filtered = activityCards.filter(activity => {
+            const searchLower = term.toLowerCase();
+            return (
+                (activity.title && activity.title.toLowerCase().includes(searchLower)) || 
+                (activity.activityName && activity.activityName.toLowerCase().includes(searchLower)) ||
+                (activity.description && activity.description.toLowerCase().includes(searchLower)) ||
+                (activity.category && activity.category.toLowerCase().includes(searchLower))
+            );
+        });
+        setFilteredActivities(filtered);
     };
 
     useEffect(() => {
@@ -84,7 +110,9 @@ const AdminViewActivityLibrary = () => {
                                             <SearchIcon color="primary" />
                                         </InputAdornment>
                                     ),
-                                }} 
+                                }}
+                                value={searchTerm}
+                                onChange={handleSearch}
                             />
                             <Button 
                                 variant='contained' 
@@ -100,14 +128,16 @@ const AdminViewActivityLibrary = () => {
 
                     <Box>
                         <Grid container spacing={3}>
-                            {activityCards.length === 0 ? (
-                                <Typography>No activities found.</Typography>
+                            {filteredActivities.length === 0 ? (
+                                <Grid item xs={12}>
+                                    <Typography sx={{ width: '100%', textAlign: 'center', py: 4 }}>No activities found.</Typography>
+                                </Grid>
                             ) : (
-                                activityCards.map((card) => (
+                                filteredActivities.map((card) => (
                                     <Grid item xs={12} sm={6} md={4} key={card._id}>
                                         <Card sx={{ maxWidth: 345, bgcolor: 'transparent', boxShadow: 'none', p: 2, '&:hover': { boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.1)' } }}>
                                             <Box sx={{ width: '200px', height: '200px', borderRadius: '12px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                                                {/\.(jpg|jpeg|png|webp)$/i.test(card.activityPhoto) ? (
+                                                {card.activityPhoto && /\.(jpg|jpeg|png|webp)$/i.test(card.activityPhoto) ? (
                                                     <CardMedia
                                                         component="img"
                                                         image={`http://localhost:4000/uploads/${card.activityPhoto}`}

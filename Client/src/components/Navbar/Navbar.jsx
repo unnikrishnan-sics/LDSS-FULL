@@ -220,8 +220,8 @@ const Navbar = ({ contactbg, aboutBg, homebg }) => {
                                     </Link>
                                 </MenuItem>
                                 <MenuItem onClick={handleCloseUserMenu}>
-                                    <Link to="/theraphist/login" style={{ textDecoration: "none", color: "#000" }}>
-                                        Theraphist Login
+                                    <Link to="/therapist/login" style={{ textDecoration: "none", color: "#000" }}>
+                                        Therapist Login
                                     </Link>
                                 </MenuItem>
                                 {/* Add more roles if needed */}

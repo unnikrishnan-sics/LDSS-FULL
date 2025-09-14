@@ -1,123 +1,201 @@
 import React, { useState } from 'react';
 import ParentNavbarSiginIn from '../Parent/ParentNavbarSiginIn';
-import { Box, Button, Container, InputAdornment, Stack, TextField, Typography, styled } from '@mui/material';
+import { Box, Button, Container, Stack, Typography } from '@mui/material';
 import background from "../../assets/Frame 12.png"
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import Footer from '../Footer/Footer';
 import axios from "axios";
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 const EducatorLogin = () => {
-    const textFieldStyle = { height: "65px", width: "360px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" }
-    const siginupStyle = { background: "white", boxShadow: "none" };
-
     const [data, setData] = useState({
         email: "",
         password: ""
     });
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setData((prevData) => ({ ...prevData, [name]: value }));
     }
 
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    }
+
     const handleLogin = async (e) => {
         e.preventDefault();
-        const response = await axios.post("http://localhost:4000/ldss/educator/login", data);
+        try {
+            const response = await axios.post("http://localhost:4000/ldss/educator/login", data);
+            const jwtToken = response.data.token;
+            const message = response.data.message;
 
-        const jwtToken = response.data.token;
-        const message = response.data.message;
-
-
-        if (jwtToken && message === "educator logged in successfully") {
-            localStorage.setItem("token", jwtToken);
-            toast.success("logged in successfully!")
-            navigate("/educator/home");
+            if (jwtToken && message === "educator logged in successfully") {
+                localStorage.setItem("token", jwtToken);
+                toast.success("Logged in successfully!");
+                navigate("/educator/home");
+            }
+            else if (message === "Admin not approved you") {
+                toast.error("Admin not approved you");
+            }
+            else {
+                toast.error("Invalid email or password");
+            }
+        } catch (error) {
+            toast.error("An error occurred during login");
+            console.error("Login error:", error);
         }
-        else if (message === "Admin not approved you") {
-            toast.error("Admin not approved you");
-        }
-
-        else {
-            toast.error("Invalid email or password");
-        }
-
-        console.log(jwtToken);
-        console.log(message);
-        setData({
-            email: "",
-            password: ""
-        })
     }
+
     return (
         <>
-            <ParentNavbarSiginIn siginupStyle={siginupStyle} />
-            <Container>
-                <Box component="img" src={background} sx={{ position: "absolute", top: -50, left: 0, objectFit: 'cover', zIndex: -1 }}></Box>
-                <Box display={'flex'} flexDirection={'column'} alignItems={'center'} sx={{ marginTop: "80px" }}>
-                    <Typography variant="h2" component="div" color='primary' sx={{ fontSize: "32px", fontWeight: "600" }}>
-                        Login !
-                    </Typography>
-                    <Box display={'flex'} flexDirection={'column'} alignItems={'flex-end'} >
+            <ParentNavbarSiginIn siginupStyle={{ background: "white", boxShadow: "none" }} />
+            <Box sx={{ display: 'flex', minHeight: 'calc(100vh - 120px)' }}>
+                <Box sx={{
+                    flex: 1,
+                    backgroundImage: `url(${background})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    display: { xs: 'none', md: 'block' }
+                }}>
+                    <Box sx={{
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'rgba(25, 118, 210, 0.8)',
+                        color: 'white',
+                        p: 8
+                    }}>
+                        <Box>
+                            <Typography variant="h3" sx={{ fontWeight: 700, mb: 2 }}>
+                                Welcome Back
+                            </Typography>
+                            <Typography variant="h5" sx={{ opacity: 0.9 }}>
+                                Login to access your educator dashboard and continue making a difference.
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Box>
 
-                        <Stack>
-                            <div style={textFieldStyle}>
-                                <label>Email</label>
-                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                <Box sx={{
+                    flex: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    p: 4
+                }}>
+                    <Box sx={{ maxWidth: 400, width: '100%' }}>
+                        <Typography variant="h4" color='primary' sx={{ 
+                            fontWeight: 700,
+                            mb: 4,
+                            textAlign: 'center'
+                        }}>
+                            Educator Login
+                        </Typography>
+
+                        <Box component="form" onSubmit={handleLogin}>
+                            <Box sx={{ mb: 3 }}>
+                                <Typography sx={{ mb: 1, fontWeight: 500 }}>Email Address</Typography>
+                                <input 
+                                    style={{ 
+                                        width: '100%',
+                                        padding: '12px 16px',
+                                        borderRadius: '8px',
+                                        border: '1px solid #CCCCCC',
+                                        fontSize: '16px'
+                                    }}
                                     onChange={handleInputChange}
                                     name='email'
                                     value={data.email}
-                                    type='text'
-
+                                    type='email'
+                                    required
                                 />
+                            </Box>
 
-                            </div>
-                            <div style={textFieldStyle}>
-                                <label>Password</label>
-                                <input style={{ height: "40px", borderRadius: "8px", border: " 1px solid #CCCCCC", padding: '8px' }}
+                            <Box sx={{ mb: 2, position: 'relative' }}>
+                                <Typography sx={{ mb: 1, fontWeight: 500 }}>Password</Typography>
+                                <input 
+                                    style={{ 
+                                        width: '100%',
+                                        padding: '12px 16px 12px 16px',
+                                        borderRadius: '8px',
+                                        border: '1px solid #CCCCCC',
+                                        fontSize: '16px'
+                                    }}
                                     onChange={handleInputChange}
                                     name='password'
                                     value={data.password}
-                                    type='password'
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
                                 />
-                                {data.password.length > 0 ? "" : <VisibilityOffIcon
-                                    style={{
+                                <Box 
+                                    onClick={togglePasswordVisibility}
+                                    sx={{
                                         position: 'absolute',
-                                        right: '10px',
-                                        top: '70%',
-                                        transform: 'translateY(-50%)',
+                                        right: '12px',
+                                        top: '42px',
                                         cursor: 'pointer',
+                                        color: 'text.secondary'
                                     }}
-                                />}
+                                >
+                                    {showPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                                </Box>
+                            </Box>
 
-                            </div>
-                        </Stack>
-                        <Box display={'flex'} alignItems={'flex-end'} justifyContent={'center'}>
-                            <Link to="/educator/forgotpassword" style={{ textDecoration: "none" }}>
-                                <Typography variant='p' color='primary' sx={{ marginTop: "10px", fontSize: "12px", fontWeight: '500' }}>Forgot password</Typography>
-                            </Link>
+                            <Box sx={{ 
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                mb: 3
+                            }}>
+                                <Link to="/educator/forgotpassword" style={{ 
+                                    textDecoration: "none",
+                                    color: 'primary.main',
+                                    fontSize: '14px',
+                                    fontWeight: 500
+                                }}>
+                                    Forgot password?
+                                </Link>
+                            </Box>
 
+                            <Button 
+                                fullWidth
+                                variant='contained' 
+                                color='secondary' 
+                                sx={{ 
+                                    borderRadius: "8px",
+                                    height: "48px",
+                                    textTransform: 'none',
+                                    fontSize: '16px',
+                                    fontWeight: 600,
+                                    mb: 2
+                                }}
+                                type="submit"
+                            >
+                                Sign In
+                            </Button>
+
+                            <Typography sx={{ textAlign: 'center', mt: 3 }}>
+                                New to our platform?{' '}
+                                <Link to="/educator/registration" style={{ 
+                                    textDecoration: "none",
+                                    color: 'primary.main',
+                                    fontWeight: 600
+                                }}>
+                                    Create an account
+                                </Link>
+                            </Typography>
                         </Box>
-
                     </Box>
-
-
-                    <Stack display={'flex'} flexDirection={'column'} alignItems={'center'} gap={2} mt={2}>
-                        <Button variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
-                            onClick={handleLogin}
-                        >Login</Button>
-
-                        <Typography>
-                            Don't have an account? <Link to="/educator/registration"><span style={{ textDecoration: "underline" }}>Sign up</span></Link>
-                        </Typography>
-                    </Stack>
                 </Box>
-
-            </Container>
+            </Box>
             <Footer />
         </>
     )
 }
 
-export default EducatorLogin
+export default EducatorLogin;

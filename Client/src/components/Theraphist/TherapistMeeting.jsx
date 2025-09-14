@@ -14,6 +14,7 @@ import AddMeeting from './Common/addMeeting';
 const TherapistMeeting = () => {
     const [therapistDetails, setTherapistDetails] = useState({});
     const [meetings, setMeetings] = useState([]);
+    const [upcomingMeetings, setUpcomingMeetings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
@@ -81,19 +82,19 @@ const TherapistMeeting = () => {
             
             const decoded = jwtDecode(token);
             setLoading(true);
-            console.log(decoded.id);
             
             const response = await axios.get(`http://localhost:4000/ldss/therapist/viewmeeting/${decoded.id}`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
             });
-            console.log(response);
             
             if (response.data && response.data.meetings) {
                 setMeetings(response.data.meetings);
+                filterUpcomingMeetings(response.data.meetings);
             } else {
                 setMeetings([]);
+                setUpcomingMeetings([]);
             }
         } catch (error) {
             console.error("Error fetching meetings:", error);
@@ -101,6 +102,30 @@ const TherapistMeeting = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const isMeetingUpcoming = (meeting) => {
+        if (!meeting?.date || !meeting?.endTime) return false;
+        
+        const now = new Date();
+        const meetingDate = new Date(meeting.date);
+        
+        // Compare dates first
+        if (meetingDate.toDateString() !== now.toDateString()) {
+            return meetingDate > now;
+        }
+        
+        // If same date, compare end time
+        const [endHours, endMinutes] = meeting.endTime.split(':').map(Number);
+        const meetingEndTime = new Date(meetingDate);
+        meetingEndTime.setHours(endHours, endMinutes, 0, 0);
+        
+        return meetingEndTime > now;
+    };
+
+    const filterUpcomingMeetings = (meetings) => {
+        const upcoming = meetings.filter(meeting => isMeetingUpcoming(meeting));
+        setUpcomingMeetings(upcoming);
     };
 
     useEffect(() => {
@@ -157,7 +182,6 @@ const TherapistMeeting = () => {
 
     const formatTime = (timeString) => {
         if (!timeString) return 'N/A';
-        // Assuming time is stored in HH:MM format
         const [hours, minutes] = timeString.split(':');
         const hour = parseInt(hours, 10);
         const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -174,7 +198,7 @@ const TherapistMeeting = () => {
             
             <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "46px", background: "#DBE8FA" }}>
                 <Typography color='primary' textAlign="center" sx={{ fontSize: "18px", fontWeight: "600" }}>
-                    Meetings
+                    Upcoming Meetings
                 </Typography>
             </Box>
 
@@ -187,14 +211,6 @@ const TherapistMeeting = () => {
                         Meetings
                     </Typography>
                 </Breadcrumbs>
-                {/* <Button 
-                    variant="contained" 
-                    color="primary"
-                    onClick={handleAddMeetingOpen}
-                    sx={{ borderRadius: "25px" }}
-                >
-                    Add Meeting
-                </Button> */}
             </Box>
             
             {loading ? (
@@ -212,7 +228,7 @@ const TherapistMeeting = () => {
             ) : (
                 <Box sx={{ background: "white" }}>
                     <Box display={'flex'} flexDirection={'column'} gap={2}>
-                        {meetings.map((meeting, index) => (
+                        {upcomingMeetings.map((meeting, index) => (
                             <Box 
                                 key={meeting._id || index} 
                                 display="flex" 
@@ -244,7 +260,7 @@ const TherapistMeeting = () => {
                                                     Student's name
                                                 </Typography>
                                                 <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-                                                    {meeting.childId?.name || 'N/A'}
+                                                    {meeting?.childId?.name || 'N/A'}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -255,7 +271,7 @@ const TherapistMeeting = () => {
                                                     Parent name
                                                 </Typography>
                                                 <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-                                                    {meeting.parentId?.name || 'N/A'}
+                                                    {meeting?.parentId?.name || 'N/A'}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -271,20 +287,20 @@ const TherapistMeeting = () => {
                                                     Date of birth
                                                 </Typography>
                                                 <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-                                                    {meeting.childId?.dateOfBirth ? formatDate(meeting.childId.dateOfBirth) : 'N/A'}
+                                                    {meeting?.childId?.dateOfBirth ? formatDate(meeting.childId.dateOfBirth) : 'N/A'}
                                                 </Typography>
                                             </Box>
                                         </Box>
                                         <Box display="flex" alignItems="center" sx={{ gap: "15px", pl: "50px" }}>
                                             <Box sx={{ color: "#1967D2" }}>
-                                                {meeting.childId?.gender === 'Female' ? <FemaleIcon /> : <MaleIcon />}
+                                                {meeting?.childId?.gender === 'Female' ? <FemaleIcon /> : <MaleIcon />}
                                             </Box>
                                             <Box display="flex" flexDirection="column" alignItems="start">
                                                 <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
                                                     Gender
                                                 </Typography>
                                                 <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-                                                    {meeting.childId?.gender || 'N/A'}
+                                                    {meeting?.childId?.gender || 'N/A'}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -310,7 +326,7 @@ const TherapistMeeting = () => {
                                                     Meeting
                                                 </Typography>
                                                 <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-                                                    {meeting.meetingTitle || 'N/A'}
+                                                    {meeting?.meetingTitle || 'N/A'}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -321,7 +337,7 @@ const TherapistMeeting = () => {
                                                     Date
                                                 </Typography>
                                                 <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-                                                    {formatDate(meeting.date)}
+                                                    {formatDate(meeting?.date)}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -337,22 +353,10 @@ const TherapistMeeting = () => {
                                                     Time
                                                 </Typography>
                                                 <Typography variant="h6" color="text.primary" sx={{ fontSize: "14px", fontWeight: "500" }}>
-                                                    {formatTime(meeting.startTime)} - {formatTime(meeting.endTime)}
+                                                    {formatTime(meeting?.startTime)} - {formatTime(meeting?.endTime)}
                                                 </Typography>
                                             </Box>
                                         </Box>
-                                        {/* <Box display="flex" alignItems="center" sx={{ gap: "15px", pl: "50px" }}>
-                                            <Box display="flex" flexDirection="column" alignItems="start">
-                                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: "12px", fontWeight: "500" }}>
-                                                    Status
-                                                </Typography>
-                                                <Chip 
-                                                    label={meeting.status || 'unknown'} 
-                                                    color={getStatusColor(meeting.status)} 
-                                                    size="small"
-                                                />
-                                            </Box>
-                                        </Box> */}
                                     </Box>
                                 </Box>
 
@@ -368,8 +372,7 @@ const TherapistMeeting = () => {
                                         padding: "10px 35px",
                                         mr: "20px"
                                     }}
-                                    onClick={() => handleJoinMeeting(meeting.meetLink)}
-                                    
+                                    onClick={() => handleJoinMeeting(meeting?.meetLink)}
                                 >
                                     Join
                                 </Button>
@@ -378,10 +381,10 @@ const TherapistMeeting = () => {
                     </Box>
                     
                     {/* Empty state */}
-                    {meetings.length === 0 && !loading && (
+                    {upcomingMeetings.length === 0 && !loading && (
                         <Box display="flex" justifyContent="center" alignItems="center" sx={{ height: "200px" }}>
                             <Typography variant="h6" color="textSecondary">
-                                No meetings scheduled yet
+                                No upcoming meetings scheduled
                             </Typography>
                         </Box>
                     )}

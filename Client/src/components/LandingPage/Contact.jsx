@@ -6,6 +6,8 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import MailOutlineIcon from '@mui/icons-material/MailOutline';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import Footer from '../Footer/Footer';
+import { useNavigate } from 'react-router-dom';
+import ChatIcon from '@mui/icons-material/Chat';
 
 const Contact = () => {
   const StyledTextField = styled(TextField)({
@@ -32,9 +34,42 @@ const Contact = () => {
     }
   });
 
+  const navigate = useNavigate();
+
+  const handleChatClick = () => {
+    navigate('/chatbot');
+  };
+
   return (
     <>
       <Navbar contactbg={contactbg} />
+      
+      {/* Floating Chat Button */}
+      <Box 
+          sx={{
+              position: 'fixed',
+              bottom: '30px',
+              right: '30px',
+              zIndex: 1000,
+              backgroundColor: '#1976d2',
+              color: 'white',
+              borderRadius: '50%',
+              width: '60px',
+              height: '60px',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+              '&:hover': {
+                  backgroundColor: '#1565c0',
+                  transform: 'scale(1.05)'
+              }
+          }}
+          onClick={handleChatClick}
+      >
+          <ChatIcon sx={{ fontSize: '30px' }} />
+      </Box>
 
       {/* Top Section with Background Image */}
       <Box

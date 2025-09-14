@@ -282,31 +282,52 @@ const getEducatorRequest = async (req, res) => {
         })
     }
 };
+// In educatorController.js - educatorAcceptsParentRequest
 const educatorAcceptsParentRequest = async (req, res) => {
-    try {
-        const requestId = req.params.id;
-        console.log("Request ID received:", requestId);
-        const updatedRequest = await requestModel.findByIdAndUpdate(requestId , { status: "accepted" }, { new: true });
-        if (!updatedRequest) {
-            return res.json({
-                message: "request not found",
-                updatedRequest
-               
-            })
-        };
-        return res.json({
-            message: "request accepted",
-            updatedRequest
-        })
-
-
-    } catch (error) {
-        console.log(error.message);
-        res.json({
-            message: error.message
-        })
+  try {
+    const requestId = req.params.id;
+    const updatedRequest = await requestModel.findByIdAndUpdate(
+      requestId, 
+      { status: "accepted" }, 
+      { new: true }
+    ).populate('parentId');
+    
+    if (!updatedRequest) {
+      return res.json({ message: "request not found" });
     }
 
+    // Create conversation between parent and educator
+    const token = req.headers.authorization?.split(' ')[1];
+    const educatorId = updatedRequest.recipientId;
+    const parentId = updatedRequest.parentId._id;
+
+    // Check if conversation already exists
+    const existingConvs = await axios.get(
+      `http://localhost:4000/ldss/conversations/user/${parentId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const existingConv = existingConvs.data.find(conv => 
+      conv.participants.includes(educatorId) && 
+      conv.participants.includes(parentId)
+    );
+
+    if (!existingConv) {
+      await axios.post(
+        'http://localhost:4000/ldss/conversations',
+        {
+          participants: [parentId, educatorId],
+          participantModels: ['parent', 'educator']
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    }
+
+    return res.json({ message: "request accepted", updatedRequest });
+  } catch (error) {
+    console.log(error.message);
+    res.json({ message: error.message });
+  }
 };
 const educatorRejectParentRequest= async(req,res)=>{
     try {
@@ -400,7 +421,7 @@ const viewAllChildsOfAllApprovedParents=async(req,res)=>{
             message:error.message
         })
     }
-}
+};
 
 module.exports = { uploadProfilePic, uploadCertification, educatorRegister, educatorLogin, educatorForgotPassword, educatorResetPassword, getEducatorById, editEducatorById, addEducatorPersonal, getAllEducators, educatorRequestAccept, adminDeleteEducator, getEducatorRequest, educatorAcceptsParentRequest,educatorRejectParentRequest ,educatorViewRequestById,viewAllApprovedParentsByEducator,viewAllChildsOfAllApprovedParents};
 

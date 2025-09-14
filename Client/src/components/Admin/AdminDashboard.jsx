@@ -163,13 +163,14 @@ const AdminDashboard = () => {
         </Box>
 
         {/* Stats Cards */}
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} sm={6} md={3}>
+        <Grid container spacing={12} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6} md={3} >
             <StatsCard 
               icon={<PeopleOutlineIcon sx={{ color: "#1967D2" }} />}
               title="Total Students"
               value={child.length}
               loading={loading.children}
+              
             />
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
@@ -224,19 +225,19 @@ const AdminDashboard = () => {
             { header: "Phone", render: (item) => item.phone || 'N/A' },
             { header: "Email", render: (item) => item.email || 'N/A' },
             { header: "Address", render: (item) => item.address || 'N/A' },
-            { 
-              header: "Action", 
-              render: () => (
-                <Button 
-                  size="small" 
-                  color="secondary"
-                  startIcon={<VisibilityIcon />}
-                  sx={{ textTransform: 'none' }}
-                >
-                  View
-                </Button>
-              )
-            }
+            // { 
+            //   header: "Action", 
+            //   render: () => (
+            //     <Button 
+            //       size="small" 
+            //       color="secondary"
+            //       startIcon={<VisibilityIcon />}
+            //       sx={{ textTransform: 'none' }}
+            //     >
+            //       View
+            //     </Button>
+            //   )
+            // }
           ]}
         />
 
@@ -265,20 +266,20 @@ const AdminDashboard = () => {
             { header: "Name", render: (item) => item.name || 'N/A' },
             { header: "Phone", render: (item) => item.phone || 'N/A' },
             { header: "Email", render: (item) => item.email || 'N/A' },
-            { header: "Address", render: (item) => item.Address || 'N/A' },
-            { 
-              header: "Action", 
-              render: () => (
-                <Button 
-                  size="small" 
-                  color="secondary"
-                  startIcon={<VisibilityIcon />}
-                  sx={{ textTransform: 'none' }}
-                >
-                  View
-                </Button>
-              )
-            }
+            { header: "Address", render: (item) => item.address || 'N/A' },
+            // { 
+            //   header: "Action", 
+            //   render: () => (
+            //     <Button 
+            //       size="small" 
+            //       color="secondary"
+            //       startIcon={<VisibilityIcon />}
+            //       sx={{ textTransform: 'none' }}
+            //     >
+            //       View
+            //     </Button>
+            //   )
+            // }
           ]}
         />
       </Box>
@@ -301,7 +302,7 @@ const StatsCard = ({ icon, title, value, loading }) => (
     p: "20px",
     display: 'flex',
     flexDirection: 'column',
-    gap: "15px",
+    justifyContent: 'space-between',
     borderRadius: '8px',
     boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.05)',
     transition: 'transform 0.2s',
@@ -335,14 +336,16 @@ const StatsCard = ({ icon, title, value, loading }) => (
         width: '60%', 
         height: 24, 
         backgroundColor: '#f0f0f0',
-        borderRadius: 4
+        borderRadius: 4,
+        alignSelf: 'center'
       }} />
     ) : (
       <Typography variant='h3' sx={{ 
         fontSize: "28px", 
         fontWeight: "600",
         color: '#1967D2',
-        pl: '56px' // Match icon space
+        textAlign: 'center',
+        width: '100%'
       }}>
         {value}
       </Typography>

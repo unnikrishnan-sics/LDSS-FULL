@@ -16,7 +16,7 @@ app.use(express.json());
 app.use("/ldss", router);
 app.use('/uploads', express.static('uploads'));
 
-// In your Express backend
+
 
 
 app.listen(PORT, () => {

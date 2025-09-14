@@ -44,41 +44,77 @@ import PhoneEnabledOutlinedIcon from '@mui/icons-material/PhoneEnabledOutlined';
 import BorderColorOutlinedIcon from '@mui/icons-material/BorderColorOutlined';
 
 const ParentHome = () => {
-    const homebg = {
-        backgroundColor: "#F6F7F9"
+    // Updated color palette
+    const colors = {
+        primary: '#2E3B4E',
+        secondary: '#4A90E2',
+        accent: '#FFAE00',
+        lightBg: '#F8FAFC',
+        cardBg: '#FFFFFF',
+        textLight: '#7F7F7F'
     }
     
-    // Helper function to generate random rating between 3 and 5 with 0.5 increments
-    const generateRandomRating = () => {
-        const ratings = [3, 3.5, 4, 4.5, 5];
-        return ratings[Math.floor(Math.random() * ratings.length)];
-    };
-
-    const [parent,setParent]=useState("");
-    const fetchUser=async()=>{
+    const homebg = {
+        backgroundColor: colors.lightBg
+    }
+    
+    const [parent, setParent] = useState("");
+    const [hasEducatorRequest, setHasEducatorRequest] = useState(false);
+    const [hasTherapistRequest, setHasTherapistRequest] = useState(false);
+    
+    const fetchUser = async () => {
         const token = localStorage.getItem('token');
         const decoded = jwtDecode(token);
-        const parent=await axios.get(`http://localhost:4000/ldss/parent/getparent/${decoded.id}`,{
+        const parent = await axios.get(`http://localhost:4000/ldss/parent/getparent/${decoded.id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           });
-          const parentDatas=localStorage.setItem("parentdetails",
-          JSON.stringify(parent.data.parent));
+        const parentDatas = localStorage.setItem("parentDetails", JSON.stringify(parent.data.parent));
         setParent(parent.data.parent);
-        console.log(parent.data.parent.name);
-        console.log(parent.data.parent.profilePic);
-        console.log(parent);
-
+        
+        // Check if parent has any requests
+        await checkParentRequests(decoded.id);
     }
-    useEffect(()=>{
+
+    // Check if parent has any pending/accepted requests
+    const checkParentRequests = async (parentId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('http://localhost:4000/ldss/request/fetchall', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            
+            const educatorRequests = response.data.requests.filter(
+                request => request.parentId === parentId && 
+                (request.status === 'pending' || request.status === 'accepted') &&
+                request.recipientRole === 'educator'
+            );
+            
+            const therapistRequests = response.data.requests.filter(
+                request => request.parentId === parentId && 
+                (request.status === 'pending' || request.status === 'accepted') &&
+                request.recipientRole === 'theraphist'
+            );
+            
+            setHasEducatorRequest(educatorRequests.length > 0);
+            setHasTherapistRequest(therapistRequests.length > 0);
+        } catch (error) {
+            console.error("Error checking parent requests:", error);
+        }
+    };
+
+    useEffect(() => {
         fetchUser();
-    },[]);
+    }, []);
 
     const navigate = useNavigate();
-    const navigateToProfile=()=>{
+    const navigateToProfile = () => {
          navigate('/parent/profile');
     }
+    
     // view all educators
     const [alleducators, setAlleducators] = useState([]);
     const fetchAllEducators = async () => {
@@ -86,30 +122,33 @@ const ParentHome = () => {
         const alleducators = await axios.get("http://localhost:4000/ldss/educator/getalleducators", {
             headers: {
                 Authorization: `Bearer ${token}`
-
             }
         });
-        console.log(alleducators.data.educators);
         setAlleducators(alleducators.data.educators);
     }
     useEffect(() => {
-        fetchAllEducators();
-    }, []);
+        if (!hasEducatorRequest) {
+            fetchAllEducators();
+        }
+    }, [hasEducatorRequest]);
+    
     // educator view model
     const educatorViewstyle = {
         position: 'absolute',
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        border: '1px solid #000',
+        border: 'none',
         borderRadius: "20px",
         boxShadow: 24,
         p: 4,
         height: "667px",
         width: "1080px",
-        background: "white"
-
+        background: colors.cardBg,
+        overflowY: 'auto',
+        maxHeight: '90vh'
     };
+    
     const [educatorViewOpen, setEducatorViewOpen] = useState(false);
     const [singleEducator, setSingleEducator] = useState({});
     const handleEducatorViewOpen = async (educatorId) => {
@@ -119,54 +158,56 @@ const ParentHome = () => {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(educator.data);
         setSingleEducator(educator.data.educator);
-
         setEducatorViewOpen(true);
     }
     const handleEducatorViewClose = () => setEducatorViewOpen(false);
 
-     // parent send request to educator
-     const handleEducatorrequest=async()=>{
+    // parent send request to educator
+    const handleEducatorrequest = async () => {
         const token = localStorage.getItem("token");
-        const parentId=JSON.parse(localStorage.getItem("parentdetails"))._id;
-        const recipientId=singleEducator._id;
-        const recipientRole="educator";
-        const message="I am interested in your education services";
-        const requestData={
+        const parentId = JSON.parse(localStorage.getItem("parentDetails"))._id;
+        const recipientId = singleEducator._id;
+        const recipientRole = "educator";
+        const message = "I am interested in your education services";
+        const requestData = {
             parentId,
             recipientId,
             recipientRole,
             message
         }
-        const request = await axios.post(`http://localhost:4000/ldss/request/sendrequest`,requestData,{
+        const request = await axios.post(`http://localhost:4000/ldss/request/sendrequest`, requestData, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(request.data);
-        if(request.data.message==="Request sent successfully."){
+        if (request.data.message === "Request sent successfully.") {
             toast.success("Request sent successfully.");
+            setHasEducatorRequest(true); // Update state to hide educators section
             handleEducatorViewClose();
-    }
-};
-//  all theraphist view 
-
-const [allTheraphist, setAllTheraphist] = useState([]);
+        }
+        else if (request.data.message === "Request already sent") {
+            toast.error("You have already sent a request to another Educator.");
+            handleEducatorViewClose();
+        }
+    };
+    
+    // all theraphist view 
+    const [allTheraphist, setAllTheraphist] = useState([]);
     const fetchAllTheraphist = async () => {
         const token = localStorage.getItem("token");
         const alltheraphist = await axios.get("http://localhost:4000/ldss/theraphist/getalltheraphist", {
             headers: {
                 Authorization: `Bearer ${token}`
-
             }
         });
-        console.log(alltheraphist.data.theraphist);
         setAllTheraphist(alltheraphist.data.theraphist);
     }
     useEffect(() => {
-        fetchAllTheraphist();
-    }, []);
+        if (!hasTherapistRequest) {
+            fetchAllTheraphist();
+        }
+    }, [hasTherapistRequest]);
 
     // theraphist view model
     const theraphistViewstyle = {
@@ -174,15 +215,17 @@ const [allTheraphist, setAllTheraphist] = useState([]);
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        border: '1px solid #000',
+        border: 'none',
         borderRadius: "20px",
         boxShadow: 24,
         p: 4,
         height: "667px",
         width: "1080px",
-        background: "white"
-
+        background: colors.cardBg,
+        overflowY: 'auto',
+        maxHeight: '90vh'
     };
+    
     const [theraphistViewOpen, setTheraphistViewOpen] = useState(false);
     const [singleTheraphist, setSingleTheraphist] = useState({});
     const handleTheraphistViewOpen = async (theraphistId) => {
@@ -192,645 +235,1168 @@ const [allTheraphist, setAllTheraphist] = useState([]);
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(theraphist.data);
         setSingleTheraphist(theraphist.data.theraphist);
-
         setTheraphistViewOpen(true);
     }
     const handleTheraphistViewClose = () => setTheraphistViewOpen(false);
 
-     // parent send request to theraphist
-     const handleTheraphistrequest=async()=>{
+    // parent send request to theraphist
+    const handleTheraphistrequest = async () => {
         const token = localStorage.getItem("token");
-        const parentId=JSON.parse(localStorage.getItem("parentdetails"))._id;
-        const recipientId=singleTheraphist._id;
-        const recipientRole="theraphist";
-        const message="I am interested in your therapist services.";
-        const requestData={
+        const parentId = JSON.parse(localStorage.getItem("parentDetails"))._id;
+        const recipientId = singleTheraphist._id;
+        const recipientRole = "theraphist";
+        const message = "I am interested in your therapist services.";
+        const requestData = {
             parentId,
             recipientId,
             recipientRole,
             message
         }
-        const request = await axios.post(`http://localhost:4000/ldss/request/sendrequest`,requestData,{
+        const request = await axios.post(`http://localhost:4000/ldss/request/sendrequest`, requestData, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
-        console.log(request.data);
-        if(request.data.message==="Request sent successfully."){
+        if (request.data.message === "Request sent successfully.") {
             toast.success("Request sent successfully.");
+            setHasTherapistRequest(true); // Update state to hide therapists section
             handleTheraphistViewClose();
+        }
+        else if (request.data.message === "Request already sent") {
+            toast.error("You have already sent a request to another Therapist.");
+            handleTheraphistViewClose();
+        }
     }
-}
+
+    const [educatorRatings, setEducatorRatings] = useState({});
+    const [therapistRatings, setTherapistRatings] = useState({});
+    
+    useEffect(() => {
+        const fetchRatings = async () => {
+            const token = localStorage.getItem("token");
+            
+            try {
+                // Fetch educator ratings
+                const educatorRes = await axios.get(
+                    "http://localhost:4000/ldss/ratings/educator",
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                
+                // Create a map of educatorId to average rating
+                const educatorRatingMap = {};
+                educatorRes.data.data.forEach(rating => {
+                    if (!educatorRatingMap[rating.professionalId._id]) {
+                        educatorRatingMap[rating.professionalId._id] = {
+                            total: 0,
+                            count: 0,
+                            average: 0
+                        };
+                    }
+                    educatorRatingMap[rating.professionalId._id].total += rating.rating;
+                    educatorRatingMap[rating.professionalId._id].count += 1;
+                    educatorRatingMap[rating.professionalId._id].average = 
+                        educatorRatingMap[rating.professionalId._id].total / 
+                        educatorRatingMap[rating.professionalId._id].count;
+                });
+                setEducatorRatings(educatorRatingMap);
+
+                // Fetch therapist ratings
+                const therapistRes = await axios.get(
+                    "http://localhost:4000/ldss/ratings/theraphist",
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                
+                // Create a map of therapistId to average rating
+                const therapistRatingMap = {};
+                therapistRes.data.data.forEach(rating => {
+                    if (!therapistRatingMap[rating.professionalId._id]) {
+                        therapistRatingMap[rating.professionalId._id] = {
+                            total: 0,
+                            count: 0,
+                            average: 0
+                        };
+                    }
+                    therapistRatingMap[rating.professionalId._id].total += rating.rating;
+                    therapistRatingMap[rating.professionalId._id].count += 1;
+                    therapistRatingMap[rating.professionalId._id].average = 
+                        therapistRatingMap[rating.professionalId._id].total / 
+                        therapistRatingMap[rating.professionalId._id].count;
+                });
+                setTherapistRatings(therapistRatingMap);
+
+            } catch (error) {
+                console.error("Error fetching ratings:", error);
+            }
+        };
+
+        fetchRatings();
+    }, []);
 
     return (
         <>
-
             <ParentNavbar homebg={homebg} navigateToProfile={navigateToProfile} parentdetails={parent}/>
 
-            
-
-            <Container maxWidth="x-lg" sx={{ ...homebg, height: '100vh', position: "relative", overflow: "hidden", zIndex: 2 }}>
-                <Box component="img" src={background} alt='background'
-                    sx={{ position: "absolute", top: "0", left: "0", width: "100%", height: "100%", objectFit: 'cover', zIndex: -1 }}
-                >
-
-                </Box>
-                <Stack direction="row" spacing={2} sx={{ padding: "80px 50px", zIndex: 1, }}>
-                    <Box sx={{ flex: 1, display: 'flex', flexDirection: "column", alignItems: "flex-start", justifyContent: "center" }}>
-                        <Box sx={{
-                            position: "relative",
-                            width: "262px",
-                            height: "55px",
-                            display: "flex",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            border: "1px solid transparent",
-                            borderImage: "linear-gradient(to right, #1967D2, #F6F7F9) 1",
-                            borderRadius: "25px",
-                            overflow: "hidden",
-                            backgroundSize: "cover",
-                            zIndex: 1,
-
-
-                        }}>
-
-                            <Typography variant="p" component="h6" color='primary'
-                                sx={{ fontSize: "14px", fontWeight: 500, margin: "10px 0px" }}
-                            >
-                                <StarIcon sx={{ verticalAlign: 'middle', marginRight: 1, color: "#FFAE00" }} />
-                                Welcome to learn hub
+            {/* Hero Section */}
+            <Box sx={{ 
+                backgroundColor: colors.secondary,
+                backgroundImage: `linear-gradient(135deg, ${colors.secondary} 0%, #6BB1FF 100%)`,
+                color: 'white',
+                py: 10,
+                position: 'relative',
+                overflow: 'hidden'
+            }}>
+                <Container maxWidth="lg">
+                    <Grid container spacing={6} alignItems="center">
+                        <Grid item xs={12} md={6}>
+                            <Box sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                px: 2,
+                                py: 1,
+                                borderRadius: 4,
+                                mb: 2
+                            }}>
+                                <StarIcon sx={{ mr: 1, color: colors.accent }} />
+                                <Typography variant="body2">Welcome to Learn Hub</Typography>
+                            </Box>
+                            
+                            <Typography variant="h2" sx={{ 
+                                fontWeight: 700,
+                                mb: 2,
+                                fontSize: { xs: '2.5rem', md: '3.5rem' },
+                                lineHeight: 1.2
+                            }}>
+                                Empowering Every Child's Learning Journey
                             </Typography>
-
-
-                        </Box>
-                        <Box>
-                            <Typography variant="h1" component="h1" color='primary'
-                                sx={{ fontSize: "56px", fontWeight: 600, marginTop: 2, margin: "10px 0px" }}
-                            >
-                                Empowering Every
-                            </Typography>
-                            <Typography variant="h1" component="h1" color='secondary'
-                                sx={{ fontSize: "56px", fontWeight: 600, marginTop: 2, margin: "10px 0px" }}
-                            >
-                                Child's Learning
-                            </Typography>
-                            <Typography variant="h1" component="h1" color='primary'
-                                sx={{ fontSize: "56px", fontWeight: 600, marginTop: 2, margin: "10px 0px" }}
-                            >
-                                Journey
-                            </Typography>
-                            <Typography variant="p" component="p" color='primary'
-                                sx={{ fontSize: "14px", fontWeight: 500, lineHeight: "25px", marginTop: 2, margin: "10px 0px", textAlign: "justify", marginRight: "250px" }}
-                            >
+                            
+                            <Typography variant="body1" sx={{ 
+                                mb: 4,
+                                fontSize: '1.1rem',
+                                opacity: 0.9,
+                                maxWidth: '90%'
+                            }}>
                                 A one-stop platform connecting parents, educators, and therapists to support children with learning disabilities through personalized learning plans, activity tracking, and seamless collaboration.
                             </Typography>
-                            
-                        </Box>
-
-
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                        <Grid container spacing={1}
-                            sx={{ width: "615px", height: "510px", position: "relative" }}
-                        >
-                            <Box sx={{ width: "264px", height: "62px", backgroundColor: 'white', borderRadius: "5px", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", padding: "5px 3px", position: 'absolute', top: "30px", left: "-35px" }} >
-
-
-                                <Typography variant='p' color="primary" sx={{ fontSize: "14px" }}>
-                                    <VerifiedIcon color='secondary' />
-                                    Thousands of Verified educators & therapist!
-                                </Typography>
-
-                            </Box>
-                            <Box sx={{ width: "195px", height: "118px", backgroundColor: '#DBE8FA', borderRadius: "5px", padding: "5px 3px", position: 'absolute', bottom: "-85px", right: "-35px", display: "flex", alignItems: "center", justifyContent: "center" }} >
-                                <Box sx={{ width: "165px", height: "88px", backgroundColor: 'white', borderRadius: "5px", padding: "5px 3px", display: "flex", flexDirection: "column", alignItems: "center", gap: "5px" }}>
-                                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                                        <Box component="img" src={AVATAR1} alt='avatar' sx={{ width: "41px", height: "39px" }}></Box>
-                                        <Box component="img" src={AVATAR2} alt='avatar' sx={{ width: "41px", height: "39px", marginLeft: "-20px" }}></Box>
-                                        <Box component="img" src={AVATAR3} alt='avatar' sx={{ width: "41px", height: "39px", marginLeft: "-20px" }}></Box>
-                                        <Box component="img" src={AVATAR4} alt='avatar' sx={{ width: "41px", height: "39px", marginLeft: "-20px" }}></Box>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={6}>
+                            <Box sx={{
+                                position: 'relative',
+                                borderRadius: 4,
+                                overflow: 'hidden',
+                                boxShadow: 6,
+                                height: { xs: 300, md: 400 },
+                                '& img': {
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                }
+                            }}>
+                                <img src={image68} alt="Children learning" />
+                                
+                                <Box sx={{
+                                    position: 'absolute',
+                                    top: 20,
+                                    left: -20,
+                                    backgroundColor: 'white',
+                                    p: 1.5,
+                                    borderRadius: 2,
+                                    boxShadow: 2,
+                                    display: 'flex',
+                                    alignItems: 'center'
+                                }}>
+                                    <VerifiedIcon color="primary" />
+                                    <Typography variant="body2" sx={{ ml: 1, color: colors.primary }}>
+                                        Thousands of Verified Educators & Therapists!
+                                    </Typography>
+                                </Box>
+                                
+                                <Box sx={{
+                                    position: 'absolute',
+                                    bottom: -40,
+                                    right: -20,
+                                    backgroundColor: colors.lightBg,
+                                    p: 2,
+                                    borderRadius: 2,
+                                    boxShadow: 2,
+                                    width: 180
+                                }}>
+                                    <Box sx={{ 
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        mb: 1
+                                    }}>
+                                        {[AVATAR1, AVATAR2, AVATAR3, AVATAR4].map((avatar, index) => (
+                                            <Avatar 
+                                                key={index}
+                                                src={avatar}
+                                                sx={{ 
+                                                    width: 36,
+                                                    height: 36,
+                                                    ml: index > 0 ? -1.5 : 0,
+                                                    border: '2px solid white'
+                                                }}
+                                            />
+                                        ))}
                                     </Box>
-                                    <Typography>
+                                    <Typography variant="body2" align="center" sx={{ color: colors.primary }}>
                                         200k+ Learning
                                     </Typography>
-
                                 </Box>
                             </Box>
-                            <Grid size={9}>
-                                <Box component="img" src={image68} alt='img'
-                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}>
-
-                                </Box>
-                            </Grid>
-                            <Grid size={3}>
-                                <Box component="img" src={image69} alt='img'
-                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}>
-
-                                </Box>
-                            </Grid>
-                            <Grid size={5}>
-                                <Box component="img" src={image70} alt='img'
-                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}>
-
-                                </Box>
-                            </Grid>
-                            <Grid size={7}>
-                                <Box component="img" src={image71} alt='img'
-                                    sx={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "10px" }}>
-
-                                </Box>
-                            </Grid>
                         </Grid>
-                    </Box>
+                    </Grid>
+                </Container>
+            </Box>
 
-                </Stack>
-            </Container >
-            <Container maxWidth="x-lg" sx={{ display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", margin: "100px 0px", height: '100vh' }}>
-                <Stack spacing={2} sx={{ width: "305px", height: "88px", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
-                    <Box>
-                        <Typography color='primary' variant='h3' sx={{ fontSize: "32px", fontWeight: "600" }}>
-                            How it Works
+            {/* How It Works Section */}
+            <Box sx={{ py: 10, backgroundColor: colors.lightBg }}>
+                <Container maxWidth="lg">
+                    <Box sx={{ textAlign: 'center', mb: 8 }}>
+                        <Typography variant="h3" sx={{ 
+                            fontWeight: 700,
+                            mb: 2,
+                            color: colors.primary
+                        }}>
+                            How It Works
+                        </Typography>
+                        <Typography variant="body1" sx={{ 
+                            color: colors.textLight,
+                            maxWidth: 600,
+                            mx: 'auto'
+                        }}>
+                            Find the perfect learning support in just a few steps
                         </Typography>
                     </Box>
-                    <Box>
-                        <Typography color='primary' variant='p' sx={{ fontSize: "14px", fontWeight: "500" }}>
-                            Find the perfect learning in just a few steps
-                        </Typography>
-                    </Box>
+                    
+                    <Grid container spacing={4} justifyContent="center">
+                        <Grid item xs={12} md={4}>
+                            <Box sx={{
+                                backgroundColor: colors.cardBg,
+                                p: 4,
+                                borderRadius: 3,
+                                height: '100%',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                                transition: 'transform 0.3s, box-shadow 0.3s',
+                                '&:hover': {
+                                    transform: 'translateY(-5px)',
+                                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
+                                }
+                            }}>
+                                <Box sx={{
+                                    width: 80,
+                                    height: 80,
+                                    backgroundColor: `${colors.secondary}20`,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    mx: 'auto',
+                                    mb: 3
+                                }}>
+                                    <img src={user} alt="Profile" style={{ width: 40 }} />
+                                </Box>
+                                <Typography variant="h5" sx={{ 
+                                    fontWeight: 600,
+                                    mb: 2,
+                                    color: colors.primary
+                                }}>
+                                    Build Profiles
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: colors.textLight }}>
+                                    Parents add child details; educators & therapists set expertise.
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={4}>
+                            <Box sx={{
+                                backgroundColor: colors.cardBg,
+                                p: 4,
+                                borderRadius: 3,
+                                height: '100%',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                                transition: 'transform 0.3s, box-shadow 0.3s',
+                                '&:hover': {
+                                    transform: 'translateY(-5px)',
+                                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
+                                }
+                            }}>
+                                <Box sx={{
+                                    width: 80,
+                                    height: 80,
+                                    backgroundColor: `${colors.secondary}20`,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    mx: 'auto',
+                                    mb: 3
+                                }}>
+                                    <img src={elearning} alt="Learning" style={{ width: 40 }} />
+                                </Box>
+                                <Typography variant="h5" sx={{ 
+                                    fontWeight: 600,
+                                    mb: 2,
+                                    color: colors.primary
+                                }}>
+                                    Start Learning
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: colors.textLight }}>
+                                    Access personalized plans, track progress, and collaborate.
+                                </Typography>
+                            </Box>
+                        </Grid>
+                        
+                        <Grid item xs={12} md={4}>
+                            <Box sx={{
+                                backgroundColor: colors.cardBg,
+                                p: 4,
+                                borderRadius: 3,
+                                height: '100%',
+                                textAlign: 'center',
+                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                                transition: 'transform 0.3s, box-shadow 0.3s',
+                                '&:hover': {
+                                    transform: 'translateY(-5px)',
+                                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
+                                }
+                            }}>
+                                <Box sx={{
+                                    width: 80,
+                                    height: 80,
+                                    backgroundColor: `${colors.secondary}20`,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    mx: 'auto',
+                                    mb: 3
+                                }}>
+                                    <img src={shopping} alt="Monitor" style={{ width: 40 }} />
+                                </Box>
+                                <Typography variant="h5" sx={{ 
+                                    fontWeight: 600,
+                                    mb: 2,
+                                    color: colors.primary
+                                }}>
+                                    Monitor & Improve
+                                </Typography>
+                                <Typography variant="body1" sx={{ color: colors.textLight }}>
+                                    Receive insights, expert advice, and ongoing support.
+                                </Typography>
+                            </Box>
+                        </Grid>
+                    </Grid>
+                </Container>
+            </Box>
 
-                </Stack>
-
-                <Stack direction="row" spacing={2} sx={{ height: "210px", display: "flex", alignItems: 'center', gap: "20px", marginTop: "90px" }}>
-                    <Box sx={{ width: "400px", display: "flex", flexDirection: "column", alignItems: 'center', gap: "20px" }}>
-                        <Box component="img" src={user} sx={{}}>
-                        </Box>
-                        <Box>
-                            <Typography variant='h4' color='"primary' sx={{ fontSize: "18px", fontWeight: "600" }}>
-                                Build Profiles
+            {/* Educators Section - Only show if no educator requests */}
+            {!hasEducatorRequest && (
+                <Box sx={{ py: 10, backgroundColor: `${colors.secondary}08` }}>
+                    <Container maxWidth="lg">
+                        <Box sx={{ textAlign: 'center', mb: 8 }}>
+                            <Typography variant="h3" sx={{ 
+                                fontWeight: 700,
+                                mb: 2,
+                                color: colors.primary
+                            }}>
+                                Our Educators
+                            </Typography>
+                            <Typography variant="body1" sx={{ 
+                                color: colors.textLight,
+                                maxWidth: 600,
+                                mx: 'auto'
+                            }}>
+                                Create personalized learning plans, track student progress, and collaborate with parents and therapists to support every child's educational journey.
                             </Typography>
                         </Box>
-                        <Box sx={{}}>
-                            <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500", textAlign: 'justify' }}>
-                                Parents add child details; educators & <br /> therapists set expertise.
-                            </Typography>
-                        </Box>
-                    </Box>
-                    <Box sx={{ width: "400px", display: "flex", flexDirection: "column", alignItems: 'center', gap: "20px" }}>
-                        <Box component="img" src={elearning} sx={{}}>
-                        </Box>
-                        <Box>
-                            <Typography variant='h4' color='"primary' sx={{ fontSize: "18px", fontWeight: "600" }}>
-                                Start Learning
-                            </Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500", textAlign: 'justify' }}>
-                                Access personalized plans, track progress,<br />
-                                and collaborate.
-                            </Typography>
-                        </Box>
-                    </Box>
-                    <Box sx={{ width: "400px", display: "flex", flexDirection: "column", alignItems: 'center', gap: "20px" }}>
-                        <Box component="img" src={shopping} sx={{}}>
-                        </Box>
-                        <Box>
-                            <Typography variant='h4' color='"primary' sx={{ fontSize: "18px", fontWeight: "600" }}>
-                                Monitor & Improve
-                            </Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500", textAlign: 'justify' }}>
-                                Receive insights, expert advice, and <br />
-                                ongoing support.
-                            </Typography>
-                        </Box>
-                    </Box>
-
-                </Stack>
-
-            </Container>
-
-            {/* educator */}
-
-            <Container maxWidth="x-lg" display={"flex"} flexDirection={"column"} alignItems={"center"} gap={"20px"} justifyContent={"center"} sx={{ height: "100%", background: "#F0F6FE" ,paddingBottom:"100px"}}>
-
-                <Box display={"flex"} flexDirection={"column"} alignItems={"center"} gap={"20px"} justifyContent={"center"} sx={{ height: "113px", }}>
-                    <Typography variant='h4' color='primary' sx={{ fontSize: "32px", fontWeight: "600", marginTop: "50px" }}>Educator</Typography>
-                    <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500", textAlign: "center" }}>Create personalized learning plans, track student progress, and collaborate with parents  and <br /> therapists to support every child's educational journey.</Typography>
-                </Box>
-                <Box>
-                    {/* cards */}
-
-                    <Grid display="flex" flexDirection="row" alignItems="center" justifyContent="center" container spacing={3} sx={{ marginTop: "100px" }}>
-                        {alleducators.slice(0,6).map((educators, index) => {
-                            const rating = generateRandomRating();
-                            const reviewCount = Math.floor(Math.random() * 50) + 1;
-                            
-                            return (
-                                <Grid item xs={12} sm={12} md={4} width={"32%"} key={index}>
-                                    <Card sx={{ maxWidth: "410px", height: "197px", borderRadius: "20px", padding: "20px" }}>
-                                        <CardActionArea>
-                                            <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
-                                                <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
-                                                    <CardMedia
-                                                        component="img"
-                                                        sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
-                                                        image={`http://localhost:4000/uploads/${educators?.profilePic?.filename}`}
-                                                        alt="Profile"
-                                                    />
-                                                    <CardContent
-                                                        sx={{
-                                                            height: "150px",
-                                                            overflow: "hidden",
-                                                            padding: "10px",
-                                                            display: "flex",
-                                                            flexDirection: "column",
-                                                            justifyContent: "space-between"
-                                                        }}
-                                                    >
-                                                        <Box>
-                                                            <Typography variant="h6" color='primary'>{educators.name}</Typography>
-                                                            <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
-                                                                {educators.educationalQualification}
-                                                            </Typography>
-                                                            <Box display="flex" alignItems="center">
-                                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                                    <StarIcon
-                                                                        key={star}
-                                                                        fontSize="small"
-                                                                        sx={{
-                                                                            color: star <= Math.floor(rating) 
-                                                                                ? '#FFD700' 
-                                                                                : star - 0.5 <= rating 
-                                                                                    ? 'rgba(255, 215, 0, 0.5)' 
-                                                                                    : '#CCCCCC'
-                                                                        }}
-                                                                    />
-                                                                ))}
-                                                                <Typography sx={{ ml: 1, fontSize: "12px" }}>
-                                                                    ({reviewCount})
+                        
+                        <Grid container spacing={4} justifyContent="center">
+                            {alleducators
+                                .slice(0,3)
+                                .map(educator => {
+                                    const ratingData = educatorRatings[educator._id] || { average: 0, count: 0 };
+                                    return { ...educator, averageRating: ratingData.average, reviewCount: ratingData.count };
+                                })
+                                .sort((a, b) => b.averageRating - a.averageRating) // Sort by highest rating first
+                                .map((educator, index) => {
+                                    return (
+                                        <Grid item xs={12} sm={6} md={4} key={index}>
+                                            <Card sx={{ 
+                                                height: '100%',
+                                                borderRadius: 3,
+                                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                                                transition: 'transform 0.3s, box-shadow 0.3s',
+                                                '&:hover': {
+                                                    transform: 'translateY(-5px)',
+                                                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
+                                                }
+                                            }}>
+                                                <CardActionArea onClick={() => handleEducatorViewOpen(educator._id)}>
+                                                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                                                            <Avatar 
+                                                                src={`http://localhost:4000/uploads/${educator?.profilePic?.filename}`}
+                                                                sx={{ 
+                                                                    width: 80, 
+                                                                    height: 80,
+                                                                    mr: 3,
+                                                                    border: `2px solid ${colors.secondary}`
+                                                                }}
+                                                            />
+                                                            <Box>
+                                                                <Typography variant="h6" sx={{ fontWeight: 600, color: colors.primary }}>
+                                                                    {educator.name}
                                                                 </Typography>
+                                                                <Typography variant="body2" sx={{ color: colors.textLight }}>
+                                                                    {educator.educationalQualification}
+                                                                </Typography>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                                        <StarIcon
+                                                                            key={star}
+                                                                            fontSize="small"
+                                                                            sx={{
+                                                                                color: star <= Math.floor(educator.averageRating) 
+                                                                                    ? colors.accent 
+                                                                                    : star - 0.5 <= educator.averageRating 
+                                                                                        ? `${colors.accent}80` 
+                                                                                        : '#DDD'
+                                                                            }}
+                                                                        />
+                                                                    ))}
+                                                                    <Typography variant="body2" sx={{ ml: 1, color: colors.textLight }}>
+                                                                        ({educator.reviewCount || 0})
+                                                                    </Typography>
+                                                                </Box>
                                                             </Box>
                                                         </Box>
-
-                                                        <Box sx={{ borderBottom: "1px solid black" }} />
-
-                                                        <Box>
-                                                            <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
-                                                                {educators.yearsOfExperience} years Experience
+                                                        
+                                                        <Divider sx={{ my: 2 }} />
+                                                        
+                                                        <Box sx={{ mt: 'auto' }}>
+                                                            <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
+                                                                {educator.yearsOfExperience} years Experience
                                                             </Typography>
-                                                            <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
-                                                                {educators.availability}
+                                                            <Typography variant="body2" sx={{ color: colors.textLight, mb: 2 }}>
+                                                                {educator.availability}
                                                             </Typography>
-                                                            <Typography onClick={() => handleEducatorViewOpen(educators._id)} color='secondary'>View all</Typography>
+                                                            <Typography 
+                                                                variant="body2" 
+                                                                sx={{ 
+                                                                    color: colors.secondary,
+                                                                    fontWeight: 600,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center'
+                                                                }}
+                                                            >
+                                                                View Profile <ArrowRightAltIcon sx={{ ml: 0.5 }} />
+                                                            </Typography>
                                                         </Box>
-                                                    </CardContent>
-                                                </Box>
+                                                    </Box>
+                                                </CardActionArea>
+                                            </Card>
+                                        </Grid>
+                                    );
+                                })}
+                        </Grid>
+                        
+                        <Box sx={{ textAlign: 'center', mt: 6 }}>
+                            <Button 
+                                component={Link}
+                                to="/parent/viewalleducators"
+                                variant="outlined"
+                                color="primary"
+                                endIcon={<ArrowRightAltIcon />}
+                                sx={{
+                                    px: 4,
+                                    py: 1.5,
+                                    borderRadius: 50,
+                                    fontWeight: 600,
+                                    borderWidth: 2,
+                                    '&:hover': {
+                                        borderWidth: 2
+                                    }
+                                }}
+                            >
+                                View All Educators
+                            </Button>
+                        </Box>
+                    </Container>
+                </Box>
+            )}
+
+            {/* Educator View Modal */}
+            <Modal
+                open={educatorViewOpen}
+                onClose={handleEducatorViewClose}
+                closeAfterTransition
+                slots={{ backdrop: Backdrop }}
+                slotProps={{
+                    backdrop: {
+                        timeout: 500,
+                    },
+                }}
+            >
+                <Fade in={educatorViewOpen}>
+                    <Box sx={educatorViewstyle}>
+                        <Box sx={{ 
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: 4,
+                            pb: 2,
+                            borderBottom: `1px solid ${colors.lightBg}`
+                        }}>
+                            <Typography variant="h5" sx={{ fontWeight: 700, color: colors.primary }}>
+                                Educator Profile
+                            </Typography>
+                            <CloseIcon 
+                                onClick={handleEducatorViewClose} 
+                                sx={{ 
+                                    cursor: 'pointer',
+                                    color: colors.textLight,
+                                    '&:hover': {
+                                        color: colors.primary
+                                    }
+                                }} 
+                            />
+                        </Box>
+                        
+                        <Box sx={{ mb: 5 }}>
+                            <Box sx={{ 
+                                display: 'flex',
+                                alignItems: 'center',
+                                mb: 4,
+                                flexDirection: { xs: 'column', md: 'row' }
+                            }}>
+                                <Box sx={{ 
+                                    width: { xs: '100%', md: 'auto' },
+                                    mb: { xs: 3, md: 0 },
+                                    mr: { xs: 0, md: 5 },
+                                    display: 'flex',
+                                    justifyContent: 'center'
+                                }}>
+                                    {singleEducator.profilePic?.filename ? (
+                                        <Avatar 
+                                            src={`http://localhost:4000/uploads/${singleEducator?.profilePic?.filename}`} 
+                                            sx={{ 
+                                                width: 150, 
+                                                height: 150,
+                                                border: `3px solid ${colors.secondary}`
+                                            }} 
+                                        />
+                                    ) : (
+                                        <Avatar 
+                                            sx={{ 
+                                                width: 150, 
+                                                height: 150,
+                                                fontSize: 60,
+                                                bgcolor: colors.secondary
+                                            }}
+                                        >
+                                            {singleEducator.name?.charAt(0)}
+                                        </Avatar>
+                                    )}
+                                </Box>
+                                
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="h4" sx={{ 
+                                        fontWeight: 700,
+                                        mb: 1,
+                                        color: colors.primary,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        {singleEducator.name}
+                                        {singleEducator._id && (
+                                            <Box sx={{ 
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                ml: 2
+                                            }}>
+                                                {(() => {
+                                                    const ratingData = educatorRatings[singleEducator._id] || { average: 0, count: 0 };
+                                                    const averageRating = ratingData.average;
+                                                    const reviewCount = ratingData.count;
+                                                    
+                                                    return (
+                                                        <>
+                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                                <StarIcon
+                                                                    key={star}
+                                                                    fontSize="small"
+                                                                    sx={{
+                                                                        color: star <= Math.floor(averageRating) 
+                                                                            ? colors.accent 
+                                                                            : star - 0.5 <= averageRating 
+                                                                                ? `${colors.accent}80` 
+                                                                                : '#DDD'
+                                                                    }}
+                                                                />
+                                                            ))}
+                                                            <Typography variant="body2" sx={{ ml: 1, color: colors.textLight }}>
+                                                                ({reviewCount})
+                                                            </Typography>
+                                                        </>
+                                                    );
+                                                })()}
                                             </Box>
-                                        </CardActionArea>
-                                    </Card>
-                                </Grid>
-                            )
-                        })}
-                    </Grid>
-
-
-                </Box>
-                <Box display={'flex'} alignItems={'flex-end'} justifyContent={'flex-end'} sx={{marginRight:"150px",paddingTop:"30px"}}>
-                <Link to="/parent/viewalleducators"><Typography>View More <span><ArrowRightAltIcon/></span></Typography></Link>
-                </Box>
-
-
-            </Container>
-            {/* educator view model */}
-            <div>
-
-                <Modal
-                    aria-labelledby="transition-modal-title"
-                    aria-describedby="transition-modal-description"
-                    open={educatorViewOpen}
-                    onClose={handleEducatorViewClose}
-                    closeAfterTransition
-                    slots={{ backdrop: Backdrop }}
-                    slotProps={{
-                        backdrop: {
-                            timeout: 500,
-                        },
-                    }}
-                >
-                    <Fade in={educatorViewOpen}>
-                        <Box sx={educatorViewstyle} display={"flex"} flexDirection={"column"} gap={5}>
-                            <Box display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Detail</Typography>
-                                <CloseIcon onClick={handleEducatorViewClose} />
-                            </Box>
-                            <Box display={"flex"} alignItems={"start"}  flexDirection={"column"}>
-                                <Box display={"flex"} alignItems={"center"} justifyContent={"center"} gap={10} width={"100%"}>
-                                    {
-                                    singleEducator.profilePic?.filename ? (<Avatar src={`http://localhost:4000/uploads/${singleEducator?.profilePic?.filename}`} sx={{ width: "180px", height: "180px" }} />)
-                                :
-                                (<Avatar sx={{ width: "180px", height: "180px" }}>{singleEducator.name?.charAt(0)}</Avatar>)    
-                                }
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={5} >
-                                        <Typography color='primary' variant='h5' sx={{ fontSize: "32px", fontWeight: "600" }}>
-                                            {singleEducator.name}
-                                            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', ml: 1 }}>
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <StarIcon
-                                                        key={star}
-                                                        fontSize="small"
-                                                        sx={{
-                                                            color: star <= Math.floor(generateRandomRating()) 
-                                                                ? '#FFD700' 
-                                                                : star - 0.5 <= generateRandomRating() 
-                                                                    ? 'rgba(255, 215, 0, 0.5)' 
-                                                                    : '#CCCCCC'
-                                                        }}
-                                                    />
-                                                ))}
-                                                <Typography component="span" sx={{ fontSize: "18px", ml: 1 }}>
-                                                    ({Math.floor(Math.random() * 50) + 1})
+                                        )}
+                                    </Typography>
+                                    
+                                    <Grid container spacing={3} sx={{ mt: 2 }}>
+                                        <Grid item xs={12} sm={6}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                <MailOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleEducator.email || "Not Updated"}
                                                 </Typography>
                                             </Box>
-                                        </Typography>
-                                        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "100px" }}>
-                                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px" }}>
-
-                                                <Typography> <PersonOutlinedIcon /> {singleEducator.name}</Typography>
-                                                <Typography> <MailOutlinedIcon /> {singleEducator.email}</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <PhoneEnabledOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleEducator.phone || "Not Updated"}
+                                                </Typography>
                                             </Box>
-                                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px", borderLeft: "1px solid #CCCCCC", ml: "50px", pl: "40px" }} >
-
-                                                <Typography> <LocationOnOutlinedIcon /> {singleEducator.address}</Typography>
-                                                <Typography> <PhoneEnabledOutlinedIcon /> {singleEducator.phone}</Typography>
-
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                <LocationOnOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleEducator.address || "Not Updated"}
+                                                </Typography>
                                             </Box>
-                                        </Box>
-
-                                    </Box>
-                                </Box>
-                                <Box display={"flex"} justifyContent={"space-between"} alignItems={"center"} sx={{ height: "323px", borderRadius: "20px", width: "100%", padding: "20px", mt: "50px", flexDirection: "column" }}>
-                                    <Box display={"flex"} justifyContent={"center"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "30px" }} >
-                                        <Box>
-                                            <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
-                                                Personal Info
-                                                <BorderColorOutlinedIcon />
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ gap: "200px" }} width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"start"}>
-                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3}>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Educational Qualifications</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.educationalQualification}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Language</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.languages}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Certification</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Adobe Certified Professional in Photoshop & Illustrator</Typography>
-                                                </Box>
-                                            </Box>
-                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3} sx={{ borderLeft: "1px solid black" }}>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Years of experience</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.yearsOfExperience}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Availablity</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleEducator.availability}</Typography>
-                                                </Box>
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                    <Button onClick={handleEducatorrequest} endIcon={<ArrowRightAltIcon />} variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}>Book</Button>
+                                        </Grid>
+                                    </Grid>
                                 </Box>
                             </Box>
-                        </Box>
-                    </Fade>
-                </Modal>
-            </div>
-
-            {/* educator view model end */}
-
-            {/* theraphist */}
-
-            <Container maxWidth="x-lg" display={"flex"} flexDirection={"column"} alignItems={"center"} gap={"20px"} justifyContent={"center"} sx={{ height: "100%", background: "#F6F7F9" ,marginTop:"85px",paddingBottom:"100px"}}>
-
-                <Box display={"flex"} flexDirection={"column"} alignItems={"center"} gap={"20px"} justifyContent={"center"} sx={{ height: "113px", }}>
-                    <Typography variant='h4' color='primary' sx={{ fontSize: "32px", fontWeight: "600", marginTop: "50px" }}>Therapist</Typography>
-                    <Typography variant='p' color='primary' sx={{ fontSize: "14px", fontWeight: "500", textAlign: "center" }}>Monitor developmental progress, assign therapy-based activities, and collaborate with parents <br /> and educators to provide holistic support.</Typography>
-                </Box>
-                <Box>
-                    {/* cards */}
-
-                    <Grid display="flex" flexDirection="row" alignItems="center" justifyContent="center" container spacing={3} sx={{ marginTop: "100px" }}>
-                        {allTheraphist.slice(0,6).map((therapist, index) => {
-                            const rating = generateRandomRating();
-                            const reviewCount = Math.floor(Math.random() * 50) + 1;
                             
-                            return (
-                                <Grid item xs={12} sm={12} md={4} width={"32%"} key={index}>
-                                    <Card sx={{ maxWidth: "410px", height: "197px", borderRadius: "20px", padding: "20px" }}>
-                                        <CardActionArea>
-                                            <Box display="flex" alignItems="center" justifyContent="center" sx={{ height: "157px" }}>
-                                                <Box display="flex" flexDirection="row" alignItems="center" justifyContent="center" sx={{ height: "150px", gap: "10px" }}>
-                                                    <CardMedia
-                                                        component="img"
-                                                        sx={{ height: "150px", width: '150px', borderRadius: "10px", flexShrink: 0 }}
-                                                        image={`http://localhost:4000/uploads/${therapist.profilePic?.filename}`}
-                                                        alt="Profile"
-                                                    />
-                                                    <CardContent
-                                                        sx={{
-                                                            height: "150px",
-                                                            overflow: "hidden",
-                                                            padding: "10px",
-                                                            display: "flex",
-                                                            flexDirection: "column",
-                                                            justifyContent: "space-between"
-                                                        }}
-                                                    >
-                                                        <Box>
-                                                            <Typography variant="h6" color='primary'>
-                                                                {therapist.name}
-                                                            </Typography>
-                                                            <Typography sx={{ color: '#7F7F7F', fontSize: "13px", fontWeight: "500" }}>
-                                                                {therapist.educationalQualification}
-                                                            </Typography>
-                                                            <Box display="flex" alignItems="center">
-                                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                                    <StarIcon
-                                                                        key={star}
-                                                                        fontSize="small"
-                                                                        sx={{
-                                                                            color: star <= Math.floor(rating) 
-                                                                                ? '#FFD700' 
-                                                                                : star - 0.5 <= rating 
-                                                                                    ? 'rgba(255, 215, 0, 0.5)' 
-                                                                                    : '#CCCCCC'
-                                                                        }}
-                                                                    />
-                                                                ))}
-                                                                <Typography sx={{ ml: 1, fontSize: "12px" }}>
-                                                                    ({reviewCount})
+                            <Box sx={{ 
+                                backgroundColor: `${colors.secondary}08`,
+                                borderRadius: 3,
+                                p: 4,
+                                mb: 4
+                            }}>
+                                <Typography variant="h6" sx={{ 
+                                    fontWeight: 600,
+                                    mb: 3,
+                                    color: colors.primary
+                                }}>
+                                    Professional Information
+                                </Typography>
+                                
+                                <Grid container spacing={4}>
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Educational Qualifications
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleEducator.educationalQualification || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                        
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Languages Spoken
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleEducator.languages || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Years of Experience
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleEducator.yearsOfExperience || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                        
+                                        <Box>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Availability
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleEducator.availability || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+                            
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Button 
+                                    onClick={handleEducatorrequest}
+                                    variant="contained"
+                                    color="primary"
+                                    endIcon={<ArrowRightAltIcon />}
+                                    sx={{
+                                        px: 6,
+                                        py: 1.5,
+                                        borderRadius: 50,
+                                        fontWeight: 600,
+                                        fontSize: '1rem'
+                                    }}
+                                >
+                                    Send Request
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Fade>
+            </Modal>
+
+            {/* Therapists Section - Only show if no therapist requests */}
+            {!hasTherapistRequest && (
+                <Box sx={{ py: 10, backgroundColor: colors.lightBg }}>
+                    <Container maxWidth="lg">
+                        <Box sx={{ textAlign: 'center', mb: 8 }}>
+                            <Typography variant="h3" sx={{ 
+                                fontWeight: 700,
+                                mb: 2,
+                                color: colors.primary
+                            }}>
+                                Our Therapists
+                            </Typography>
+                            <Typography variant="body1" sx={{ 
+                                color: colors.textLight,
+                                maxWidth: 600,
+                                mx: 'auto'
+                            }}>
+                                Monitor developmental progress, assign therapy-based activities, and collaborate with parents and educators to provide holistic support.
+                            </Typography>
+                        </Box>
+                        
+                        <Grid container spacing={4} justifyContent="center">
+                            {allTheraphist
+                                .slice(0,3)
+                                .map(therapist => {
+                                    const ratingData = therapistRatings[therapist._id] || { average: 0, count: 0 };
+                                    return { ...therapist, averageRating: ratingData.average, reviewCount: ratingData.count };
+                                })
+                                .sort((a, b) => b.averageRating - a.averageRating) // Sort by highest rating first
+                                .map((therapist, index) => {
+                                    return (
+                                        <Grid item xs={12} sm={6} md={4} key={index}>
+                                            <Card sx={{ 
+                                                height: '100%',
+                                                borderRadius: 3,
+                                                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)',
+                                                transition: 'transform 0.3s, box-shadow 0.3s',
+                                                '&:hover': {
+                                                    transform: 'translateY(-5px)',
+                                                    boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
+                                                }
+                                            }}>
+                                                <CardActionArea onClick={() => handleTheraphistViewOpen(therapist._id)}>
+                                                    <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                                                            <Avatar 
+                                                                src={`http://localhost:4000/uploads/${therapist?.profilePic?.filename}`}
+                                                                sx={{ 
+                                                                    width: 80, 
+                                                                    height: 80,
+                                                                    mr: 3,
+                                                                    border: `2px solid ${colors.secondary}`
+                                                                }}
+                                                            />
+                                                            <Box>
+                                                                <Typography variant="h6" sx={{ fontWeight: 600, color: colors.primary }}>
+                                                                    {therapist.name}
                                                                 </Typography>
+                                                                <Typography variant="body2" sx={{ color: colors.textLight }}>
+                                                                    {therapist.educationalQualification}
+                                                                </Typography>
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                                        <StarIcon
+                                                                            key={star}
+                                                                            fontSize="small"
+                                                                            sx={{
+                                                                                color: star <= Math.floor(therapist.averageRating) 
+                                                                                    ? colors.accent 
+                                                                                    : star - 0.5 <= therapist.averageRating 
+                                                                                        ? `${colors.accent}80` 
+                                                                                        : '#DDD'
+                                                                            }}
+                                                                        />
+                                                                    ))}
+                                                                    <Typography variant="body2" sx={{ ml: 1, color: colors.textLight }}>
+                                                                        ({therapist.reviewCount || 0})
+                                                                    </Typography>
+                                                                </Box>
                                                             </Box>
                                                         </Box>
-
-                                                        <Box sx={{ borderBottom: "1px solid black" }} />
-
-                                                        <Box>
-                                                            <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
+                                                        
+                                                        <Divider sx={{ my: 2 }} />
+                                                        
+                                                        <Box sx={{ mt: 'auto' }}>
+                                                            <Typography variant="body2" sx={{ color: colors.textLight, mb: 1 }}>
                                                                 {therapist.yearsOfExperience} years Experience
                                                             </Typography>
-                                                            <Typography sx={{ color: '#7F7F7F', fontSize: "12px", fontWeight: "500" }}>
+                                                            <Typography variant="body2" sx={{ color: colors.textLight, mb: 2 }}>
                                                                 {therapist.availability}
                                                             </Typography>
-                                                            <Typography color='secondary' onClick={()=>handleTheraphistViewOpen(therapist._id)}>View all</Typography>
+                                                            <Typography 
+                                                                variant="body2" 
+                                                                sx={{ 
+                                                                    color: colors.secondary,
+                                                                    fontWeight: 600,
+                                                                    display: 'flex',
+                                                                    alignItems: 'center'
+                                                                }}
+                                                            >
+                                                                View Profile <ArrowRightAltIcon sx={{ ml: 0.5 }} />
+                                                            </Typography>
                                                         </Box>
-                                                    </CardContent>
-                                                </Box>
-                                            </Box>
-                                        </CardActionArea>
-                                    </Card>
-                                </Grid>
-                            )
-                        })}
-                    </Grid>
-                </Box>
-                <Box display={'flex'} alignItems={'flex-end'} justifyContent={'flex-end'} sx={{marginRight:"150px",paddingTop:"30px"}}>
-                <Link to="/parent/viewalltheraphist"><Typography>View More <span><ArrowRightAltIcon/></span></Typography></Link>
-                </Box>
-            </Container>
-
-            {/* theraphist view model */}
-            <div>
-                <Modal
-                    aria-labelledby="transition-modal-title"
-                    aria-describedby="transition-modal-description"
-                    open={theraphistViewOpen}
-                    onClose={handleTheraphistViewClose}
-                    closeAfterTransition
-                    slots={{ backdrop: Backdrop }}
-                    slotProps={{
-                        backdrop: {
-                            timeout: 500,
-                        },
-                    }}
-                >
-                    <Fade in={theraphistViewOpen}>
-                        <Box sx={theraphistViewstyle} display={"flex"} flexDirection={"column"} gap={5}>
-                            <Box display={"flex"} alignItems={"center"} justifyContent={"space-between"}>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Therapist Detail</Typography>
-                                <CloseIcon onClick={handleTheraphistViewClose} />
-                            </Box>
-                            <Box display={"flex"} alignItems={"start"}  flexDirection={"column"}>
-                                <Box display={"flex"} alignItems={"center"} justifyContent={"center"} gap={10} width={"100%"}>
-                                    {
-                                        singleTheraphist.profilePic?.filename ? (
-                                            <Avatar src={`http://localhost:4000/uploads/${singleTheraphist?.profilePic?.filename}`} sx={{ width: "180px", height: "180px" }} />
-                                        ) : (
-                                            <Avatar sx={{ width: "180px", height: "180px" }}>{singleTheraphist.name?.charAt(0)}</Avatar>
-                                        )
+                                                    </Box>
+                                                </CardActionArea>
+                                            </Card>
+                                        </Grid>
+                                    );
+                                })}
+                        </Grid>
+                        
+                        <Box sx={{ textAlign: 'center', mt: 6 }}>
+                            <Button 
+                                component={Link}
+                                to="/parent/viewalltheraphist"
+                                variant="outlined"
+                                color="primary"
+                                endIcon={<ArrowRightAltIcon />}
+                                sx={{
+                                    px: 4,
+                                    py: 1.5,
+                                    borderRadius: 50,
+                                    fontWeight: 600,
+                                    borderWidth: 2,
+                                    '&:hover': {
+                                        borderWidth: 2
                                     }
-                                    <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={5} >
-                                        <Typography color='primary' variant='h5' sx={{ fontSize: "32px", fontWeight: "600" }}>
-                                            {singleTheraphist.name}
-                                            <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', ml: 1 }}>
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <StarIcon
-                                                        key={star}
-                                                        fontSize="small"
-                                                        sx={{
-                                                            color: star <= Math.floor(generateRandomRating()) 
-                                                                ? '#FFD700' 
-                                                                : star - 0.5 <= generateRandomRating() 
-                                                                    ? 'rgba(255, 215, 0, 0.5)' 
-                                                                    : '#CCCCCC'
-                                                        }}
-                                                    />
-                                                ))}
-                                                <Typography component="span" sx={{ fontSize: "18px", ml: 1 }}>
-                                                    ({Math.floor(Math.random() * 50) + 1})
+                                }}
+                            >
+                                View All Therapists
+                            </Button>
+                        </Box>
+                    </Container>
+                </Box>
+            )}
+
+            {/* Therapist View Modal */}
+            <Modal
+                open={theraphistViewOpen}
+                onClose={handleTheraphistViewClose}
+                closeAfterTransition
+                slots={{ backdrop: Backdrop }}
+                slotProps={{
+                    backdrop: {
+                        timeout: 500,
+                    },
+                }}
+            >
+                <Fade in={theraphistViewOpen}>
+                    <Box sx={theraphistViewstyle}>
+                        <Box sx={{ 
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            mb: 4,
+                            pb: 2,
+                            borderBottom: `1px solid ${colors.lightBg}`
+                        }}>
+                            <Typography variant="h5" sx={{ fontWeight: 700, color: colors.primary }}>
+                                Therapist Profile
+                            </Typography>
+                            <CloseIcon 
+                                onClick={handleTheraphistViewClose} 
+                                sx={{ 
+                                    cursor: 'pointer',
+                                    color: colors.textLight,
+                                    '&:hover': {
+                                        color: colors.primary
+                                    }
+                                }} 
+                            />
+                        </Box>
+                        
+                        <Box sx={{ mb: 5 }}>
+                            <Box sx={{ 
+                                display: 'flex',
+                                alignItems: 'center',
+                                mb: 4,
+                                flexDirection: { xs: 'column', md: 'row' }
+                            }}>
+                                <Box sx={{ 
+                                    width: { xs: '100%', md: 'auto' },
+                                    mb: { xs: 3, md: 0 },
+                                    mr: { xs: 0, md: 5 },
+                                    display: 'flex',
+                                    justifyContent: 'center'
+                                }}>
+                                    {singleTheraphist.profilePic?.filename ? (
+                                        <Avatar 
+                                            src={`http://localhost:4000/uploads/${singleTheraphist?.profilePic?.filename}`} 
+                                            sx={{ 
+                                                width: 150, 
+                                                height: 150,
+                                                border: `3px solid ${colors.secondary}`
+                                            }} 
+                                        />
+                                    ) : (
+                                        <Avatar 
+                                            sx={{ 
+                                                width: 150, 
+                                                height: 150,
+                                                fontSize: 60,
+                                                bgcolor: colors.secondary
+                                            }}
+                                        >
+                                            {singleTheraphist.name?.charAt(0)}
+                                        </Avatar>
+                                    )}
+                                </Box>
+                                
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography variant="h4" sx={{ 
+                                        fontWeight: 700,
+                                        mb: 1,
+                                        color: colors.primary,
+                                        display: 'flex',
+                                        alignItems: 'center'
+                                    }}>
+                                        {singleTheraphist.name}
+                                        {singleTheraphist._id && (
+                                            <Box sx={{ 
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                ml: 2
+                                            }}>
+                                                {(() => {
+                                                    const ratingData = therapistRatings[singleTheraphist._id] || { average: 0, count: 0 };
+                                                    const averageRating = ratingData.average;
+                                                    const reviewCount = ratingData.count;
+                                                    
+                                                    return (
+                                                        <>
+                                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                                <StarIcon
+                                                                    key={star}
+                                                                    fontSize="small"
+                                                                    sx={{
+                                                                        color: star <= Math.floor(averageRating) 
+                                                                            ? colors.accent 
+                                                                            : star - 0.5 <= averageRating 
+                                                                                ? `${colors.accent}80` 
+                                                                                : '#DDD'
+                                                                    }}
+                                                                />
+                                                            ))}
+                                                            <Typography variant="body2" sx={{ ml: 1, color: colors.textLight }}>
+                                                                ({reviewCount})
+                                                            </Typography>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </Box>
+                                        )}
+                                    </Typography>
+                                    
+                                    <Grid container spacing={3} sx={{ mt: 2 }}>
+                                        <Grid item xs={12} sm={6}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                <MailOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleTheraphist.email || "Not Updated"}
                                                 </Typography>
                                             </Box>
-                                        </Typography>
-                                        <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ gap: "100px" }}>
-                                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px" }}>
-                                                <Typography> <PersonOutlinedIcon /> {singleTheraphist.name}</Typography>
-                                                <Typography> <MailOutlinedIcon /> {singleTheraphist.email}</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <PhoneEnabledOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleTheraphist.phone || "Not Updated"}
+                                                </Typography>
                                             </Box>
-                                            <Box display={"flex"} justifyContent={"start"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "20px", borderLeft: "1px solid #CCCCCC", ml: "50px", pl: "40px" }} >
-                                                <Typography> <LocationOnOutlinedIcon /> {singleTheraphist.address}</Typography>
-                                                <Typography> <PhoneEnabledOutlinedIcon /> {singleTheraphist.phone}</Typography>
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                                <LocationOnOutlinedIcon sx={{ mr: 2, color: colors.textLight }} />
+                                                <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                    {singleTheraphist.address || "Not Updated"}
+                                                </Typography>
                                             </Box>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                                <Box display={"flex"} justifyContent={"space-between"} alignItems={"center"} sx={{ height: "323px", borderRadius: "20px", width: "100%", padding: "20px", mt: "50px", flexDirection: "column" }}>
-                                    <Box display={"flex"} justifyContent={"center"} alignItems={"start"} flexDirection={"column"} sx={{ gap: "30px" }} >
-                                        <Box>
-                                            <Typography color='primary' sx={{ fontSize: "24px", fontWeight: "600", display: "flex", alignItems: "center", justifyContent: "center", gap: "20px" }}>
-                                                Personal Info
-                                                <BorderColorOutlinedIcon />
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ gap: "200px" }} width={"100%"} display={"flex"} justifyContent={"space-between"} alignItems={"start"}>
-                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3}>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Educational Qualifications</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.educationalQualification}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Language</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.languages}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Certification</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Adobe Certified Professional in Photoshop & Illustrator</Typography>
-                                                </Box>
-                                            </Box>
-                                            <Box display={"flex"} flexDirection={"column"} alignItems={"start"} gap={3} sx={{ borderLeft: "1px solid black" }}>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Years of experience</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.yearsOfExperience}</Typography>
-                                                </Box>
-                                                <Box display={"flex"} flexDirection={"column"} alignItems={"start"} ml={10}>
-                                                    <Typography color='secondary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>Availablity</Typography>
-                                                    <Typography color='primary' variant='p' sx={{ fontSize: "15px", fontWeight: "600" }}>{singleTheraphist.availability}</Typography>
-                                                </Box>
-                                            </Box>
-                                        </Box>
-                                    </Box>
-                                    <Button onClick={handleTheraphistrequest} endIcon={<ArrowRightAltIcon />} variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}>Book</Button>
+                                        </Grid>
+                                    </Grid>
                                 </Box>
                             </Box>
+                            
+                            <Box sx={{ 
+                                backgroundColor: `${colors.secondary}08`,
+                                borderRadius: 3,
+                                p: 4,
+                                mb: 4
+                            }}>
+                                <Typography variant="h6" sx={{ 
+                                    fontWeight: 600,
+                                    mb: 3,
+                                    color: colors.primary
+                                }}>
+                                    Professional Information
+                                </Typography>
+                                
+                                <Grid container spacing={4}>
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Educational Qualifications
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleTheraphist.educationalQualification || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                        
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Languages Spoken
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleTheraphist.languages || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                    
+                                    <Grid item xs={12} md={6}>
+                                        <Box sx={{ mb: 3 }}>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Years of Experience
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleTheraphist.yearsOfExperience || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                        
+                                        <Box>
+                                            <Typography variant="body2" sx={{ 
+                                                fontWeight: 600,
+                                                color: colors.secondary,
+                                                mb: 1
+                                            }}>
+                                                Availability
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: colors.primary }}>
+                                                {singleTheraphist.availability || "Not Updated"}
+                                            </Typography>
+                                        </Box>
+                                    </Grid>
+                                </Grid>
+                            </Box>
+                            
+                            <Box sx={{ textAlign: 'center' }}>
+                                <Button 
+                                    onClick={handleTheraphistrequest}
+                                    variant="contained"
+                                    color="primary"
+                                    endIcon={<ArrowRightAltIcon />}
+                                    sx={{
+                                        px: 6,
+                                        py: 1.5,
+                                        borderRadius: 50,
+                                        fontWeight: 600,
+                                        fontSize: '1rem'
+                                    }}
+                                >
+                                    Send Request
+                                </Button>
+                            </Box>
                         </Box>
-                    </Fade>
-                </Modal>
-            </div>
+                    </Box>
+                </Fade>
+            </Modal>
 
-            {/* theraphist view model end */}
+            {/* Personalized Learning Section */}
+            <Box sx={{ 
+                py: 10,
+                backgroundColor: colors.secondary,
+                color: 'white',
+                position: 'relative',
+                overflow: 'hidden'
+            }}>
+                <Container maxWidth="lg">
+                    <Box sx={{ 
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0.05,
+                        zIndex: 0
+                    }}>
+                        <Box component="img" src={frame1} alt="Decoration" sx={{ position: 'absolute', top: -50, left: 0 }} />
+                        <Box component="img" src={frame2} alt="Decoration" sx={{ position: 'absolute', bottom: -50, right: 0 }} />
+                    </Box>
+                    
+                    <Box sx={{ 
+                        position: 'relative',
+                        zIndex: 1,
+                        textAlign: 'center',
+                        maxWidth: 800,
+                        mx: 'auto'
+                    }}>
+                        <Typography variant="h3" sx={{ 
+                            fontWeight: 700,
+                            mb: 3,
+                            fontSize: { xs: '2rem', md: '2.5rem' }
+                        }}>
+                            Personalized Learning Plans!
+                        </Typography>
+                        <Typography variant="body1" sx={{ 
+                            fontSize: '1.1rem',
+                            opacity: 0.9,
+                            lineHeight: 1.6
+                        }}>
+                            Tailored daily or weekly activities designed to support your child's unique learning needs. Created by educators and therapists, these plans adapt based on your child's progress and goals.
+                        </Typography>
+                    </Box>
+                </Container>
+            </Box>
 
-            <Container maxWidth="x-lg" sx={{position:"relative"}}>
-                <Box component="img" src={frame1} alt='background frame' sx={{position:"absolute",top:-50,left:0}}>
-                </Box>
-                <Box component="img" src={frame2} alt='background frame' sx={{position:"absolute",bottom:-50,right:0}}>
-                </Box>
-                <Stack sx={{ height: "265px", display: "flex", justifyContent:"space-evenly", alignItems: 'center', marginTop:'50px' }}>
-                    <Typography sx={{ fontSize: "32px", fontWeight: "600" }} variant='h3' color='primary'>
-                    Personalized Learning Plan!
-                    </Typography>
-                    <Typography sx={{ fontSize: "18px", fontWeight: "500",textAlign:"center" }} variant='h3' color='primary'>
-                    Tailored daily or weekly activities designed to support your child's unique learning needs. Created by educators and <br />therapists, these plans adapt based on your child's progress and goals.
-                    </Typography>
-                </Stack>
-            </Container>
-            <Footer/>
+            <Footer />
         </>
     )
 }

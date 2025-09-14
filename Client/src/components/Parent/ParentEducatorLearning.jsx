@@ -86,59 +86,76 @@ const ParentEducatorLearning = () => {
         }
     };
 
-    const fetchLearningPlan = async () => {
-        try {
-            const token = localStorage.getItem("token");
-            const parentData = JSON.parse(localStorage.getItem("parentDetails"));
-            const parentId = parentData?._id;
+const fetchLearningPlan = async () => {
+    try {
+        const token = localStorage.getItem("token");
+        const parentData = JSON.parse(localStorage.getItem("parentDetails"));
+        const parentId = parentData?._id;
 
-            if (!childId) {
-                throw new Error("Missing child ID");
-            }
-
-            const url = educatorId
-                ? `http://localhost:4000/ldss/parent/getstudentplan/${educatorId}/${childId}`
-                : `http://localhost:4000/ldss/parent/getstudentplan/${childId}`;
-
-            const response = await axios.get(url, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!response.data?.data || !Array.isArray(response.data.data)) {
-                throw new Error("Invalid data structure from API");
-            }
-
-            const plan = response.data.data[0] || {};
-
-            const formattedPlan = {
-                _id: plan._id || null,
-                goal: plan.goal || '',
-                planDuration: plan.planDuration || (Array.isArray(plan.weeks) ? plan.weeks.length : 1),
-                weeks: Array.isArray(plan.weeks)
-                    ? plan.weeks.map(week => ({
-                        _id: week._id || null,
-                        activities: Array.isArray(week.activities)
-                            ? week.activities.map(activity => ({
-                                _id: activity._id || null,
-                                title: activity.title || '',
-                                description: activity.description || '',
-                                completed: activity.completed || false,
-                                completedDate: activity.completedDate || null
-                            }))
-                            : []
-                    }))
-                    : []
-            };
-
-            setLearningPlan(formattedPlan);
-        } catch (error) {
-            console.error("Error fetching learning plan:", error);
-            setError(error.message || "Failed to load learning plan");
-            toast.error(error.message || "Failed to load learning plan");
-        } finally {
-            setLoading(false);
+        if (!childId) {
+            throw new Error("Missing child ID");
         }
-    };
+
+        const url = educatorId
+            ? `http://localhost:4000/ldss/parent/getstudentplan/${educatorId}/${childId}`
+            : `http://localhost:4000/ldss/parent/getstudentplan/${childId}`;
+
+        const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!response.data?.data || !Array.isArray(response.data.data)) {
+            throw new Error("Invalid data structure from API");
+        }
+
+        const plan = response.data.data[0] || {};
+
+        const formattedPlan = {
+            _id: plan._id || null,
+            goal: plan.goal || '',
+            planDuration: plan.planDuration || (Array.isArray(plan.weeks) ? plan.weeks.length : 1),
+            weeks: Array.isArray(plan.weeks)
+                ? plan.weeks.map(week => ({
+                    _id: week._id || null,
+                    activities: Array.isArray(week.activities)
+                        ? week.activities.map(activity => ({
+                            _id: activity._id || null,
+                            title: activity.title || '',
+                            description: activity.description || '',
+                            completed: activity.completed || false,
+                            completedDate: activity.completedDate || null
+                        }))
+                        : []
+                }))
+                : []
+        };
+
+        setLearningPlan(formattedPlan);
+    } catch (error) {
+        console.error("Error fetching learning plan:", error);
+        
+        // Check if the error is a 404 response
+        if (error.response && error.response.status === 404) {
+            setError("No learning plan available");
+        } else {
+            setError(error.message || "Failed to load learning plan");
+        }
+        
+        // Set an empty learning plan state
+        setLearningPlan({
+            goal: '',
+            planDuration: 0,
+            weeks: []
+        });
+        
+        // Only show toast for errors other than 404
+        if (!error.response || error.response.status !== 404) {
+            toast.error(error.message || "Failed to load learning plan");
+        }
+    } finally {
+        setLoading(false);
+    }
+};
 
     useEffect(() => {
         const storedParentDetails = localStorage.getItem("parentDetails");
@@ -156,7 +173,7 @@ const ParentEducatorLearning = () => {
         if (activity.completed) {
             return (
                 <Typography variant='h6' sx={{ fontSize: "18px", fontWeight: "500", color: "#149319" }}>
-                    Completed on {activity.completedDate || "a previous date"}
+                    Completed 
                 </Typography>
             );
         } else {
@@ -199,18 +216,32 @@ const ParentEducatorLearning = () => {
             </Box>
         );
     }
-
-    if (error) {
-        return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-                <Typography color="error">{error}</Typography>
+if (error) {
+    return (
+        <>
+            <ParentNavbar parentdetails={parentDetails} navigateToProfile={navigateToProfile} />
+            <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" flexDirection="column">
+                <Typography color="primary" variant="h5" sx={{ mb: 2 }}>
+                    {error === "No learning plan available" ? 
+                        "No learning plan available" : 
+                        "Error loading learning plan"}
+                </Typography>
+                <Button 
+                    variant="outlined" 
+                    color="primary"
+                    onClick={() => navigate(-1)}
+                    sx={{ mt: 2 }}
+                >
+                    Go Back
+                </Button>
             </Box>
-        );
-    }
+        </>
+    );
+}
 
     return (
         <>
-            <ParentNavbar parentDetails={parentDetails} navigateToProfile={navigateToProfile} />
+            <ParentNavbar parentdetails={parentDetails} navigateToProfile={navigateToProfile} />
             <Box sx={{ background: "white" }}>
                 <Box display={"flex"} justifyContent={"center"} alignItems={"center"} sx={{ height: "46px", background: "#DBE8FA" }}>
                     <Typography color='primary' textAlign={"center"} sx={{ fontSize: "18px", fontWeight: "600" }}>Learning Plan</Typography>

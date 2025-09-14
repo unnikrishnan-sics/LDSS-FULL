@@ -3,12 +3,20 @@ import React, { useState } from 'react'
 import CloseIcon from '@mui/icons-material/Close';
 import axiosInstance from '../../../Api_service/baseUrl';
 import { toast } from 'react-toastify';
-import { useNavigate } from 'react-router-dom'; // Add this import
+import { useNavigate } from 'react-router-dom';
 
 const AddMeeting = ({ handleAddMeetingClose, addMeetingopen, fetchAllMeetings, childId }) => {
-    const navigate = useNavigate(); // Initialize the navigate function
+    const navigate = useNavigate();
     
-    const textFieldStyle = { height: "65px", width: "360px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" };
+    const textFieldStyle = { 
+        height: "65px", 
+        width: "360px", 
+        display: "flex", 
+        flexDirection: "column", 
+        justifyContent: "start", 
+        position: "relative" 
+    };
+    
     const styleAddMeeting = {
         position: 'absolute',
         top: '50%',
@@ -31,25 +39,106 @@ const AddMeeting = ({ handleAddMeetingClose, addMeetingopen, fetchAllMeetings, c
         creatorType: "educator",
     });
 
+    const [errors, setErrors] = useState({
+        meetingTitle: "",
+        date: "",
+        startTime: "",
+        endTime: "",
+        meetLink: "",
+    });
+
+    const validateForm = () => {
+        let valid = true;
+        const newErrors = {
+            meetingTitle: "",
+            date: "",
+            startTime: "",
+            endTime: "",
+            meetLink: "",
+        };
+
+        // Validate meeting title
+        if (!data.meetingTitle.trim()) {
+            newErrors.meetingTitle = "Meeting title is required";
+            valid = false;
+        } else if (data.meetingTitle.length > 100) {
+            newErrors.meetingTitle = "Title must be less than 100 characters";
+            valid = false;
+        }
+
+        // Validate date
+        if (!data.date) {
+            newErrors.date = "Date is required";
+            valid = false;
+        } else {
+            const selectedDate = new Date(data.date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                newErrors.date = "Date cannot be in the past";
+                valid = false;
+            }
+        }
+
+        // Validate times
+        if (!data.startTime) {
+            newErrors.startTime = "Start time is required";
+            valid = false;
+        }
+        
+        if (!data.endTime) {
+            newErrors.endTime = "End time is required";
+            valid = false;
+        } else if (data.startTime && data.endTime <= data.startTime) {
+            newErrors.endTime = "End time must be after start time";
+            valid = false;
+        }
+
+        // Validate meet link
+        if (!data.meetLink) {
+            newErrors.meetLink = "Meeting link is required";
+            valid = false;
+        } else if (!isValidUrl(data.meetLink)) {
+            newErrors.meetLink = "Please enter a valid URL";
+            valid = false;
+        } else if (!data.meetLink.includes('meet.google.com')) {
+            newErrors.meetLink = "Please enter a valid Google Meet link";
+            valid = false;
+        }
+
+        setErrors(newErrors);
+        return valid;
+    };
+
+    const isValidUrl = (url) => {
+        try {
+            new URL(url);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    };
+
     const handleOnchange = (e) => {
         const { name, value } = e.target;
         setData(prev => {
             return { ...prev, [name]: value }
-        })
+        });
+        
+        // Clear error when user starts typing
+        if (errors[name]) {
+            setErrors(prev => ({
+                ...prev,
+                [name]: ""
+            }));
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Basic validation
-        if (!data.meetingTitle || !data.date || !data.startTime || !data.endTime || !data.meetLink) {
-            toast.error("Please fill all fields");
-            return;
-        }
-
-        // Validate time
-        if (data.startTime >= data.endTime) {
-            toast.error("End time must be after start time");
+        if (!validateForm()) {
             return;
         }
 
@@ -79,10 +168,9 @@ const AddMeeting = ({ handleAddMeetingClose, addMeetingopen, fetchAllMeetings, c
                 });
                 handleAddMeetingClose();
                 fetchAllMeetings();
-                navigate('/educator/allstudents'); // Add this line to redirect
+                navigate('/educator/allstudents');
+                toast.success("Meeting created successfully");
             } else {
-                                toast.success("Meeting created successfully");
-
                 console.log(response.data.message || "Error creating meeting");
             }
         } catch (error) {
@@ -90,6 +178,9 @@ const AddMeeting = ({ handleAddMeetingClose, addMeetingopen, fetchAllMeetings, c
             toast.error(error.response?.data?.message || "Error creating meeting");
         }
     }
+
+    // Get today's date in YYYY-MM-DD format for the date input min attribute
+    const today = new Date().toISOString().split('T')[0];
 
     return (
         <Modal
@@ -111,65 +202,111 @@ const AddMeeting = ({ handleAddMeetingClose, addMeetingopen, fetchAllMeetings, c
                         <div style={textFieldStyle}>
                             <label>Meeting title</label>
                             <input 
-                                style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
+                                style={{ 
+                                    height: "40px", 
+                                    borderRadius: "8px", 
+                                    border: errors.meetingTitle ? "1px solid red" : "1px solid #CCCCCC", 
+                                    padding: '8px' 
+                                }}
                                 onChange={handleOnchange}
                                 name='meetingTitle'
                                 value={data.meetingTitle}
                                 type='text'
-                                required
+                                maxLength={100}
                             />
+                            {errors.meetingTitle && (
+                                <Typography color="error" variant="caption" sx={{ fontSize: "12px" }}>
+                                    {errors.meetingTitle}
+                                </Typography>
+                            )}
                         </div>
                     </Box>
                     <Box>
                         <div style={textFieldStyle}>
                             <label>Date</label>
                             <input 
-                                style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
+                                style={{ 
+                                    height: "40px", 
+                                    borderRadius: "8px", 
+                                    border: errors.date ? "1px solid red" : "1px solid #CCCCCC", 
+                                    padding: '8px' 
+                                }}
                                 onChange={handleOnchange}
                                 name='date'
                                 value={data.date}
                                 type='date'
-                                required
-                                min={new Date().toISOString().split('T')[0]} // Restrict to future dates
+                                min={today}
                             />
+                            {errors.date && (
+                                <Typography color="error" variant="caption" sx={{ fontSize: "12px" }}>
+                                    {errors.date}
+                                </Typography>
+                            )}
                         </div>
                     </Box>
                     <Box display={'flex'} alignItems={'center'} justifyContent={'center'} gap={3}>
                         <div style={{ height: "65px", width: "170px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" }}>
                             <label>Start time</label>
                             <input 
-                                style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
+                                style={{ 
+                                    height: "40px", 
+                                    borderRadius: "8px", 
+                                    border: errors.startTime ? "1px solid red" : "1px solid #CCCCCC", 
+                                    padding: '8px' 
+                                }}
                                 onChange={handleOnchange}
                                 name='startTime'
                                 value={data.startTime}
                                 type='time'
-                                required
                             />
+                            {errors.startTime && (
+                                <Typography color="error" variant="caption" sx={{ fontSize: "12px" }}>
+                                    {errors.startTime}
+                                </Typography>
+                            )}
                         </div>
                         <div style={{ height: "65px", width: "170px", display: "flex", flexDirection: "column", justifyContent: "start", position: "relative" }}>
                             <label>End time</label>
                             <input 
-                                style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
+                                style={{ 
+                                    height: "40px", 
+                                    borderRadius: "8px", 
+                                    border: errors.endTime ? "1px solid red" : "1px solid #CCCCCC", 
+                                    padding: '8px' 
+                                }}
                                 onChange={handleOnchange}
                                 name='endTime'
                                 value={data.endTime}
                                 type='time'
-                                required
                             />
+                            {errors.endTime && (
+                                <Typography color="error" variant="caption" sx={{ fontSize: "12px" }}>
+                                    {errors.endTime}
+                                </Typography>
+                            )}
                         </div>
                     </Box>
                     <Box>
                         <div style={textFieldStyle}>
                             <label>Google Meet Link</label>
                             <input 
-                                style={{ height: "40px", borderRadius: "8px", border: "1px solid #CCCCCC", padding: '8px' }}
+                                style={{ 
+                                    height: "40px", 
+                                    borderRadius: "8px", 
+                                    border: errors.meetLink ? "1px solid red" : "1px solid #CCCCCC", 
+                                    padding: '8px' 
+                                }}
                                 onChange={handleOnchange}
                                 name='meetLink'
                                 value={data.meetLink}
                                 type='url'
                                 placeholder="https://meet.google.com/..."
-                                required
                             />
+                            {errors.meetLink && (
+                                <Typography color="error" variant="caption" sx={{ fontSize: "12px" }}>
+                                    {errors.meetLink}
+                                </Typography>
+                            )}
                         </div>
                     </Box>
                 </Box>

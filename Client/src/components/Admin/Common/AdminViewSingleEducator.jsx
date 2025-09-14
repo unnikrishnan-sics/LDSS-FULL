@@ -8,87 +8,121 @@ import Typography from '@mui/material/Typography';
 import CloseIcon from '@mui/icons-material/Close';
 import { Avatar } from '@mui/material';
 
-
-
 const AdminViewSingleEducator = ({handleEducatorClose,educatordetail,approve,rejectEducator}) => {
     
+    // Helper function to display value or "Not Updated"
+    const displayValue = (value) => {
+        return value ? value : "Not Updated";
+    }
 
     return (
         <>
                 <Box display={"flex"} alignItems={"center"} justifyContent={"space-between"} sx={{ p: "0px 10px" }}>
-                    {educatordetail.isAdminApproved ? (<Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Details </Typography>)
-                :(<Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Request Details </Typography>)    
-                }
+                    {educatordetail.isAdminApproved ? (
+                        <Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Details </Typography>
+                    ) : (
+                        <Typography color='primary' variant='h5' sx={{ fontSize: "18px", fontWeight: "600" }}>Educator Request Details </Typography>
+                    )}
                     
                     <CloseIcon onClick={handleEducatorClose} />
                 </Box>
                 <Box display={"flex"} alignItems={"center"} justifyContent={"center"} flexDirection={"column"} sx={{ p: "0px 10px", mt: "40px", gap: "15px" }}>
-                    <Avatar sx={{ height: "150px", width: "150px" }} src={`http://localhost:4000/uploads/${educatordetail.profilePic?.filename}`}></Avatar>
-                    <Typography color='primary' variant='h5' sx={{ fontSize: "24px", fontWeight: "500" }}>{educatordetail.name} </Typography>
-
+                    <Avatar 
+                        sx={{ height: "150px", width: "150px" }} 
+                        src={educatordetail.profilePic?.filename ? 
+                            `http://localhost:4000/uploads/${educatordetail.profilePic.filename}` : 
+                            undefined
+                        }
+                    />
+                    <Typography color='primary' variant='h5' sx={{ fontSize: "24px", fontWeight: "500" }}>
+                        {displayValue(educatordetail.name)}
+                    </Typography>
                 </Box>
                 <Box display={"flex"} alignItems={"center"} justifyContent={"center"} sx={{ mt: "60px", gap: "30px" }}>
                     <Box display={"flex"} alignItems={"center"} justifyContent={"start"} sx={{ width: "400px", height: "155px", border: "1px solid black", borderRadius: "20px", gap: "10px" }}>
-                        <Box display={"flex"} alignItems={"start"} gap={5}  width={"100%"} flexDirection={"column"} >
+                        <Box display={"flex"} alignItems={"start"} gap={5} width={"100%"} flexDirection={"column"} >
                             <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Name </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{educatordetail.name} </Typography>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Name</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                    {displayValue(educatordetail.name)}
+                                </Typography>
                             </Box>
                             <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Phone number </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{educatordetail.phone} </Typography>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Phone number</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                    {displayValue(educatordetail.phone)}
+                                </Typography>
                             </Box>
-                            
-
                         </Box>
-                        <Box display={"flex"} alignItems={"start"} gap={5}  width={"100%"} flexDirection={"column"}>
-                            
-                        <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>E-mail </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{educatordetail.email} </Typography>
+                        <Box display={"flex"} alignItems={"start"} gap={5} width={"100%"} flexDirection={"column"}>
+                            <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>E-mail</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                    {displayValue(educatordetail.email)}
+                                </Typography>
                             </Box>
                             <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Language </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{educatordetail.languages} </Typography>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Language</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                    {displayValue(educatordetail.languages)}
+                                </Typography>
                             </Box>
-
                         </Box>
-
                     </Box>
                     <Box display={"flex"} alignItems={"center"} justifyContent={"start"} sx={{ width: "400px", height: "155px", border: "1px solid black", borderRadius: "20px", gap: "10px" }}>
-                        <Box display={"flex"} alignItems={"start"} gap={5}  width={"100%"} flexDirection={"column"} >
+                        <Box display={"flex"} alignItems={"start"} gap={5} width={"100%"} flexDirection={"column"} >
                             <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Educational Qualifications </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{educatordetail.educationalQualification} </Typography>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Educational Qualifications</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                    {displayValue(educatordetail.educationalQualification)}
+                                </Typography>
                             </Box>
                             <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Availability </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{educatordetail.availability} </Typography>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Availability</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                    {displayValue(educatordetail.availability)}
+                                </Typography>
                             </Box>
-                            
-
                         </Box>
-                        <Box display={"flex"} alignItems={"start"} gap={5}  width={"100%"} flexDirection={"column"}>
-                            
-                        <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Years Of Experiance </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{educatordetail.yearsOfExperience} </Typography>
+                        <Box display={"flex"} alignItems={"start"} gap={5} width={"100%"} flexDirection={"column"}>
+                            <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Years Of Experience</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                    {displayValue(educatordetail.yearsOfExperience)}
+                                </Typography>
                             </Box>
                             <Box sx={{ m: "10px" }} display={"flex"} alignItems={"start"} flexDirection={"column"}>
-                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Certifications </Typography>
-                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>{educatordetail.certification?.originalname} </Typography>
+                                <Typography variant='h5' sx={{ fontSize: "12px", fontWeight: "500", color: "#7F7F7F" }}>Certifications</Typography>
+                                <Typography color='primary' variant='h5' sx={{ fontSize: "14px", fontWeight: "500" }}>
+                                    {educatordetail.certification?.originalname ? 
+                                        educatordetail.certification.originalname : 
+                                        "Not Updated"}
+                                </Typography>
                             </Box>
-
                         </Box>
-
                     </Box>
                 </Box>
                 
-                {!educatordetail.isAdminApproved && <Box display={"flex"} justifyContent={"center"} mt={2} mb={2} gap={3}>
-                <Button onClick={()=>rejectEducator(educatordetail._id)} variant='outlined' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}>reject</Button>
-                <Button onClick={()=>approve(educatordetail._id)} variant='contained' color='secondary' sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}>Approve</Button>
-        
-            </Box> }
+                {!educatordetail.isAdminApproved && (
+                    <Box display={"flex"} justifyContent={"center"} mt={2} mb={2} gap={3}>
+                        <Button 
+                            onClick={() => rejectEducator(educatordetail._id)} 
+                            variant='outlined' 
+                            color='secondary' 
+                            sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
+                        >
+                            Reject
+                        </Button>
+                        <Button 
+                            onClick={() => approve(educatordetail._id)} 
+                            variant='contained' 
+                            color='secondary' 
+                            sx={{ borderRadius: "25px", marginTop: "20px", height: "40px", width: '200px', padding: '10px 35px' }}
+                        >
+                            Approve
+                        </Button>
+                    </Box>
+                )}
         </>
     )
 }
