@@ -1,5 +1,7 @@
 const learningModel = require("../Models/learningModel");
 
+// ... (other functions like addLearningPlan, getLearningPlanOfSingleStudent, etc. remain the same) ...
+
 const addLearningPlan = async (req, res) => {
     try {
         const { goal, planDuration, weeks, educatorId, childId } = req.body;
@@ -467,24 +469,27 @@ const updateLearningPlanByParentTherapist = async (req, res) => {
     }
 };
 
+
+// --- THIS IS THE FUNCTION TO FIX ---
 const markActivityCompleted = async (req, res) => {
     try {
-        const { childId, weekIndex, activityIndex } = req.params;
-        const { userId, role } = req.user; // From authentication middleware
+        // FIX: The parameter from the route is `planId`, not `childId`.
+        const { planId, weekIndex, activityIndex } = req.params;
+        const { role } = req.user; // From authentication middleware
 
         // Validate parameters
-        if (!childId || isNaN(weekIndex) || isNaN(activityIndex)) {
+        if (!planId || isNaN(weekIndex) || isNaN(activityIndex)) {
             return res.status(400).json({
                 success: false,
-                message: "Child ID, week index, and activity index are required."
+                message: "Plan ID, week index, and activity index are required."
             });
         }
 
         const weekIdx = parseInt(weekIndex);
         const activityIdx = parseInt(activityIndex);
 
-        // Find the learning plan
-        const learningPlan = await learningModel.findOne({ childId });
+        // FIX: Find the plan by its unique ID
+        const learningPlan = await learningModel.findById(planId);
         if (!learningPlan) {
             return res.status(404).json({
                 success: false,
@@ -492,30 +497,20 @@ const markActivityCompleted = async (req, res) => {
             });
         }
 
-        // Validate week and activity indexes
+        // ... (rest of the logic is correct)
+        
         if (weekIdx < 0 || weekIdx >= learningPlan.weeks.length) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid week index."
-            });
+            return res.status(400).json({ success: false, message: "Invalid week index." });
         }
-
         const week = learningPlan.weeks[weekIdx];
         if (activityIdx < 0 || activityIdx >= week.activities.length) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid activity index."
-            });
+            return res.status(400).json({ success: false, message: "Invalid activity index." });
         }
 
-        // Get the activity
         const activity = week.activities[activityIdx];
-
-        // Mark activity as completed
         activity.completed = true;
         activity.completedDate = new Date();
         
-        // Set completedBy information based on role
         if (role === 'therapist') {
             activity.completedBy = 'Therapist';
         } else if (role === 'educator') {
@@ -548,59 +543,8 @@ const markActivityCompleted = async (req, res) => {
         });
     }
 };
+// --- END OF FIX ---
 
-// const updateRating = async (req, res) => {
-//     try {
-//         const { childId } = req.params;
-//         const { rating } = req.body;
-
-//         // Validate parameters
-//         if (!childId || rating === undefined) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Child ID and rating are required."
-//             });
-//         }
-
-//         // Validate rating value
-//         if (isNaN(rating) || rating < 1 || rating > 5) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Rating must be a number between 1 and 5."
-//             });
-//         }
-
-//         const updatedPlan = await learningModel.findOneAndUpdate(
-//             { childId },
-//             { 
-//                 rating: parseFloat(rating),
-//                 updatedAt: Date.now() 
-//             },
-//             { new: true }
-//         );
-
-//         if (!updatedPlan) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "Learning plan not found."
-//             });
-//         }
-
-//         return res.status(200).json({
-//             success: true,
-//             message: "Rating updated successfully.",
-//             data: updatedPlan
-//         });
-
-//     } catch (error) {
-//         console.error("Error in updateRating:", error);
-//         return res.status(500).json({
-//             success: false,
-//             message: "Internal server error",
-//             error: process.env.NODE_ENV === 'development' ? error.message : undefined
-//         });
-//     }
-// };
 
 module.exports = {
     addLearningPlan,
@@ -609,7 +553,6 @@ module.exports = {
     editLearningPlanByEducator,
     updateLearningPlanByParent,
     markActivityCompleted,
-    // updateRating,
     getLearningPlanOfSingleTherapist,
     addLearningPlanTherapist,
     editLearningPlanByTherapist,

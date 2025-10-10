@@ -25,137 +25,97 @@ const ParentEducatorLearning = () => {
     };
 
     const markAsCompleted = async (weekIndex, activityIndex) => {
+        // Store the original plan in case we need to revert on error
+        const originalPlan = JSON.parse(JSON.stringify(learningPlan));
+
         try {
             const token = localStorage.getItem("token");
+            if (!token) throw new Error("No authentication token found");
+
+            // Ensure we have a plan ID before proceeding
+            if (!learningPlan._id) {
+                toast.error("Learning plan ID is missing. Cannot complete activity.");
+                return;
+            }
             
-            // First update the UI optimistically
+            // Optimistic UI update
             setLearningPlan(prev => {
-                const updatedPlan = { ...prev };
-                const updatedWeeks = [...updatedPlan.weeks];
-                const updatedWeek = { ...updatedWeeks[weekIndex] };
-                const updatedActivities = [...updatedWeek.activities];
-                
-                updatedActivities[activityIndex] = {
-                    ...updatedActivities[activityIndex],
-                    completed: true,
-                    completedDate: formatDate()
-                };
-                
-                updatedWeek.activities = updatedActivities;
-                updatedWeeks[weekIndex] = updatedWeek;
-                updatedPlan.weeks = updatedWeeks;
-                
+                const updatedPlan = JSON.parse(JSON.stringify(prev)); // Deep copy
+                const activity = updatedPlan.weeks[weekIndex].activities[activityIndex];
+                activity.completed = true;
+                activity.completedDate = new Date().toISOString();
                 return updatedPlan;
             });
 
-            // Then make the API call
-            await axios.put(
-                `http://localhost:4000/ldss/parent/completeactivity/${childId}/${weekIndex}/${activityIndex}`,
-                {}, // empty body since we're just using route params
+            // FIXED: Send learningPlan._id instead of childId
+            const response = await axios.put(
+                `http://localhost:4000/ldss/parent/completeactivity/${learningPlan._id}/${weekIndex}/${activityIndex}`,
+                {},
                 {
                     headers: { Authorization: `Bearer ${token}` }
                 }
             );
 
-            toast.success("Activity marked as completed successfully!");
+            // Finalize UI with data from the server response
+            if (response.data.success) {
+                 setLearningPlan(prev => {
+                    const updatedPlan = JSON.parse(JSON.stringify(prev));
+                    const activity = updatedPlan.weeks[weekIndex].activities[activityIndex];
+                    activity.completedDate = response.data.data.completedDate;
+                    activity.completedBy = response.data.data.completedBy;
+                    return updatedPlan;
+                });
+                toast.success("Activity marked as completed successfully!");
+            } else {
+                throw new Error(response.data.message || "Failed to mark activity as completed");
+            }
             
         } catch (error) {
             console.error("Error marking activity as completed:", error);
-            
-            // Revert the UI if the API call fails
-            setLearningPlan(prev => {
-                const updatedPlan = { ...prev };
-                const updatedWeeks = [...updatedPlan.weeks];
-                const updatedWeek = { ...updatedWeeks[weekIndex] };
-                const updatedActivities = [...updatedWeek.activities];
-                
-                updatedActivities[activityIndex] = {
-                    ...updatedActivities[activityIndex],
-                    completed: false,
-                    completedDate: null
-                };
-                
-                updatedWeek.activities = updatedActivities;
-                updatedWeeks[weekIndex] = updatedWeek;
-                updatedPlan.weeks = updatedWeeks;
-                
-                return updatedPlan;
-            });
-
+            // Revert the UI to its original state on failure
+            setLearningPlan(originalPlan);
             toast.error(error.response?.data?.message || "Failed to mark activity as completed");
         }
     };
 
-const fetchLearningPlan = async () => {
-    try {
-        const token = localStorage.getItem("token");
-        const parentData = JSON.parse(localStorage.getItem("parentDetails"));
-        const parentId = parentData?._id;
+    const fetchLearningPlan = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem("token");
 
-        if (!childId) {
-            throw new Error("Missing child ID");
+            if (!childId) throw new Error("Missing child ID");
+
+            const url = `http://localhost:4000/ldss/parent/getstudentplan/${educatorId}/${childId}`;
+
+            const response = await axios.get(url, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!response.data?.data?.[0]) {
+                throw new Error("No learning plan available");
+            }
+
+            const plan = response.data.data[0];
+
+            setLearningPlan({
+                _id: plan._id || null,
+                goal: plan.goal || '',
+                planDuration: plan.planDuration || plan.weeks?.length || 1,
+                weeks: plan.weeks || []
+            });
+            setError(null);
+
+        } catch (error) {
+            console.error("Error fetching learning plan:", error);
+            if (error.response?.status === 404 || error.message === "No learning plan available") {
+                setError("No learning plan available");
+            } else {
+                setError(error.message || "Failed to load learning plan");
+            }
+        } finally {
+            setLoading(false);
         }
-
-        const url = educatorId
-            ? `http://localhost:4000/ldss/parent/getstudentplan/${educatorId}/${childId}`
-            : `http://localhost:4000/ldss/parent/getstudentplan/${childId}`;
-
-        const response = await axios.get(url, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-
-        if (!response.data?.data || !Array.isArray(response.data.data)) {
-            throw new Error("Invalid data structure from API");
-        }
-
-        const plan = response.data.data[0] || {};
-
-        const formattedPlan = {
-            _id: plan._id || null,
-            goal: plan.goal || '',
-            planDuration: plan.planDuration || (Array.isArray(plan.weeks) ? plan.weeks.length : 1),
-            weeks: Array.isArray(plan.weeks)
-                ? plan.weeks.map(week => ({
-                    _id: week._id || null,
-                    activities: Array.isArray(week.activities)
-                        ? week.activities.map(activity => ({
-                            _id: activity._id || null,
-                            title: activity.title || '',
-                            description: activity.description || '',
-                            completed: activity.completed || false,
-                            completedDate: activity.completedDate || null
-                        }))
-                        : []
-                }))
-                : []
-        };
-
-        setLearningPlan(formattedPlan);
-    } catch (error) {
-        console.error("Error fetching learning plan:", error);
-        
-        // Check if the error is a 404 response
-        if (error.response && error.response.status === 404) {
-            setError("No learning plan available");
-        } else {
-            setError(error.message || "Failed to load learning plan");
-        }
-        
-        // Set an empty learning plan state
-        setLearningPlan({
-            goal: '',
-            planDuration: 0,
-            weeks: []
-        });
-        
-        // Only show toast for errors other than 404
-        if (!error.response || error.response.status !== 404) {
-            toast.error(error.message || "Failed to load learning plan");
-        }
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
     useEffect(() => {
         const storedParentDetails = localStorage.getItem("parentDetails");
@@ -177,7 +137,6 @@ const fetchLearningPlan = async () => {
                 </Typography>
             );
         } else {
-            // Check if this is the first incomplete activity in the week
             const weekActivities = learningPlan.weeks[weekIndex]?.activities || [];
             const isFirstIncomplete = weekActivities.findIndex(a => !a.completed) === activityIndex;
             
@@ -190,14 +149,8 @@ const fetchLearningPlan = async () => {
                         <Button 
                             variant='outlined' 
                             color='secondary' 
-                            sx={{ 
-                                borderRadius: "25px", 
-                                height: "36px", 
-                                width: '100px', 
-                                fontSize: "14px", 
-                                fontWeight: "500" 
-                            }}
-                            onClick={async () => await markAsCompleted(weekIndex, activityIndex)}
+                            sx={{ borderRadius: "25px", height: "36px", width: '100px', fontSize: "14px", fontWeight: "500" }}
+                            onClick={() => markAsCompleted(weekIndex, activityIndex)}
                         >
                             Complete
                         </Button>
@@ -216,28 +169,27 @@ const fetchLearningPlan = async () => {
             </Box>
         );
     }
-if (error) {
-    return (
-        <>
-            <ParentNavbar parentdetails={parentDetails} navigateToProfile={navigateToProfile} />
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" flexDirection="column">
-                <Typography color="primary" variant="h5" sx={{ mb: 2 }}>
-                    {error === "No learning plan available" ? 
-                        "No learning plan available" : 
-                        "Error loading learning plan"}
-                </Typography>
-                <Button 
-                    variant="outlined" 
-                    color="primary"
-                    onClick={() => navigate(-1)}
-                    sx={{ mt: 2 }}
-                >
-                    Go Back
-                </Button>
-            </Box>
-        </>
-    );
-}
+
+    if (error) {
+        return (
+            <>
+                <ParentNavbar parentdetails={parentDetails} navigateToProfile={navigateToProfile} />
+                <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh" flexDirection="column">
+                    <Typography color="primary" variant="h5" sx={{ mb: 2 }}>
+                        {error}
+                    </Typography>
+                    <Button 
+                        variant="outlined" 
+                        color="primary"
+                        onClick={() => navigate(-1)}
+                        sx={{ mt: 2 }}
+                    >
+                        Go Back
+                    </Button>
+                </Box>
+            </>
+        );
+    }
 
     return (
         <>
@@ -268,7 +220,6 @@ if (error) {
                     <Typography variant='h4' color='primary' sx={{ fontSize: "24px", fontWeight: "600", pr: "20px" }}>{learningPlan.planDuration || learningPlan.weeks?.length || 1} Weeks Plan</Typography>
                 </Box>
                 
-                {/* Weeks */}
                 {learningPlan.weeks.map((week, weekIndex) => (
                     <Box key={week._id || weekIndex} display={'flex'} flexDirection={'column'} m={"20px 50px"} sx={{ background: "#F0F6FE", borderRadius: "12px" }}>
                         <Typography variant='h6' color='primary' sx={{ fontSize: "24px", fontWeight: "500", p: "20px 30px" }}>Week {weekIndex + 1}</Typography>

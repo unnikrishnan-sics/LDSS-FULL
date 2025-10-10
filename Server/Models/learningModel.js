@@ -23,6 +23,16 @@ const learningSchema = mongoose.Schema({
                     },
                     completed: {
                         type: Boolean, default: false
+                    },
+                    // ADDED: Fields to track completion details
+                    completedDate: {
+                        type: Date,
+                        default: null
+                    },
+                    completedBy: {
+                        type: String,
+                        enum: ['Parent', 'Educator', 'Therapist', null],
+                        default: null
                     }
                 }
             ]

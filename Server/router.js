@@ -60,7 +60,11 @@ router.get("/parent/getacceptededucator/:id", protectedRoute.protectedRoute, par
 router.get("/parent/getacceptedtherapist/:id", protectedRoute.protectedRoute, parentController.getAcceptedTherapists);
 router.put("/parent/updatelearningplan/:childId/:educatorId", protectedRoute.protectedRoute, learningPlanController.updateLearningPlanByParent);
 router.put("/parent/updatelearningplantherapist/:childId/:therapistId", protectedRoute.protectedRoute, learningPlanController.updateLearningPlanByParentTherapist);
-router.put("/parent/completeactivity/:childId/:weekIndex/:activityIndex", protectedRoute.protectedRoute, learningPlanController.markActivityCompleted);
+
+// =================== THIS IS THE FIX ===================
+router.put("/parent/completeactivity/:planId/:weekIndex/:activityIndex", protectedRoute.protectedRoute, learningPlanController.markActivityCompleted);
+// =======================================================
+
 router.get("/parent/getallmeeting/:id", protectedRoute.protectedRoute, meetingController.viewAllMeetingsOfParent);
 router.get("/parent/getstudentplan/:educatorId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleStudent);
 router.get("/parent/getstudentplantherapist/:therapistId/:childId",protectedRoute.protectedRoute,learningPlanController.getLearningPlanOfSingleTherapist);
