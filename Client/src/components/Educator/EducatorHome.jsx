@@ -13,7 +13,7 @@ import Backdrop from '@mui/material/Backdrop';
 import EducatorViewParentDetails from './Common/EducatorViewParentDetails';
 import { keyframes } from '@emotion/react';
 import { motion } from 'framer-motion';
-
+import HomeImage from '../../assets/librarycard.png'; // Ensure you have an appropriate image here
 // Animation keyframes
 const floatAnimation = keyframes`
   0% { transform: translateY(0px); }
@@ -136,7 +136,7 @@ const EducatorHome = () => {
                         animation: `${floatAnimation} 6s ease-in-out infinite`
                     }}>
                         <Box component="img" 
-                            src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80" 
+                            src={HomeImage}
                             alt="Teaching" 
                             sx={{ 
                                 width: '100%',
