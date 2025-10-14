@@ -193,8 +193,7 @@ const EducatorLogin = () => {
                     </Box>
                 </Box>
             </Box>
-            <Footer />
-        </>
+<Footer userRole="educator" />        </>
     )
 }
 

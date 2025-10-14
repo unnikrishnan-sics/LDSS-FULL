@@ -245,8 +245,7 @@ const TheraphistRest = () => {
                     </Stack>
                 </Box>
             </Container>
-            <Footer/>
-        </>
+<Footer userRole="therapist" />        </>
     );
 };
 

@@ -310,8 +310,7 @@ const navigate=useNavigate();
                 </Box>
 
             </Container>
-            <Footer />
-        </>
+<Footer userRole="therapist" />        </>
     )
 }
 

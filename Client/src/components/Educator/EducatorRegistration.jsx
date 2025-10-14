@@ -630,8 +630,7 @@ const EducatorRegistration = () => {
                 </Box>
             </Container>
             
-            <Footer />
-        </>
+<Footer userRole="educator" />        </>
     );
 };
 

@@ -189,8 +189,7 @@ const ParentResetPassword = () => {
                     </Stack>
                 </Box>
             </Container>
-            <Footer/>
-        </>
+<Footer userRole="parent" />         </>
     )
 }
 

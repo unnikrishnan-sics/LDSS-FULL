@@ -148,7 +148,7 @@ const TheraphistLogin = () => {
                             </Box>
 
                             <Box sx={{ textAlign: 'right', mb: 3 }}>
-                                <Link to="/theraphist/forgotpassword" style={{ 
+                                <Link to="/therapist/forgotpassword" style={{ 
                                     textDecoration: "none",
                                     color: 'primary.main',
                                     fontSize: '14px',
@@ -192,8 +192,7 @@ const TheraphistLogin = () => {
                     </Box>
                 </Container>
             </Box>
-            <Footer />
-        </>
+<Footer userRole="therapist" />        </>
     )
 }
 

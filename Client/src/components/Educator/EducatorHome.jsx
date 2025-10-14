@@ -414,8 +414,7 @@ const EducatorHome = () => {
                 </Fade>
             </Modal>
 
-            <Footer />
-        </Box>
+<Footer userRole="educator" />        </Box>
     );
 };
 

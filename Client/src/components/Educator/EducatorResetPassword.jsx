@@ -186,8 +186,7 @@ const EducatorResetPassword = () => {
                     </Stack>
                 </Box>
             </Container>
-            <Footer/>
-        </>
+<Footer userRole="educator" />        </>
     )
 }
 

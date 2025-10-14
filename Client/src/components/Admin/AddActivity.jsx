@@ -4,6 +4,7 @@ import AdminSideBar from './Common/AdminSideBar';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DriveFolderUploadIcon from '@mui/icons-material/DriveFolderUpload';
 import axios from 'axios';
+import axiosInstance from '../../Api_service/baseUrl';
 
 const AddActivity = () => {
   const textFieldStyle = {
@@ -102,7 +103,7 @@ const AddActivity = () => {
     try {
       setStatus({ submitting: true, success: null, message: '' });
 
-      const res = await axios.post('http://localhost:4000/ldss/addactivity', formData, {
+      const res = await axios.post(`${axiosInstance}addactivity`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,

@@ -625,8 +625,7 @@ const TheraphistHome = () => {
     </Fade>
 </Modal>
 
-            <Footer />
-        </>
+<Footer userRole="therapist" />        </>
     );
 };
 

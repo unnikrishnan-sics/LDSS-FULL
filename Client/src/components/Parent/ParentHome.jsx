@@ -1396,8 +1396,7 @@ const ParentHome = () => {
                 </Container>
             </Box>
 
-            <Footer />
-        </>
+<Footer userRole="parent" />         </>
     )
 }
 

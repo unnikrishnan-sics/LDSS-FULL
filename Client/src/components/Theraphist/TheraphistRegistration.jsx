@@ -630,8 +630,7 @@ const TherapistRegistration = () => {
                 </Box>
             </Container>
             
-            <Footer />
-        </>
+<Footer userRole="therapist" />        </>
     );
 };
 

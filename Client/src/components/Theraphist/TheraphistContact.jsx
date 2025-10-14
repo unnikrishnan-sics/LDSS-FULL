@@ -131,8 +131,7 @@ const TheraphistContact = () => {
         </Box>
       </Container>
 
-      <Footer />
-      
+<Footer userRole="therapist" />      
     </>
   )
 }

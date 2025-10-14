@@ -378,8 +378,7 @@ const ParentSiginIn = () => {
                     </Box>
                 </Box>
             </Container>
-            <Footer />
-        </>
+<Footer userRole="parent" />         </>
     )
 }
 

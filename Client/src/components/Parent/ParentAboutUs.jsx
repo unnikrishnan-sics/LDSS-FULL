@@ -101,8 +101,7 @@ const ParentAboutUs = () => {
 
 
             </Box>
-            <Footer/>
-      
+<Footer userRole="parent" />       
     </>
   )
 }

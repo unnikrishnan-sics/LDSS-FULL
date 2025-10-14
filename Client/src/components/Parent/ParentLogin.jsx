@@ -166,8 +166,7 @@ const ParentLogin = () => {
                     </Typography>
                 </Box>
             </Container>
-            <Footer />
-        </>
+<Footer userRole="parent" />         </>
     )
 }
 

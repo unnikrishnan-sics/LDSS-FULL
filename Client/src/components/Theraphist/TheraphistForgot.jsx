@@ -78,8 +78,7 @@ const navigate=useNavigate();
 
 
             </Container>
-            <Footer />
-    </>
+<Footer userRole="therapist" />    </>
   )
 }
 

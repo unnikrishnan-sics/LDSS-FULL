@@ -131,8 +131,7 @@ const ParentContactUs = () => {
         </Box>
       </Container>
 
-      <Footer />
-    </>
+<Footer userRole="parent" />     </>
   )
 }
 

@@ -274,8 +274,7 @@ const EducatorContact = () => {
                 </Box>
             </Container>
 
-            <Footer />
-        </>
+<Footer userRole="educator" />        </>
     );
 }
 

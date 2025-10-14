@@ -125,8 +125,7 @@ const EducatorAbout = () => {
                 </Box>
             </Box>
 
-            <Footer/>
-        </>
+<Footer userRole="educator" />        </>
     )
 }
 
