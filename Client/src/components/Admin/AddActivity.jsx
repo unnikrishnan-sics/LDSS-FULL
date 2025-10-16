@@ -103,7 +103,7 @@ const AddActivity = () => {
     try {
       setStatus({ submitting: true, success: null, message: '' });
 
-      const res = await axios.post(`${axiosInstance}addactivity`, formData, {
+      const res = await axios.post(`http://localhost:4000/ldss/addactivity`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${token}`,
